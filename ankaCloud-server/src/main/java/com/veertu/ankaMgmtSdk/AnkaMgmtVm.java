@@ -20,5 +20,6 @@ public interface AnkaMgmtVm {
     boolean isRunning();
     String getInfo();
     Date getCreatedTime() throws AnkaMgmtException;
+    String getImageId();
 
 }

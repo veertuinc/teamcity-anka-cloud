@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Date;
 import java.util.Map;
 
-public class AnkaCloudInsatnce implements CloudInstance {
+public class AnkaCloudInstance implements CloudInstance {
 
 
     public AnkaMgmtVm getVm() {
@@ -24,7 +24,7 @@ public class AnkaCloudInsatnce implements CloudInstance {
     private final AnkaMgmtVm vm;
     private final CloudImage image;
 
-    public AnkaCloudInsatnce(AnkaMgmtVm vm, CloudImage image) {
+    public AnkaCloudInstance(AnkaMgmtVm vm, CloudImage image) {
         this.vm = vm;
         this.image = image;
     }
@@ -38,7 +38,12 @@ public class AnkaCloudInsatnce implements CloudInstance {
     @NotNull
     @Override
     public String getName() {
-        return vm.getName();
+        String name = vm.getName();
+        if (name != null ) {
+            return name;
+        }
+        return "error";
+
     }
 
     @NotNull
@@ -100,6 +105,11 @@ public class AnkaCloudInsatnce implements CloudInstance {
     @Override
     public boolean containsAgent(@NotNull AgentDescription agentDescription){
         final Map<String, String> configParams = agentDescription.getConfigurationParameters();
-        return getInstanceId().equals(configParams.get(AnkaConstants.INSTANCE_ID));
+        Map<String, String> availableParameters = agentDescription.getAvailableParameters();
+        return availableParameters.get("env.USER").equals("anka");
+//        return getInstanceId().equals(configParams.get(AnkaConstants.INSTANCE_ID));
+        // TODO: get another variable set by ssh when instance starts
+        // maybe there this is for agent push?
+
     }
 }

@@ -3,6 +3,7 @@ package com.veertu.ankaMgmtSdk;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -31,9 +32,11 @@ public class AnkaMgmtCommunicator {
 
     private final String host;
     private final String port;
+    private final int timeout;
     private String scheme;
 
     public AnkaMgmtCommunicator(String host, String port) throws AnkaMgmtException {
+        this.timeout = 200;
         this.host = host;
         this.port = port;
         this.scheme = "https";
@@ -57,7 +60,7 @@ public class AnkaMgmtCommunicator {
             String logicalResult = jsonResponse.getString("status");
             if (logicalResult.equals("OK")) {
                 JSONArray vmsJson = jsonResponse.getJSONArray("body");
-                for (Object j: vmsJson) {
+                for (Object j : vmsJson) {
                     JSONObject jsonObj = (JSONObject) j;
                     String vmId = jsonObj.getString("id");
                     String name = jsonObj.getString("name");
@@ -80,17 +83,15 @@ public class AnkaMgmtCommunicator {
             if (logicalResult.equals("OK")) {
                 JSONObject templateVm = jsonResponse.getJSONObject("body");
                 JSONArray vmsJson = templateVm.getJSONArray("versions");
-                for (Object j: vmsJson) {
+                for (Object j : vmsJson) {
                     JSONObject jsonObj = (JSONObject) j;
                     String tag = jsonObj.getString("tag");
                     tags.add(tag);
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             System.out.printf("Exception trying to access: '%s'", url);
-        }
-        catch (org.json.JSONException e) {
+        } catch (org.json.JSONException e) {
             System.out.printf("Exception trying to parse response: '%s'", url);
         }
         return tags;
@@ -114,7 +115,7 @@ public class AnkaMgmtCommunicator {
         String logicalResult = jsonResponse.getString("status");
         if (logicalResult.equals("OK")) {
             JSONArray uuidsJson = jsonResponse.getJSONArray("body");
-            if (uuidsJson.length() >= 1 ){
+            if (uuidsJson.length() >= 1) {
                 return uuidsJson.getString(0);
             }
 
@@ -157,22 +158,27 @@ public class AnkaMgmtCommunicator {
     }
 
 
-    private List<String> list() throws AnkaMgmtException {
-        List<String> vmIds = new ArrayList<String>();
-        String url = String.format("%s://%s:%s/list", this.scheme, this.host, this.port);
+    public List<AnkaVmSession> list() throws AnkaMgmtException {
+        List<AnkaVmSession> vms = new ArrayList<>();
+        String url = String.format("%s://%s:%s/api/v1/vm", this.scheme, this.host, this.port);
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
-            String logicalResult = jsonResponse.getString("result");
+            String logicalResult = jsonResponse.getString("status");
             if (logicalResult.equals("OK")) {
-                JSONArray vmsJson = jsonResponse.getJSONArray("instance_id");
+                JSONArray vmsJson = jsonResponse.getJSONArray("body");
                 for (int i = 0; i < vmsJson.length(); i++) {
-                    String vmId = vmsJson.getString(i);
-                    vmIds.add(vmId);
+                    JSONObject vmJson = vmsJson.getJSONObject(i);
+                    String instanceId = vmJson.getString("instance_id");
+                    JSONObject vm = vmJson.getJSONObject("vm");
+                    vm.put("instance_id", instanceId);
+                    vm.put("cr_time", vm.getString("cr_time"));
+                    AnkaVmSession ankaVmSession = AnkaVmSession.makeAnkaVmSessionFromJson(vmJson);
+                    vms.add(ankaVmSession);
                 }
             }
-            return vmIds;
+            return vms;
         } catch (IOException e) {
-            return vmIds;
+            return vms;
         }
     }
 
@@ -185,60 +191,64 @@ public class AnkaMgmtCommunicator {
     }
 
     private JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
-    CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-    HttpRequestBase request;
-    try {
-        switch (method) {
-            case POST:
-                HttpPost postRequest = new HttpPost(url);
-                request = setBody(postRequest, requestBody);
-                break;
-            case DELETE:
-                HttpDeleteWithBody delRequest = new HttpDeleteWithBody(url);
-                request = setBody(delRequest, requestBody);
-                break;
-            case GET:
-                request = new HttpGet(url);
-                break;
-            default:
-                request = new HttpGet(url);
-                break;
-        }
-
-        HttpResponse response = httpClient.execute(request);
-        int responseCode = response.getStatusLine().getStatusCode();
-        if (responseCode != 200) {
-            System.out.println(response.toString());
-            return null;
-        }
-        HttpEntity entity = response.getEntity();
-        if ( entity != null ) {
-            BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(entity.getContent()));
-            StringBuffer result = new StringBuffer();
-            String line = "";
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
+//        RequestConfig.Builder requestBuilder = RequestConfig.custom();
+//        requestBuilder = requestBuilder.setConnectTimeout(timeout);
+//        requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+//        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        HttpRequestBase request;
+        try {
+            switch (method) {
+                case POST:
+                    HttpPost postRequest = new HttpPost(url);
+                    request = setBody(postRequest, requestBody);
+                    break;
+                case DELETE:
+                    HttpDeleteWithBody delRequest = new HttpDeleteWithBody(url);
+                    request = setBody(delRequest, requestBody);
+                    break;
+                case GET:
+                    request = new HttpGet(url);
+                    break;
+                default:
+                    request = new HttpGet(url);
+                    break;
             }
-            JSONObject jsonResponse = new JSONObject(result.toString());
-            return jsonResponse;
-        }
 
-    } catch (HttpHostConnectException e) {
-        throw new AnkaMgmtException(e);
-    } catch (SSLException e) {
-        throw e;
-    } catch (UnsupportedEncodingException e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-    } catch (IOException e) {
-        e.printStackTrace();
-        throw new AnkaMgmtException(e);
-    } finally {
-        httpClient.close();
+            HttpResponse response = httpClient.execute(request);
+            int responseCode = response.getStatusLine().getStatusCode();
+            if (responseCode != 200) {
+                System.out.println(response.toString());
+                return null;
+            }
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                BufferedReader rd = new BufferedReader(
+                        new InputStreamReader(entity.getContent()));
+                StringBuffer result = new StringBuffer();
+                String line = "";
+                while ((line = rd.readLine()) != null) {
+                    result.append(line);
+                }
+                JSONObject jsonResponse = new JSONObject(result.toString());
+                return jsonResponse;
+            }
+
+        } catch (HttpHostConnectException e) {
+            throw new AnkaMgmtException(e);
+        } catch (SSLException e) {
+            throw e;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new AnkaMgmtException(e);
+        } finally {
+            httpClient.close();
+        }
+        return null;
     }
-    return null;
-}
 
     private HttpRequestBase setBody(HttpEntityEnclosingRequestBase request, JSONObject requestBody) throws UnsupportedEncodingException {
         request.setHeader("content-type", "application/json");

@@ -34,7 +34,15 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     public CloudClientEx createNewClient(@NotNull CloudState cloudState, @NotNull CloudClientParameters cloudClientParameters) {
         String host = cloudClientParameters.getParameter(AnkaConstants.HOST_NAME);
         String port = cloudClientParameters.getParameter(AnkaConstants.PORT);
-        return new AnkaCloudClientEx(host, port);
+        String sshUser = cloudClientParameters.getParameter(AnkaConstants.SSH_USER);
+        String sshPassword = cloudClientParameters.getParameter(AnkaConstants.SSH_PASSWORD);
+        String imageName = cloudClientParameters.getParameter(AnkaConstants.IMAGE_NAME);
+        String imageTag = cloudClientParameters.getParameter(AnkaConstants.IMAGE_TAG);
+        String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
+        String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
+        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl);
+        // TODO: figure out if it's possible to get more coniguration variables here
+        return new AnkaCloudClientEx(connector);
 
     }
 
@@ -62,6 +70,9 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         HashMap<String, String> parameters = new HashMap<String, String>();
         parameters.put(AnkaConstants.HOST_NAME, "18.236.6.136");
         parameters.put(AnkaConstants.PORT, "8090");
+        parameters.put(AnkaConstants.SSH_PASSWORD, "admin");
+        parameters.put(AnkaConstants.SSH_USER, "anka");
+        parameters.put(AnkaConstants.AGENT_PATH, "/Users/anka/buildAgent");
         return parameters;
     }
 
@@ -73,7 +84,8 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
-        final Map<String, String> configParams = agentDescription.getConfigurationParameters();
-        return configParams.containsKey(AnkaConstants.IMAGE_NAME);
+        Map<String, String> availableParameters = agentDescription.getAvailableParameters();
+        return availableParameters.get("env.USER").equals("anka");
+        // TODO: get another variable set by ssh when instance starts
     }
 }

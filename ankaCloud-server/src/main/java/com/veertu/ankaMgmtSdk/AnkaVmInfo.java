@@ -14,14 +14,16 @@ public class AnkaVmInfo {
     private final String vmIp;
     private final List<PortForwardingRule> portForwardingRules;
 
-    private final String hostIp;
+    private String hostIp;
 
     public AnkaVmInfo(JSONObject jsonObject) {
         this.uuid = jsonObject.getString("uuid");
         this.name = jsonObject.getString("name");
         this.status = jsonObject.getString("status");
         this.vmIp = jsonObject.getString("ip");
-        this.hostIp = jsonObject.getString("host_ip");
+        if (jsonObject.has("host_ip")) {
+            this.hostIp = jsonObject.getString("host_ip");
+        }
         this.portForwardingRules = new ArrayList<PortForwardingRule>();
         if (!jsonObject.isNull("port_forwarding")) {
             JSONArray portForwardRulesJson = jsonObject.getJSONArray("port_forwarding");

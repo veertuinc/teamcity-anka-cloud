@@ -1,95 +1,94 @@
 package com.veertu;
 
-import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
 import jetbrains.buildServer.clouds.*;
-import com.veertu.ankaMgmtSdk.AnkaVmFactory;
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Map;
 
 public class AnkaCloudClientEx implements CloudClientEx {
 
-    private final String cloudHost;
-    private final String cloudPort;
 
-    public AnkaCloudClientEx(String cloudHost,String cloudPort) {
-        this.cloudHost = cloudHost;
-        this.cloudPort = cloudPort;
+    private final AnkaCloudConnector connector;
+
+    public AnkaCloudClientEx(AnkaCloudConnector connector) {
+        this.connector = connector;
     }
 
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        String imageId = cloudImage.getId();
-        AnkaVmFactory vmFactory = AnkaVmFactory.getInstance();
-        String tag = userData.getAgentConfigurationParameter("tag");
-        try {
-            AnkaMgmtVm vm = vmFactory.makeAnkaVm(this.cloudHost, this.cloudPort, imageId, tag, null, 22);
-            return new AnkaCloudInsatnce(vm, cloudImage);
-
-        } catch (AnkaMgmtException e) {
-            throw new RuntimeException(e);
-        }
+        return this.connector.startNewInstance(cloudImage, userData);
     }
 
     @Override
     public void restartInstance(@NotNull CloudInstance cloudInstance) {
-
+        // TODO: do something about this!
     }
 
     @Override
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
-        AnkaCloudInsatnce instance = (AnkaCloudInsatnce)cloudInstance;
-        AnkaMgmtVm vm = instance.getVm();
-        vm.terminate();
+        this.connector.terminateInstance(cloudInstance);
     }
 
     @Override
     public void dispose() {
-
+        // TODO: figure out what should happen here (what am i disposing off?)
     }
 
     @Override
     public boolean isInitialized() {
-        return true;
+        return true; // TODO: check for cloud connectivity here
     }
 
     @Nullable
     @Override
     public CloudImage findImageById(@NotNull String s) throws CloudException {
-        return null;
+        return this.connector.findImageById(s);
+        // TODO: hook this to the class's image "cache"
     }
 
     @Nullable
     @Override
     public CloudInstance findInstanceByAgent(@NotNull AgentDescription agentDescription) {
-        return null;
+        // this is how tc figures out which agent belongs to which instance
+        Map<String, String> availableParameters = agentDescription.getAvailableParameters();
+        Map<String, String> configurationParameters = agentDescription.getConfigurationParameters();
+        String instanceId = availableParameters.get("env.INSTANCE_ID");
+        String imageId = availableParameters.get("env.IMAGE_ID");
+        if (instanceId == null || imageId == null) {
+            return null;
+        }
+        CloudImage image = findImageById(imageId);
+        return connector.getInstanceById(instanceId, (AnkaCloudImage)image);
+
+//        return null;
     }
 
     @NotNull
     @Override
     public Collection<? extends CloudImage> getImages() throws CloudException {
-        return Collections.emptyList();
+        return this.connector.getImages();
+        // TODO: hook this to the class's image "cache"
+
     }
 
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
-        return null;
+        return null; // TODO: figure out what to do here
     }
 
     @Override
     public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
         return true;
+        // TODO: check for instance capacity
     }
 
     @Nullable
     @Override
     public String generateAgentName(@NotNull AgentDescription agentDescription) {
-        return null;
+        return null; // TODO: figure out what to do here
     }
 }

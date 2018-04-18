@@ -2,6 +2,7 @@ package com.veertu.ankaMgmtSdk;
 
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,23 @@ public class AnkaVmFactory {
         AnkaMgmtVm vm = new ConcAnkaMgmtVm(sessionId, communicator, sshPort);
         return vm;
 
+    }
+
+    public AnkaMgmtVm getVm(String mgmtHost, String mgmtPort, String sessionId) throws AnkaMgmtException {
+        AnkaMgmtCommunicator communicator = getCommunicator(mgmtHost, mgmtPort);
+        AnkaVmSession ankaVmSession = communicator.showVm(sessionId);
+        return new ConcAnkaMgmtVm(communicator, ankaVmSession);
+    }
+
+    public List<AnkaMgmtVm> listVms(String mgmtHost, String mgmtPort) throws AnkaMgmtException {
+        AnkaMgmtCommunicator communicator = getCommunicator(mgmtHost, mgmtPort);
+        List<AnkaMgmtVm> vms = new ArrayList<>();
+        List<AnkaVmSession> ankaVmSessions = communicator.list();
+        for (AnkaVmSession vmSession: ankaVmSessions) {
+            AnkaMgmtVm vm = new ConcAnkaMgmtVm(communicator, vmSession);
+            vms.add(vm);
+        }
+        return vms;
     }
 
     public List<AnkaVmTemplate> listTemplates(String mgmtHost, String mgmtPort) throws AnkaMgmtException {

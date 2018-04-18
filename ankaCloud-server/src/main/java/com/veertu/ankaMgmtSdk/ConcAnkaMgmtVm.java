@@ -30,6 +30,13 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
         logger.info(String.format("init VM %s", sessionId));
     }
 
+    public ConcAnkaMgmtVm(AnkaMgmtCommunicator communicator, AnkaVmSession session) {
+        this.sessionId = session.id;
+        this.cachedVmSession = session;
+        this.sshConnectionPort = 0;
+        this.communicator = communicator;
+    }
+
     private String getStatus() throws AnkaMgmtException {
         AnkaVmSession session = this.communicator.showVm(this.sessionId);
         return session.getSessionState();
@@ -96,7 +103,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
         }
 
         status = getStatus();
-        if (!status.equals("Starting") && !status.equals("Started") && !status.equals("Scheduled")) {
+        if (!status.equals("Starting") && !status.equals("Started") && !status.equals("Scheduled") && !status.equals("Scheduling")) {
             logger.info(String.format("vm %s in unexpected state %s, terminating", this.sessionId, status));
             this.terminate();
             throw new IOException("could not start vm");
@@ -141,7 +148,11 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
 
     public String getName() {
         AnkaVmSession session = this.getSessionInfoCache();
-        return session.getVmInfo().getName();
+        AnkaVmInfo vmInfo = session.getVmInfo();
+        if (vmInfo != null){
+            return vmInfo.getName();
+        }
+        return null;
     }
 
     public String getConnectionIp() {
@@ -185,5 +196,10 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
     public Date getCreatedTime() throws AnkaMgmtException {
         AnkaVmSession session = this.communicator.showVm(this.sessionId);
         return session.getCreated();
+    }
+
+    public String getImageId() {
+        AnkaVmSession session = this.getSessionInfoCache();
+        return session.getVmId();
     }
 }
