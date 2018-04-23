@@ -12,14 +12,14 @@ public class AnkaCloudImage implements CloudImage {
 
     private final String id;
     private final String name;
-    private final Collection<String> tags;
+    private final String tag;
     private final AnkaCloudConnector connector;
 
-    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, Collection<String> tags) {
+    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag) {
         this.connector = connector;
         this.id = id;
         this.name = name;
-        this.tags = tags;
+        this.tag = tag;
 
         // TODO: accept an image with a tag
     }

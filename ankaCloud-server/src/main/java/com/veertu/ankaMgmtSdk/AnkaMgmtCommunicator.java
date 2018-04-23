@@ -36,7 +36,7 @@ public class AnkaMgmtCommunicator {
     private String scheme;
 
     public AnkaMgmtCommunicator(String host, String port) throws AnkaMgmtException {
-        this.timeout = 200;
+        this.timeout = 2000;
         this.host = host;
         this.port = port;
         this.scheme = "https";
@@ -182,6 +182,21 @@ public class AnkaMgmtCommunicator {
         }
     }
 
+    public AnkaCloudStatus status() {
+        String url = String.format("%s://%s:%s/api/v1/status", this.scheme, this.host, this.port);
+        try {
+            JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
+            String logicalResult = jsonResponse.getString("status");
+            if (logicalResult.equals("OK")) {
+                JSONObject statusJson = jsonResponse.getJSONObject("body");
+                return AnkaCloudStatus.fromJson(statusJson);
+            }
+            return null;
+        } catch (IOException | AnkaMgmtException e) {
+            return null;
+        }
+    }
+
     private enum RequestMethod {
         GET, POST, DELETE
     }
@@ -191,11 +206,11 @@ public class AnkaMgmtCommunicator {
     }
 
     private JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
-//        RequestConfig.Builder requestBuilder = RequestConfig.custom();
-//        requestBuilder = requestBuilder.setConnectTimeout(timeout);
-//        requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
-//        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        RequestConfig.Builder requestBuilder = RequestConfig.custom();
+        requestBuilder = requestBuilder.setConnectTimeout(timeout);
+        requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
+//        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpRequestBase request;
         try {
             switch (method) {

@@ -39,7 +39,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public boolean isInitialized() {
-        return true; // TODO: check for cloud connectivity here
+        return this.connector.isRunning();
     }
 
     @Nullable
@@ -54,7 +54,6 @@ public class AnkaCloudClientEx implements CloudClientEx {
     public CloudInstance findInstanceByAgent(@NotNull AgentDescription agentDescription) {
         // this is how tc figures out which agent belongs to which instance
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        Map<String, String> configurationParameters = agentDescription.getConfigurationParameters();
         String instanceId = availableParameters.get("env.INSTANCE_ID");
         String imageId = availableParameters.get("env.IMAGE_ID");
         if (instanceId == null || imageId == null) {
@@ -62,8 +61,6 @@ public class AnkaCloudClientEx implements CloudClientEx {
         }
         CloudImage image = findImageById(imageId);
         return connector.getInstanceById(instanceId, (AnkaCloudImage)image);
-
-//        return null;
     }
 
     @NotNull

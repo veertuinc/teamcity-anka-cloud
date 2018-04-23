@@ -24,7 +24,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     public AnkaCloudClientFactory(@NotNull final CloudRegistrar cloudRegistrar,
                                   @NotNull final PluginDescriptor pluginDescriptor,
                                   @NotNull final ServerPaths serverPaths) {
-        cloudProfileSettings = pluginDescriptor.getPluginResourcesPath("profile-settings.jsp");
+        cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTINGS_JSP);
         this.serverPaths = serverPaths;
         cloudRegistrar.registerCloudFactory(this);
     }

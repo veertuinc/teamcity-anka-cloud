@@ -10,17 +10,17 @@ import java.util.Map;
 /**
  * Created by asafgur on 18/05/2017.
  */
-public class AnkaVmFactory {
+public class AnkaAPI {
 
-    private static AnkaVmFactory ourInstance = new AnkaVmFactory();
+    private static AnkaAPI ourInstance = new AnkaAPI();
     private Map<String, AnkaMgmtCommunicator> communicators;
     private static int vmCounter = 1;
 
-    public static AnkaVmFactory getInstance() {
+    public static AnkaAPI getInstance() {
         return ourInstance;
     }
-    private java.util.logging.Logger logger =  java.util.logging.Logger.getLogger("AnkaVmFactory");
-    private AnkaVmFactory() {
+    private java.util.logging.Logger logger =  java.util.logging.Logger.getLogger("AnkaAPI");
+    private AnkaAPI() {
         this.communicators = new HashMap<String, AnkaMgmtCommunicator>();
     }
 
@@ -76,5 +76,15 @@ public class AnkaVmFactory {
     public List<String> listTemplateTags(String mgmtHost, String ankaMgmtPort, String masterVmId) throws AnkaMgmtException {
         AnkaMgmtCommunicator communicator = getCommunicator(mgmtHost, ankaMgmtPort);
         return communicator.getTemplateTags(masterVmId);
+    }
+
+    public AnkaCloudStatus status(String mgmtHost, String ankaMgmtPort) {
+        try {
+            AnkaMgmtCommunicator communicator = getCommunicator(mgmtHost, ankaMgmtPort);
+            return communicator.status();
+        } catch (AnkaMgmtException e) {
+            return null;
+        }
+
     }
 }

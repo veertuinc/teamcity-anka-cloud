@@ -1,9 +1,11 @@
 package com.veertu;
 
+import com.veertu.ankaMgmtSdk.AnkaAPI;
+import com.veertu.ankaMgmtSdk.AnkaCloudStatus;
 import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
-import com.veertu.ankaMgmtSdk.AnkaVmFactory;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.utils.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudException;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
@@ -27,7 +29,7 @@ public class AnkaCloudConnector {
     private String imageTag;
     private String sshUser;
     private String sshPassword;
-    private final AnkaVmFactory vmFactory;
+    private final AnkaAPI ankaAPI;
 
     public AnkaCloudConnector(String host, String port, String imageId, String imageTag,
                               String sshUser, String sshPassword, String agentPath, String serverUrl) {
@@ -39,7 +41,7 @@ public class AnkaCloudConnector {
         this.sshPassword = sshPassword;
         this.agentPath = agentPath;
         this.serverUrl = serverUrl;
-        this.vmFactory = AnkaVmFactory.getInstance();
+        this.ankaAPI = AnkaAPI.getInstance();
 
         // TODO: add list of images that will be used for this profile,
         // maybe return them instead of creating new instances all the time
@@ -48,14 +50,14 @@ public class AnkaCloudConnector {
     public AnkaCloudInstance startNewInstance(CloudImage cloudImage, CloudInstanceUserData userData) {
         String imageId = cloudImage.getId();
         try {
-            AnkaMgmtVm vm = this.vmFactory.makeAnkaVm(this.host, this.port, imageId, null, null, 22);
+            AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.host, this.port, imageId, null, null, 22);
             vm.waitForBoot();
             HashMap<String, String > properties = new HashMap<>();
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
-                properties.put("serverUrl", this.serverUrl);
+                properties.put(AnkaConstants.SERVER_URL_KEY, this.serverUrl);
             }
-            properties.put("env.INSTANCE_ID", vm.getId());
-            properties.put("env.IMAGE_ID", cloudImage.getId());
+            properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vm.getId());
+            properties.put(AnkaConstants.ENV_IMAGE_ID_KEY, cloudImage.getId());
             // TODO: put a variable that says the this istance belongs to anka cloud
             AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath);
             propertiesSetter.setProperties(properties);
@@ -75,10 +77,10 @@ public class AnkaCloudConnector {
     public Collection<? extends CloudImage> getImages() throws CloudException {
         ArrayList<CloudImage> images = new ArrayList<>();
         try {
-            List<AnkaVmTemplate> ankaVmTemplates = this.vmFactory.listTemplates(this.host, this.port);
+            List<AnkaVmTemplate> ankaVmTemplates = this.ankaAPI.listTemplates(this.host, this.port);
             for (AnkaVmTemplate template: ankaVmTemplates) {
-                List<String> tags = this.vmFactory.listTemplateTags(this.host, this.port, template.getId());
-                AnkaCloudImage newImage = new AnkaCloudImage(this, template.getId(), template.getName(), tags);
+//                List<String> tags = this.ankaAPI.listTemplateTags(this.host, this.port, template.getId());
+                AnkaCloudImage newImage = new AnkaCloudImage(this, template.getId(), template.getName(), null);
                 images.add(newImage);
             }
             return images;
@@ -90,25 +92,26 @@ public class AnkaCloudConnector {
 
     public CloudImage findImageById(String id)  throws CloudException {
         try {
-            List<AnkaVmTemplate> ankaVmTemplates = this.vmFactory.listTemplates(this.host, this.port);
+            List<AnkaVmTemplate> ankaVmTemplates = this.ankaAPI.listTemplates(this.host, this.port);
             for (AnkaVmTemplate template : ankaVmTemplates) {
                 if (template.getId().equals(id)) {
-                    List<String> tags = vmFactory.listTemplateTags(this.host, this.port, template.getId());
-                    AnkaCloudImage newImage = new AnkaCloudImage(this, template.getId(), template.getName(), tags);
+//                    List<String> tags = ankaAPI.listTemplateTags(this.host, this.port, template.getId());
+                    AnkaCloudImage newImage = new AnkaCloudImage(this, template.getId(), template.getName(), null);
                     return newImage;
                 }
             }
 
             return null;
         } catch (AnkaMgmtException e) {
-            throw new CloudException(e.getMessage());
+            return null;
+//            throw new CloudException(e.getMessage());
         }
     }
 
     public Collection<? extends CloudInstance> getImageInstances(AnkaCloudImage image) {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         try {
-            List<AnkaMgmtVm> ankaMgmtVms = this.vmFactory.listVms(this.host, this.port);
+            List<AnkaMgmtVm> ankaMgmtVms = this.ankaAPI.listVms(this.host, this.port);
 
             for (AnkaMgmtVm vm: ankaMgmtVms) {
                 if (vm.getImageId().equals(image.getId())) {
@@ -127,11 +130,19 @@ public class AnkaCloudConnector {
 
     public CloudInstance getInstanceById(String id, AnkaCloudImage image) {
         try {
-            AnkaMgmtVm vm = this.vmFactory.getVm(this.host, this.port, id);
+            AnkaMgmtVm vm = this.ankaAPI.getVm(this.host, this.port, id);
             return new AnkaCloudInstance(vm, image);
         } catch (AnkaMgmtException e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public boolean isRunning() {
+        AnkaCloudStatus ankaCloudStatus = this.ankaAPI.status(this.host, this.port);
+        if (ankaCloudStatus == null) {
+            return false;
+        }
+        return ankaCloudStatus.getStatus().toLowerCase().equals("running");
     }
 }
