@@ -3,7 +3,7 @@ package com.veertu.utils;
 public interface AnkaConstants {
 
     // Cloud Profile constants
-    String PROFILE_SETTING_HTML = "editAnka.html";
+    String PROFILE_SETTING_HTML = "profile-settings.html";
     String PROFILE_SETTINGS_JSP = "profile-settings.jsp";
     String INSTANCE_ID = "instance_id";
     String IMAGE_NAME = "image_name";
