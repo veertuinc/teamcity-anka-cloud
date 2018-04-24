@@ -24,7 +24,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     public AnkaCloudClientFactory(@NotNull final CloudRegistrar cloudRegistrar,
                                   @NotNull final PluginDescriptor pluginDescriptor,
                                   @NotNull final ServerPaths serverPaths) {
-        cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTINGS_JSP);
+        cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML);
         this.serverPaths = serverPaths;
         cloudRegistrar.registerCloudFactory(this);
     }
@@ -40,7 +40,17 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String imageTag = cloudClientParameters.getParameter(AnkaConstants.IMAGE_TAG);
         String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
-        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl);
+        Integer agentPoolId = null;
+        String agentPoolIdVal = cloudClientParameters.getParameter(AnkaConstants.AGENT_POOL_ID);
+        try {
+            if (!agentPoolIdVal.isEmpty()) {
+                agentPoolId = Integer.valueOf(agentPoolIdVal);
+            }
+        } catch (NullPointerException | NumberFormatException e) {
+            // do nothing - agentPoolId will just be null...
+        }
+
+        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl, agentPoolId);
         // TODO: figure out if it's possible to get more coniguration variables here
         return new AnkaCloudClientEx(connector);
 

@@ -53,8 +53,7 @@ public class AnkaCloudImage implements CloudImage {
     @Nullable
     @Override
     public Integer getAgentPoolId() {
-        return null;
-        // TODO: need to - either get pool id from tc or generate a pool id somehow
+        return this.connector.getAgentPoolId();
     }
 
     @Nullable

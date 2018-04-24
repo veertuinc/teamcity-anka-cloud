@@ -44,19 +44,19 @@
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>cloud-interface</artifactId>
-            <version>2017.2</version>
+            <version>${teamcity-version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>cloud-shared</artifactId>
-            <version>2017.2</version>
+            <version>${teamcity-version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.teamcity.internal</groupId>
             <artifactId>server</artifactId>
-            <version>2017.2</version>
+            <version>${teamcity-version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -73,6 +73,12 @@
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
             <version>0.1.54</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains.teamcity.internal</groupId>
+            <artifactId>server</artifactId>
+            <version>${teamcity-version}</version>
         </dependency>
 
 

@@ -25,6 +25,7 @@ public class AnkaCloudConnector {
     private final String port;
     private final String agentPath;
     private final String serverUrl;
+    private final Integer agentPoolId;
     private String imageId;
     private String imageTag;
     private String sshUser;
@@ -32,7 +33,7 @@ public class AnkaCloudConnector {
     private final AnkaAPI ankaAPI;
 
     public AnkaCloudConnector(String host, String port, String imageId, String imageTag,
-                              String sshUser, String sshPassword, String agentPath, String serverUrl) {
+                              String sshUser, String sshPassword, String agentPath, String serverUrl, Integer agentPoolId) {
         this.host = host;
         this.port = port;
         this.imageId = imageId;
@@ -41,6 +42,7 @@ public class AnkaCloudConnector {
         this.sshPassword = sshPassword;
         this.agentPath = agentPath;
         this.serverUrl = serverUrl;
+        this.agentPoolId = agentPoolId;
         this.ankaAPI = AnkaAPI.getInstance();
 
         // TODO: add list of images that will be used for this profile,
@@ -145,4 +147,10 @@ public class AnkaCloudConnector {
         }
         return ankaCloudStatus.getStatus().toLowerCase().equals("running");
     }
+
+
+    public Integer getAgentPoolId() {
+        return agentPoolId;
+    }
+
 }
