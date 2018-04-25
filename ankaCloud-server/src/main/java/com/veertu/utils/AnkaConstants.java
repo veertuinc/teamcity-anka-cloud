@@ -17,6 +17,7 @@ public interface AnkaConstants {
     String AGENT_PATH = "agent_path";
     String OPTIONAL_SERVER_URL = "profileServerUrl";
     String AGENT_POOL_ID = "agentPoolId";
+    String MAX_INSTANCES = "clouds.anka.maxInstances";
 
 
     // Agent Configuration constants
@@ -25,4 +26,5 @@ public interface AnkaConstants {
     String SERVER_URL_KEY = "serverUrl";
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";
     String ENV_ANKA_CLOUD_VALUE = "ANKA";
+    String ENV_PROFILE_ID = "env.ANKA_PROFILE_ID";
 }

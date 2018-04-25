@@ -49,9 +49,16 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         } catch (NullPointerException | NumberFormatException e) {
             // do nothing - agentPoolId will just be null...
         }
+        Integer maxInstances = 1;
+        try {
+            String maxInstancesString = cloudClientParameters.getParameter(AnkaConstants.MAX_INSTANCES);
+            maxInstances = Integer.valueOf(maxInstancesString);
+        } catch (NullPointerException | NumberFormatException e) {
+            // do nothing - maxInstances will just be 1...
+        }
 
-        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl, agentPoolId);
-        // TODO: figure out if it's possible to get more coniguration variables here
+        String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
+        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl, agentPoolId, profileId, maxInstances);
         return new AnkaCloudClientEx(connector);
 
     }
@@ -95,7 +102,6 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        return availableParameters.get("env.USER").equals("anka");
-        // TODO: get another variable set by ssh when instance starts
+        return availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY).equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE);
     }
 }

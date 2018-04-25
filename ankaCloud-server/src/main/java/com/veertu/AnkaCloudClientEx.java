@@ -5,15 +5,19 @@ import jetbrains.buildServer.serverSide.AgentDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class AnkaCloudClientEx implements CloudClientEx {
 
 
     private final AnkaCloudConnector connector;
+    private Map<String, AnkaCloudImage> images;
+
 
     public AnkaCloudClientEx(AnkaCloudConnector connector) {
         this.connector = connector;
+        this.images = new HashMap<>();
     }
 
     @NotNull
@@ -30,6 +34,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
         this.connector.terminateInstance(cloudInstance);
+
     }
 
     @Override
@@ -45,8 +50,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Nullable
     @Override
     public CloudImage findImageById(@NotNull String s) throws CloudException {
-        return this.connector.findImageById(s);
-        // TODO: hook this to the class's image "cache"
+        if (this.images.isEmpty()) {
+            Collection<AnkaCloudImage> images = this.connector.getImages();
+            for (AnkaCloudImage image: images) {
+                this.images.put(image.getId(), image);
+            }
+        }
+        return this.images.getOrDefault(s, null);
     }
 
     @Nullable
@@ -66,8 +76,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @NotNull
     @Override
     public Collection<? extends CloudImage> getImages() throws CloudException {
-        return this.connector.getImages();
-        // TODO: hook this to the class's image "cache"
+        if (this.images.isEmpty()) {
+            Collection<AnkaCloudImage> images = this.connector.getImages();
+            for (AnkaCloudImage image: images) {
+                this.images.put(image.getId(), image);
+            }
+        }
+        return this.images.values();
 
     }
 
@@ -79,8 +94,8 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
-        return true;
-        // TODO: check for instance capacity
+        Collection<? extends CloudInstance> imageInstances = connector.getImageInstances((AnkaCloudImage) cloudImage);
+        return imageInstances.size() < connector.getMaxInstances();
     }
 
     @Nullable

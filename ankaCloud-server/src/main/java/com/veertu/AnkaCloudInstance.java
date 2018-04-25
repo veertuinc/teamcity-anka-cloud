@@ -42,7 +42,7 @@ public class AnkaCloudInstance implements CloudInstance {
         if (name != null ) {
             return name;
         }
-        return "error";
+        return "-";
 
     }
 
@@ -104,12 +104,8 @@ public class AnkaCloudInstance implements CloudInstance {
 
     @Override
     public boolean containsAgent(@NotNull AgentDescription agentDescription){
-        final Map<String, String> configParams = agentDescription.getConfigurationParameters();
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        return availableParameters.get("env.USER").equals("anka");
-//        return getInstanceId().equals(configParams.get(AnkaConstants.INSTANCE_ID));
-        // TODO: get another variable set by ssh when instance starts
-        // maybe there this is for agent push?
+        return availableParameters.containsKey(AnkaConstants.ENV_PROFILE_ID);
 
     }
 }
