@@ -48,13 +48,14 @@ public class AnkaCloudImage implements CloudImage {
     @NotNull
     @Override
     public Collection<? extends CloudInstance> getInstances() {
-        if (this.instances.isEmpty()) {
-            Collection<AnkaCloudInstance> imageInstances = this.connector.getImageInstances(this);
-            for (AnkaCloudInstance instance: imageInstances) {
-                this.instances.put(instance.getInstanceId(), instance);
-            }
-        }
-        return this.instances.values();
+        return this.connector.getImageInstances(this);
+//        if (this.instances.isEmpty()) {
+//            Collection<AnkaCloudInstance> imageInstances = this.connector.getImageInstances(this);
+//            for (AnkaCloudInstance instance: imageInstances) {
+//                this.instances.put(instance.getInstanceId(), instance);
+//            }
+//        }
+//        return this.instances.values();
     }
 
     @Nullable

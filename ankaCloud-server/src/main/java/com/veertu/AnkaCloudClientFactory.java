@@ -102,6 +102,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        return availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY).equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE);
+        String ankaCloudKey = availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY);
+        return (ankaCloudKey != null && ankaCloudKey.equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE));
     }
 }

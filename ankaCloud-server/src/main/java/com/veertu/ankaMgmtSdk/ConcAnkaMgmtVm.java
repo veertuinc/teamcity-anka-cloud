@@ -39,6 +39,9 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
 
     private String getStatus() throws AnkaMgmtException {
         AnkaVmSession session = this.communicator.showVm(this.sessionId);
+        if (session == null) {
+            throw new AnkaMgmtException(new Exception("No session found"));
+        }
         return session.getSessionState();
     }
 
