@@ -23,10 +23,12 @@ public class AnkaCloudInstance implements CloudInstance {
 
     private final AnkaMgmtVm vm;
     private final CloudImage image;
+    private Date createdTime;
 
     public AnkaCloudInstance(AnkaMgmtVm vm, CloudImage image) {
         this.vm = vm;
         this.image = image;
+        this.createdTime = new Date();
     }
 
     @NotNull
@@ -62,10 +64,13 @@ public class AnkaCloudInstance implements CloudInstance {
     @Override
     public Date getStartedTime() {
         try {
-            return this.vm.getCreatedTime();
+            Date created = this.vm.getCreatedTime();
+            if (created != null) {
+                this.createdTime = created;
+            }
+            return this.createdTime;
         } catch (AnkaMgmtException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            return this.createdTime;
         }
     }
 
