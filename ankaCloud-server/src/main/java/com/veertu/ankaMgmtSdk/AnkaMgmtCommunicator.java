@@ -34,9 +34,11 @@ public class AnkaMgmtCommunicator {
     private final String port;
     private final int timeout;
     private String scheme;
+    private final int maxRetries;
 
     public AnkaMgmtCommunicator(String host, String port) throws AnkaMgmtException {
-        this.timeout = 2000;
+        this.maxRetries = 10;
+        this.timeout = 4000;
         this.host = host;
         this.port = port;
         this.scheme = "https";
@@ -206,63 +208,75 @@ public class AnkaMgmtCommunicator {
     }
 
     private JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
-        RequestConfig.Builder requestBuilder = RequestConfig.custom();
-        requestBuilder = requestBuilder.setConnectTimeout(timeout);
-        requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
+        int retry = 0;
+        while (true){
+            try {
+                retry++;
+                RequestConfig.Builder requestBuilder = RequestConfig.custom();
+                requestBuilder = requestBuilder.setConnectTimeout(timeout);
+                requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+                CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
 //        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpRequestBase request;
-        try {
-            switch (method) {
-                case POST:
-                    HttpPost postRequest = new HttpPost(url);
-                    request = setBody(postRequest, requestBody);
-                    break;
-                case DELETE:
-                    HttpDeleteWithBody delRequest = new HttpDeleteWithBody(url);
-                    request = setBody(delRequest, requestBody);
-                    break;
-                case GET:
-                    request = new HttpGet(url);
-                    break;
-                default:
-                    request = new HttpGet(url);
-                    break;
-            }
+                HttpRequestBase request;
+                try {
+                    switch (method) {
+                        case POST:
+                            HttpPost postRequest = new HttpPost(url);
+                            request = setBody(postRequest, requestBody);
+                            break;
+                        case DELETE:
+                            HttpDeleteWithBody delRequest = new HttpDeleteWithBody(url);
+                            request = setBody(delRequest, requestBody);
+                            break;
+                        case GET:
+                            request = new HttpGet(url);
+                            break;
+                        default:
+                            request = new HttpGet(url);
+                            break;
+                    }
 
-            HttpResponse response = httpClient.execute(request);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if (responseCode != 200) {
-                System.out.println(response.toString());
-                return null;
-            }
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                BufferedReader rd = new BufferedReader(
-                        new InputStreamReader(entity.getContent()));
-                StringBuffer result = new StringBuffer();
-                String line = "";
-                while ((line = rd.readLine()) != null) {
-                    result.append(line);
+                    HttpResponse response = httpClient.execute(request);
+                    int responseCode = response.getStatusLine().getStatusCode();
+                    if (responseCode != 200) {
+                        System.out.println(response.toString());
+                        return null;
+                    }
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        BufferedReader rd = new BufferedReader(
+                                new InputStreamReader(entity.getContent()));
+                        StringBuffer result = new StringBuffer();
+                        String line = "";
+                        while ((line = rd.readLine()) != null) {
+                            result.append(line);
+                        }
+                        JSONObject jsonResponse = new JSONObject(result.toString());
+                        return jsonResponse;
+                    }
+
+                } catch (HttpHostConnectException e) {
+                    throw new AnkaMgmtException(e);
+                } catch (SSLException e) {
+                    throw e;
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new AnkaMgmtException(e);
+                } finally {
+                    httpClient.close();
                 }
-                JSONObject jsonResponse = new JSONObject(result.toString());
-                return jsonResponse;
+                return null;
+            } catch (Exception e) {
+                if (retry >= maxRetries) {
+                    continue;
+                }
+                throw e;
             }
-
-        } catch (HttpHostConnectException e) {
-            throw new AnkaMgmtException(e);
-        } catch (SSLException e) {
-            throw e;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new AnkaMgmtException(e);
-        } finally {
-            httpClient.close();
         }
-        return null;
+
     }
 
     private HttpRequestBase setBody(HttpEntityEnclosingRequestBase request, JSONObject requestBody) throws UnsupportedEncodingException {

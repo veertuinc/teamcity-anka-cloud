@@ -1,34 +1,45 @@
 package com.veertu;
 
+import com.veertu.utils.AnkaConstants;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AnkaCloudClientEx implements CloudClientEx {
 
 
     private final AnkaCloudConnector connector;
-    private Map<String, AnkaCloudImage> images;
+    private InstanceUpdater updater;
+    private final int maxInstances;
+    private final ConcurrentHashMap<String, AnkaCloudImage> imagesMap;
 
 
-    public AnkaCloudClientEx(AnkaCloudConnector connector) {
+    public AnkaCloudClientEx(AnkaCloudConnector connector, InstanceUpdater updater, Collection<AnkaCloudImage> images, int maxInstances) {
         this.connector = connector;
-        this.images = new HashMap<>();
+        this.updater = updater;
+        this.maxInstances = maxInstances;
+        this.imagesMap = new ConcurrentHashMap<>();
+        for (AnkaCloudImage image: images) {
+            imagesMap.put(image.getId(), image);
+        }
+        updater.registerClient(this);
     }
 
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        return this.connector.startNewInstance(cloudImage, userData);
+        AnkaCloudImage image = (AnkaCloudImage)cloudImage;
+        return image.startNewInstance(userData);
+//        return this.connector.startNewInstance(cloudImage, userData);
     }
 
     @Override
     public void restartInstance(@NotNull CloudInstance cloudInstance) {
-        // TODO: do something about this!
+        throw new UnsupportedOperationException("Restart not implemented");
     }
 
     @Override
@@ -39,7 +50,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public void dispose() {
-        // TODO: figure out what should happen here (what am i disposing off?)
+        updater.unRegisterClient(this);
     }
 
     @Override
@@ -50,13 +61,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Nullable
     @Override
     public CloudImage findImageById(@NotNull String s) throws CloudException {
-        if (this.images.isEmpty()) {
-            Collection<AnkaCloudImage> images = this.connector.getImages();
-            for (AnkaCloudImage image: images) {
-                this.images.put(image.getId(), image);
-            }
-        }
-        return this.images.getOrDefault(s, null);
+        return this.imagesMap.getOrDefault(s, null);
     }
 
     @Nullable
@@ -70,37 +75,44 @@ public class AnkaCloudClientEx implements CloudClientEx {
             return null;
         }
         CloudImage image = findImageById(imageId);
-        return connector.getInstanceById(instanceId, (AnkaCloudImage)image);
+        if (image != null) {
+            return image.findInstanceById(instanceId);
+        }
+        return null;
     }
 
     @NotNull
     @Override
     public Collection<? extends CloudImage> getImages() throws CloudException {
-        if (this.images.isEmpty()) {
-            Collection<AnkaCloudImage> images = this.connector.getImages();
-            for (AnkaCloudImage image: images) {
-                this.images.put(image.getId(), image);
-            }
-        }
-        return this.images.values();
+        return this.imagesMap.values();
 
     }
 
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
-        return null; // TODO: figure out what to do here
+        return null;
     }
 
     @Override
     public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
-        Collection<? extends CloudInstance> imageInstances = connector.getImageInstances((AnkaCloudImage) cloudImage);
-        return imageInstances.size() < connector.getMaxInstances();
+        Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
+        return imageInstances.size() < this.maxInstances;
     }
 
     @Nullable
     @Override
     public String generateAgentName(@NotNull AgentDescription agentDescription) {
-        return null; // TODO: figure out what to do here
+        Map<String, String> availableParameters = agentDescription.getAvailableParameters();
+        String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
+        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
+        if (instanceId != null && imageId != null) {
+            CloudImage image = findImageById(imageId);
+            if (image == null) {
+                return null;
+            }
+            return String.format("%s_%s", image.getName(), instanceId);
+        }
+        return null;
     }
 }

@@ -78,7 +78,8 @@ public class AnkaCloudInstance implements CloudInstance {
     @NotNull
     @Override
     public InstanceStatus getStatus() {
-        switch (this.vm.getState().toLowerCase()) {
+        String state = this.vm.getState();
+        switch (state.toLowerCase()) {
             case "scheduling":
                 return InstanceStatus.SCHEDULED_TO_START;
             case "starting":

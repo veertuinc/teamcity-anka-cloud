@@ -31,7 +31,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
     }
 
-    public void setProperties(Map<String, String> properties) {
+    public void setProperties(Map<String, String> properties) throws AnkaUnreachableInstanceException {
         try {
             this.sshConnect();
             String commandFmt = "echo \"%s=%s\" >> " + this.propetiesFilePath;
@@ -46,7 +46,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
             this.sendCommand(this.loadScriptPath + " unload");
             this.sendCommand(this.loadScriptPath + " load");
         } catch (JSchException e) {
-            e.printStackTrace(); // TODO: handle this!
+           throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh", this.vm.getId()));
         } finally {
             this.closeConnection();
         }

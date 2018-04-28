@@ -38,7 +38,7 @@
     </td>
 </tr>
 
-<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
+<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_ID%>"/>
 
 <tr class="dialog hidden">
     <th><label for="${paramImageName}">Image Name: <l:star/></label></th>

@@ -5,27 +5,36 @@ import com.veertu.utils.AnkaCloudPropertiesProcesser;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
-import jetbrains.buildServer.serverSide.ServerPaths;
+import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class AnkaCloudClientFactory implements CloudClientFactory {
 
 
+    @NotNull
+    private final CloudRegistrar cloudRegistrar;
     @NotNull private final String cloudProfileSettings;
-    @NotNull private final ServerPaths serverPaths;
+    @NotNull
+    private final ServerSettings serverSettings;
 
+    @NotNull
+    private final InstanceUpdater updater;
 
 
     public AnkaCloudClientFactory(@NotNull final CloudRegistrar cloudRegistrar,
                                   @NotNull final PluginDescriptor pluginDescriptor,
-                                  @NotNull final ServerPaths serverPaths) {
+                                  @NotNull final ServerSettings serverSettings,
+                                  @NotNull final InstanceUpdater updater) {
+        this.cloudRegistrar = cloudRegistrar;
         cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML);
-        this.serverPaths = serverPaths;
+        this.serverSettings = serverSettings;
+        this.updater = updater;
         cloudRegistrar.registerCloudFactory(this);
     }
 
@@ -36,7 +45,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String port = cloudClientParameters.getParameter(AnkaConstants.PORT);
         String sshUser = cloudClientParameters.getParameter(AnkaConstants.SSH_USER);
         String sshPassword = cloudClientParameters.getParameter(AnkaConstants.SSH_PASSWORD);
-        String imageName = cloudClientParameters.getParameter(AnkaConstants.IMAGE_NAME);
+        String imageId = cloudClientParameters.getParameter(AnkaConstants.IMAGE_ID);
         String imageTag = cloudClientParameters.getParameter(AnkaConstants.IMAGE_TAG);
         String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
@@ -58,8 +67,11 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         }
 
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
-        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageName, imageTag, sshUser, sshPassword, agentPath, serverUrl, agentPoolId, profileId, maxInstances);
-        return new AnkaCloudClientEx(connector);
+        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageId, imageTag, sshUser,
+                                    sshPassword, agentPath, serverUrl, agentPoolId, profileId);
+        ArrayList<AnkaCloudImage> images = new ArrayList<>();
+        images.add(connector.findImageById(imageId));
+        return new AnkaCloudClientEx(connector, updater, images, maxInstances);
 
     }
 

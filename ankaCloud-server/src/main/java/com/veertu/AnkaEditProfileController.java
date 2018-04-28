@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class AnkaEditProfileController extends BaseFormXmlController {
@@ -63,7 +62,7 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         String host = request.getParameter(PROP_PREFIX+ AnkaConstants.HOST_NAME);
         String port = request.getParameter(PROP_PREFIX + AnkaConstants.PORT);
         AnkaAPI ankaApi = AnkaAPI.getInstance();
-        String imageId = request.getParameter(PROP_PREFIX + AnkaConstants.IMAGE_NAME);
+        String imageId = request.getParameter(PROP_PREFIX + AnkaConstants.IMAGE_ID);
         String toGet = request.getParameter("get");
         try {
             if (imageId != null && toGet.equals("tags")) {
