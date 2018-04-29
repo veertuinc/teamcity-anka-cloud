@@ -6,7 +6,8 @@ public interface AnkaConstants {
     String PROFILE_SETTING_HTML = "profile-settings.html";
     String PROFILE_SETTINGS_JSP = "profile-settings.jsp";
     String INSTANCE_ID = "instance_id";
-    String IMAGE_ID = "image_name";
+    String IMAGE_ID = "image_id";
+    String IMAGE_NAME = "image_name";
     String IMAGE_TAG = "image_tag";
     String HOST_NAME = "clouds.anka.host";
     String PORT = "clouds.anka.port";

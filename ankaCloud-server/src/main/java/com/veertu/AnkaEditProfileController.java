@@ -50,6 +50,7 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         for (Integer poolId: projectPools) {
             pools.add(agentPoolManager.findAgentPoolById(poolId));
         }
+        // TODO: add only project agent pools
         pools.addAll(agentPoolManager.getAllAgentPools());
         modelAndView.getModel().put("agentPools", pools);
         modelAndView.getModel().put("pluginResourcePath", pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML));

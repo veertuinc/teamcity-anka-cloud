@@ -38,28 +38,48 @@
     </td>
 </tr>
 
-<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_ID%>"/>
-
 <tr class="dialog hidden">
-    <th><label for="${paramImageName}">Image Name: <l:star/></label></th>
+    <th><label for="imageSelect">Image Name: <l:star/></label></th>
     <td>
-        <props:selectProperty id="imageSelect" name="${paramImageName}" className="longField">
-                  <props:option value=""><c:out value="<Please select Image>"/></props:option>
-        </props:selectProperty>
+        <select id="imageSelect" class="longField">
+                  <option value="">Please select Image</option>
+        </select>
     </td>
 </tr>
 
+<tr class="dialog hidden">
+    <th><label for="tagSelect">Image Tag: <l:star/></label></th>
+    <td>
+        <select id="tagSelect" class="longField">
+                  <option value="">Please select Tag</option>
+        </select>
+    </td>
+</tr>
 
+<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
+<tr class="dialog hidden">
+    <th><label for="${paramImageName}">Image Name</label></th>
+    <td>
+        <props:textProperty name="${paramImageName}" id="imageNameInput" disabled="true" />
+    </td>
+</tr>
+
+<c:set var="paramImageId" value="<%=AnkaConstants.IMAGE_ID%>"/>
+<tr class="hidden">
+    <th><label for="${paramImageId}">Image Id</label></th>
+    <td>
+        <props:textProperty name="${paramImageId}" id="imageIdInput" disabled="true" />
+    </td>
+</tr>
 
 <c:set var="paramImageTag" value="<%=AnkaConstants.IMAGE_TAG%>"/>
 <tr class="dialog hidden">
-    <th><label for="${paramImageTag}">Image Tag: <l:star/></label></th>
+    <th><label for="${paramImageTag}">Image Tag</label></th>
     <td>
-        <props:selectProperty id="tagSelect" name="${paramImageTag}" className="longField">
-                  <props:option value=""><c:out value="<Please select Tag>"/></props:option>
-        </props:selectProperty>
+        <props:textProperty name="${paramImageTag}" id="imageTagInput" disabled="true" />
     </td>
 </tr>
+
 
 <c:set var="paramSshUser" value="<%=AnkaConstants.SSH_USER%>"/>
 <tr class="dialog hidden">
@@ -131,7 +151,7 @@
 
                             imageSelect.append(newTemplate);
                         }
-                        getTags();
+                        updateInputsAndTags();
                         $j(".dialog").removeClass("hidden");
                     }
             });
@@ -159,18 +179,29 @@
 
                                     tagSelect.append(tag);
                                 }
-
+                                $j("#imageTagInput").val($j("#tagSelect").val());
 
                             }
                     });
 
      }
 
+     function updateInputsAndTags() {
+        $j("#imageNameInput").val($j("#imageSelect option:selected").text());
+        $j("#imageIdInput").val($j("#imageSelect option:selected").val());
+        getTags();
+     }
+
          var connectBtn = $j("#getTemplatesBtn");
          connectBtn.on("click", getImages);
          var imageSelect = $j("#imageSelect");
-         imageSelect.on("change", getTags);
-         if (imageSelect.find("option").length > 1) {
+         var tagSelect = $j("#tagSelect");
+
+         imageSelect.on("change", updateInputsAndTags);
+         tagSelect.on("change", function() {
+            $j("#imageTagInput").val($j("#tagSelect").val());
+         });
+         if ($j("#imageTagInput").val().length > 1) {
             $j(".dialog").removeClass("hidden");
 
          }
