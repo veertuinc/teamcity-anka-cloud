@@ -22,19 +22,14 @@
 <c:set var="paramUrl" value="<%=AnkaConstants.HOST_NAME%>"/>
 <tr>
     <th><label for="${paramUrl}">Anka Cloud Host: <l:star/></label></th>
-    <td><props:textProperty name="${paramUrl}" className="longField"/>
+    <td><props:textProperty name="${paramUrl}" id="hostName" className="longField"/>
     </td>
 </tr>
 
 <c:set var="paramPort" value="<%=AnkaConstants.PORT%>"/>
 <tr>
     <th><label for="${paramPort}">Port: <l:star/></label></th>
-    <td><props:textProperty name="${paramPort}" className="longField"/>
-    </td>
-</tr>
-<tr>
-    <td>
-        <forms:button id="getTemplatesBtn" >Check connection / Fetch parameter values</forms:button>
+    <td><props:textProperty name="${paramPort}" id="hostPort" className="longField"/>
     </td>
 </tr>
 
@@ -53,6 +48,12 @@
         <select id="tagSelect" class="longField">
                   <option value="">Please select Tag</option>
         </select>
+    </td>
+</tr>
+
+<tr>
+    <td>
+        <forms:button id="selectImageButton" >Select this Image and Tag</forms:button>
     </td>
 </tr>
 
@@ -127,8 +128,7 @@
 <script type="text/javascript">
 
 
-    function getImages(e) {
-        e.preventDefault();
+    function getImages() {
         if (!BS) BS = {};
         // inspired by vmware plugin
         BS.ajaxRequest(
@@ -151,7 +151,7 @@
 
                             imageSelect.append(newTemplate);
                         }
-                        updateInputsAndTags();
+                        getTags();
                         $j(".dialog").removeClass("hidden");
                     }
             });
@@ -161,7 +161,7 @@
         if (!BS) BS = {};
                 // inspired by vmware plugin
                 BS.ajaxRequest(
-                    "<c:url value="${pluginResourcePath}"/>"+"?get=tags",
+                    "<c:url value="${pluginResourcePath}"/>"+"?get=tags&imageId=" + $j("#imageSelect option:selected").val(),
                         {
                             parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                             onFailure: function (response) {
@@ -179,31 +179,37 @@
 
                                     tagSelect.append(tag);
                                 }
-                                $j("#imageTagInput").val($j("#tagSelect").val());
 
                             }
                     });
 
      }
 
-     function updateInputsAndTags() {
-        $j("#imageNameInput").val($j("#imageSelect option:selected").text());
-        $j("#imageIdInput").val($j("#imageSelect option:selected").val());
-        getTags();
+     function updateInputs(e) {
+        e.preventDefault();
+        var imageId = $j("#imageSelect option:selected").val();
+        var tag = $j("#tagSelect").val();
+        if (imageId.length > 0 && tag.length > 0) {
+            $j("#imageNameInput").val($j("#imageSelect option:selected").text());
+            $j("#imageIdInput").val(imageId);
+            $j("#imageTagInput").val(tag);
+        }
      }
 
-         var connectBtn = $j("#getTemplatesBtn");
-         connectBtn.on("click", getImages);
+         var portField = $j("#hostPort");
+         var hostField = $j("#hostName");
+         hostField.on("change", getImages);
+         portField.on("change", getImages);
          var imageSelect = $j("#imageSelect");
-         var tagSelect = $j("#tagSelect");
-
-         imageSelect.on("change", updateInputsAndTags);
-         tagSelect.on("change", function() {
-            $j("#imageTagInput").val($j("#tagSelect").val());
-         });
+         imageSelect.on("change", getTags);
+         var selectImageButton = $j("#selectImageButton");
+         selectImageButton.on("click", updateInputs);
          if ($j("#imageTagInput").val().length > 1) {
             $j(".dialog").removeClass("hidden");
 
+         }
+         if (hostField.val().length > 0 && portField.val().length > 0) {
+            getImages();
          }
 
 </script>

@@ -63,7 +63,7 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         String host = request.getParameter(PROP_PREFIX+ AnkaConstants.HOST_NAME);
         String port = request.getParameter(PROP_PREFIX + AnkaConstants.PORT);
         AnkaAPI ankaApi = AnkaAPI.getInstance();
-        String imageId = request.getParameter(PROP_PREFIX + AnkaConstants.IMAGE_ID);
+        String imageId = request.getParameter("imageId");
         String toGet = request.getParameter("get");
         try {
             if (imageId != null && toGet.equals("tags")) {
