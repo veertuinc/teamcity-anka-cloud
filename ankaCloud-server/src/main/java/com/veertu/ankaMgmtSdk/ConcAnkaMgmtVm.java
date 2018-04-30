@@ -197,7 +197,10 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
     }
 
     public Date getCreatedTime() throws AnkaMgmtException {
-        AnkaVmSession session = this.communicator.showVm(this.sessionId);
+        AnkaVmSession session = this.getSessionInfoCache();
+        if (session == null) {
+            throw new AnkaMgmtException("could not get session");
+        }
         return session.getCreated();
     }
 

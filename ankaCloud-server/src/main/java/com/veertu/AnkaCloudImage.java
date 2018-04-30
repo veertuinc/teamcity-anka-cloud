@@ -67,9 +67,9 @@ public class AnkaCloudImage implements CloudImage {
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
-        if (this.errorMsg != null) {
-            return new CloudErrorInfo(this.errorMsg);
-        }
+//        if (this.errorMsg != null) {
+//            return new CloudErrorInfo(this.errorMsg);
+//        }
         return null;
     }
 
