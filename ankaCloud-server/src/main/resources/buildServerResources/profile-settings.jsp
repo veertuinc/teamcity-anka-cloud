@@ -59,14 +59,8 @@
     </td>
 </tr>
 
-<tr>
-    <td>
-        <forms:button id="selectImageButton" >Select this Image and Tag</forms:button>
-    </td>
-</tr>
-
 <c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
-<tr class="dialog hidden">
+<tr class="hidden">
     <th><label for="${paramImageName}">Image Name</label></th>
     <td>
         <div>
@@ -85,7 +79,7 @@
 </tr>
 
 <c:set var="paramImageTag" value="<%=AnkaConstants.IMAGE_TAG%>"/>
-<tr class="dialog hidden">
+<tr class="hidden">
     <th><label for="${paramImageTag}">Image Tag</label></th>
     <td>
         <div>
@@ -178,7 +172,9 @@
                         for (var k = 0; k < templates.length; k++) {
                             var template = templates[k];
                             var newTemplate = $j('<option value="' + template.id + '">' + template.name + '</option>');
-
+                            if (template.id === $j("#imageIdInput").val()) {
+                                newTemplate.prop("selected", true);
+                            }
                             imageSelect.append(newTemplate);
                         }
                         getTags();
@@ -206,17 +202,19 @@
                                 tagSelect.empty();
                                 for (var k = 0; k < tags.length; k++) {
                                     var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
-
+                                    if (tags[k] ===  $j("#imageTagInput").val()) {
+                                        tag.prop("selected", true);
+                                    }
                                     tagSelect.append(tag);
                                 }
-
+                             updateInputs();
                             }
                     });
 
      }
 
-     function updateInputs(e) {
-        e.preventDefault();
+     function updateInputs() {
+
         var imageId = $j("#imageSelect option:selected").val();
         var tag = $j("#tagSelect").val();
         if (imageId.length > 0 && tag.length > 0) {
@@ -231,13 +229,15 @@
          hostField.on("change", getImages);
          portField.on("change", getImages);
          var imageSelect = $j("#imageSelect");
-         imageSelect.on("change", getTags);
-         var selectImageButton = $j("#selectImageButton");
-         selectImageButton.on("click", updateInputs);
-         if ($j("#imageTagInput").val().length > 1) {
-            $j(".dialog").removeClass("hidden");
+         imageSelect.on("change", function() {
+            getTags();
+            updateInputs();
+         });
 
-         }
+         var tagSelect = $j("#tagSelect");
+         tagSelect.on("change", updateInputs);
+
+
          if (hostField.val().length > 0 && portField.val().length > 0) {
             getImages();
          }
