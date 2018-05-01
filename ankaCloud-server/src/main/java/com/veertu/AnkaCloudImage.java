@@ -1,5 +1,6 @@
 package com.veertu;
 
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
@@ -82,12 +83,12 @@ public class AnkaCloudImage implements CloudImage {
         return null;
     }
 
-    public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData) {
+    public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
-            AnkaCloudInstance instance = this.connector.startNewInstance(this);
+            AnkaCloudInstance instance = this.connector.startNewInstance(this, updater);
             populateInstances();
             return instance;
-        } catch (AnkaUnreachableInstanceException e) {
+        } catch (AnkaMgmtException e) {
             this.errorMsg = e.getMessage();
             return null;
         }

@@ -49,9 +49,14 @@ public class AnkaCloudConnector {
         this.ankaAPI = AnkaAPI.getInstance();
     }
 
-    public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage) throws AnkaUnreachableInstanceException {
+    public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
+        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.host, this.port, cloudImage.getId(), cloudImage.getTag(), null, 22);
+        updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vm, cloudImage));
+        return new AnkaCloudInstance(vm, cloudImage);
+    }
+
+    private void waitForBootAndSetVmProperties(AnkaMgmtVm vm, AnkaCloudImage cloudImage) {
         try {
-            AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.host, this.port, cloudImage.getId(), cloudImage.getTag(), null, 22);
             vm.waitForBoot();
             HashMap<String, String > properties = new HashMap<>();
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
@@ -71,10 +76,8 @@ public class AnkaCloudConnector {
             AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath);
             try {
                 propertiesSetter.setProperties(properties);
-                return new AnkaCloudInstance(vm, cloudImage);
             } catch (AnkaUnreachableInstanceException e) {
                 vm.terminate();
-                throw e;
             }
 
         } catch (AnkaMgmtException | InterruptedException | IOException e) {

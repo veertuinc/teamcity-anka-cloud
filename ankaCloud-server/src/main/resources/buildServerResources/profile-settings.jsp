@@ -125,11 +125,12 @@
 
 <c:set var="paramMaxInstances" value="<%=AnkaConstants.MAX_INSTANCES%>"/>
 <tr class="dialog hidden">
-    <th><label for="${paramMaxInstances}">Max Instances: <l:star/></label></th>
+    <th><label for="${paramMaxInstances}">Max Instances: </label></th>
     <td>
         <div>
             <props:textProperty name="${paramMaxInstances}" className="longField"/>
         </div>
+        <span>Leave this empty for unlimited intances</span>
         <span class="error option-error option-error_${paramMaxInstances}" id="error_${paramMaxInstances}"></span>
     </td>
 </tr>

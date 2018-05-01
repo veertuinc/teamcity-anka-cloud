@@ -44,7 +44,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
                 cloudImage.getName(), cloudImage.getId(), this.toString()));
 
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
-        return image.startNewInstance(userData);
+        return image.startNewInstance(userData, updater);
 //        return this.connector.startNewInstance(cloudImage, userData);
     }
 

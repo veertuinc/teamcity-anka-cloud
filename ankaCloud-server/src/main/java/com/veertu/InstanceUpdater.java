@@ -16,10 +16,12 @@ public class InstanceUpdater {
 
     private final long delay;
     private final Collection<AnkaCloudClientEx> clients;
+    private final ExecutorServices executors;
 
     public InstanceUpdater(ExecutorServices executors) {
         this.delay = 5000;
         this.clients = new ArrayList<>();
+        this.executors = executors;
         executors.getNormalExecutorService().scheduleWithFixedDelay(this::populateInstances, delay, delay, TimeUnit.MILLISECONDS);
     }
 
@@ -41,5 +43,9 @@ public class InstanceUpdater {
             }
         }
 
+    }
+
+    public void executeTaskInBackground(Runnable r) {
+        executors.getNormalExecutorService().schedule(r, 0, TimeUnit.MILLISECONDS);
     }
 }
