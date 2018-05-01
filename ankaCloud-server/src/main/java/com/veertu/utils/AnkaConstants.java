@@ -28,4 +28,5 @@ public interface AnkaConstants {
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";
     String ENV_ANKA_CLOUD_VALUE = "ANKA";
     String ENV_PROFILE_ID = "env.ANKA_PROFILE_ID";
+    String AGENT_NAME = "name";
 }

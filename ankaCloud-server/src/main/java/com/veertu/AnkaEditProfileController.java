@@ -24,6 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaEditProfileController extends BaseFormXmlController {
 
     private final PluginDescriptor pluginDescriptor;
@@ -62,6 +67,10 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         final BasePropertiesBean propsBean = new BasePropertiesBean(null);
         String host = request.getParameter(PROP_PREFIX+ AnkaConstants.HOST_NAME);
         String port = request.getParameter(PROP_PREFIX + AnkaConstants.PORT);
+        if (host == null || port == null) {
+            response.setStatus(400);
+            return;
+        }
         AnkaAPI ankaApi = AnkaAPI.getInstance();
         String imageId = request.getParameter("imageId");
         String toGet = request.getParameter("get");
@@ -73,7 +82,7 @@ public class AnkaEditProfileController extends BaseFormXmlController {
                 xmlResponse.addContent(templatesToJson(ankaApi.listTemplates(host, port)));
             }
         } catch (AnkaMgmtException e) {
-            // do something, like return error msg
+            response.setStatus(400);
         }
 
 

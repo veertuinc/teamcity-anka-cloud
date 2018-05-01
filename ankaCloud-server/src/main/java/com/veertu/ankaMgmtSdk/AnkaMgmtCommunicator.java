@@ -8,6 +8,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -255,7 +256,7 @@ public class AnkaMgmtCommunicator {
                         return jsonResponse;
                     }
 
-                } catch (HttpHostConnectException e) {
+                } catch (HttpHostConnectException | ConnectTimeoutException e) {
                     throw new AnkaMgmtException(e);
                 } catch (SSLException e) {
                     throw e;
@@ -263,6 +264,9 @@ public class AnkaMgmtCommunicator {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new AnkaMgmtException(e);
+                } catch (Exception e) {
                     e.printStackTrace();
                     throw new AnkaMgmtException(e);
                 } finally {

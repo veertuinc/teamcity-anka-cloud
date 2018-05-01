@@ -1,5 +1,6 @@
 package com.veertu;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.utils.AnkaConstants;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;
@@ -9,8 +10,14 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaCloudClientEx implements CloudClientEx {
 
+    private static final Logger LOG = Logger.getInstance(AnkaCloudClientEx.class.getName());
 
     private final AnkaCloudConnector connector;
     private InstanceUpdater updater;
@@ -26,12 +33,16 @@ public class AnkaCloudClientEx implements CloudClientEx {
         for (AnkaCloudImage image: images) {
             imagesMap.put(image.getId(), image);
         }
+        LOG.info(String.format("Registering AnkaCloudClientEx %s to updater", this.toString()));
         updater.registerClient(this);
     }
 
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
+        LOG.info(String.format("Starting new instance for  image %s(%s) on AnkaCloudClientEx %s",
+                cloudImage.getName(), cloudImage.getId(), this.toString()));
+
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
         return image.startNewInstance(userData);
 //        return this.connector.startNewInstance(cloudImage, userData);
@@ -44,6 +55,8 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
+        LOG.info(String.format("Terminating instance %s(%s) on AnkaCloudClientEx %s",
+                                    cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
         this.connector.terminateInstance(cloudInstance);
 
     }
@@ -68,16 +81,20 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public CloudInstance findInstanceByAgent(@NotNull AgentDescription agentDescription) {
         // this is how tc figures out which agent belongs to which instance
+        LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get("env.INSTANCE_ID");
         String imageId = availableParameters.get("env.IMAGE_ID");
         if (instanceId == null || imageId == null) {
+            LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;
         }
         CloudImage image = findImageById(imageId);
         if (image != null) {
+            LOG.info(String.format("Found instance %s for %s", instanceId, agentDescription.toString()));
             return image.findInstanceById(instanceId);
         }
+        LOG.info(String.format("No instance for %s", agentDescription.toString()));
         return null;
     }
 

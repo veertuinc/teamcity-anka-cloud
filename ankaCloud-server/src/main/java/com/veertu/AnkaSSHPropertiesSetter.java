@@ -7,6 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
+
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
     private final String host;

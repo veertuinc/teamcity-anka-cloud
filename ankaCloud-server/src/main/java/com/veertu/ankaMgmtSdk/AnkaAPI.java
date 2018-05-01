@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by asafgur on 18/05/2017.
+ * Created by Asaf Gur on 18/05/2017.
  */
+
 public class AnkaAPI {
 
     private static AnkaAPI ourInstance = new AnkaAPI();

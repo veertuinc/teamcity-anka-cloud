@@ -22,14 +22,22 @@
 <c:set var="paramUrl" value="<%=AnkaConstants.HOST_NAME%>"/>
 <tr>
     <th><label for="${paramUrl}">Anka Cloud Host: <l:star/></label></th>
-    <td><props:textProperty name="${paramUrl}" id="hostName" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramUrl}" id="hostName" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramUrl}" id="error_${paramUrl}"></span>
     </td>
 </tr>
 
 <c:set var="paramPort" value="<%=AnkaConstants.PORT%>"/>
 <tr>
     <th><label for="${paramPort}">Port: <l:star/></label></th>
-    <td><props:textProperty name="${paramPort}" id="hostPort" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramPort}" id="hostPort" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramPort}" id="error_${paramPort}"></span>
     </td>
 </tr>
 
@@ -61,7 +69,10 @@
 <tr class="dialog hidden">
     <th><label for="${paramImageName}">Image Name</label></th>
     <td>
-        <props:textProperty name="${paramImageName}" id="imageNameInput" disabled="true" />
+        <div>
+            <props:textProperty className="disabled" name="${paramImageName}" id="imageNameInput" disabled="true" />
+        </div>
+        <span class="error option-error option-error_${paramImageId}" id="error_${paramImageId}"></span>
     </td>
 </tr>
 
@@ -77,7 +88,10 @@
 <tr class="dialog hidden">
     <th><label for="${paramImageTag}">Image Tag</label></th>
     <td>
-        <props:textProperty name="${paramImageTag}" id="imageTagInput" disabled="true" />
+        <div>
+            <props:textProperty className="disabled" name="${paramImageTag}" id="imageTagInput" disabled="true" />
+        </div>
+        <span class="error option-error option-error_${paramImageTag}" id="error_${paramImageTag}"></span>
     </td>
 </tr>
 
@@ -85,28 +99,44 @@
 <c:set var="paramSshUser" value="<%=AnkaConstants.SSH_USER%>"/>
 <tr class="dialog hidden">
     <th><label for="${paramSshUser}">SSH User: <l:star/></label></th>
-    <td><props:textProperty name="${paramSshUser}" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramSshUser}" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramSshUser}" id="error_${paramSshUser}"></span>
     </td>
 </tr>
 
 <c:set var="paramSshPassword" value="<%=AnkaConstants.SSH_PASSWORD%>"/>
 <tr class="dialog hidden">
     <th><label for="${paramSshPassword}">SSH Password: <l:star/></label></th>
-    <td><props:textProperty name="${paramSshPassword}" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramSshPassword}" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramSshPassword}" id="error_${paramSshPassword}"></span>
     </td>
 </tr>
 
 <c:set var="paramAgentPath" value="<%=AnkaConstants.AGENT_PATH%>"/>
 <tr class="dialog hidden">
     <th><label for="${paramAgentPath}">Agent Path: <l:star/></label></th>
-    <td><props:textProperty name="${paramAgentPath}" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramAgentPath}" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramAgentPath}" id="error_${paramAgentPath}"></span>
     </td>
 </tr>
 
 <c:set var="paramMaxInstances" value="<%=AnkaConstants.MAX_INSTANCES%>"/>
 <tr class="dialog hidden">
     <th><label for="${paramMaxInstances}">Max Instances: <l:star/></label></th>
-    <td><props:textProperty name="${paramMaxInstances}" className="longField"/>
+    <td>
+        <div>
+            <props:textProperty name="${paramMaxInstances}" className="longField"/>
+        </div>
+        <span class="error option-error option-error_${paramMaxInstances}" id="error_${paramMaxInstances}"></span>
     </td>
 </tr>
 
@@ -211,5 +241,14 @@
          if (hostField.val().length > 0 && portField.val().length > 0) {
             getImages();
          }
+
+         $j(".disabled").on("data-attribute-change", function() {
+            $j(".disabled").prop("disabled", true);
+
+         });
+
+         $j(".error").on("change",  function() {
+            $j(".disabled").prop("disabled", true);
+         });
 
 </script>

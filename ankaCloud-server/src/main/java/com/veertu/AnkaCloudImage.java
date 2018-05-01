@@ -10,6 +10,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaCloudImage implements CloudImage {
 
     private final String id;

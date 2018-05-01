@@ -7,6 +7,7 @@ import jetbrains.buildServer.serverSide.AgentDescription;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +15,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaCloudClientFactory implements CloudClientFactory {
+
+    private static final Logger LOG = Logger.getInstance(AnkaCloudClientFactory.class.getName());
 
 
     @NotNull
@@ -35,6 +43,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML);
         this.serverSettings = serverSettings;
         this.updater = updater;
+        LOG.info("Registering Anka Cloud plugin in cloud registrar");
         cloudRegistrar.registerCloudFactory(this);
     }
 
@@ -59,20 +68,23 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         } catch (NullPointerException | NumberFormatException e) {
             // do nothing - agentPoolId will just be null...
         }
-        Integer maxInstances = 1;
+        Integer maxInstances = Integer.MAX_VALUE;
         try {
             String maxInstancesString = cloudClientParameters.getParameter(AnkaConstants.MAX_INSTANCES);
             maxInstances = Integer.valueOf(maxInstancesString);
         } catch (NullPointerException | NumberFormatException e) {
-            // do nothing - maxInstances will just be 1...
+            // do nothing - maxInstances will just be MAX (unlimited)...
         }
 
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
-        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, imageId, imageTag, sshUser,
+        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, sshUser,
                                     sshPassword, agentPath, serverUrl, agentPoolId, profileId);
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);
+        LOG.info(String.format("Creating AnkaCloudClientEx for server %s:%s , image %s(%s) tag %s",
+                host, port, imageName, imageId, imageTag ));
+
         return new AnkaCloudClientEx(connector, updater, images, maxInstances);
 
     }
@@ -99,8 +111,8 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @Override
     public Map<String, String> getInitialParameterValues() {
         HashMap<String, String> parameters = new HashMap<String, String>();
-        parameters.put(AnkaConstants.HOST_NAME, "18.236.6.136");
-        parameters.put(AnkaConstants.PORT, "8090");
+        parameters.put(AnkaConstants.HOST_NAME, "");
+        parameters.put(AnkaConstants.PORT, "");
         parameters.put(AnkaConstants.SSH_PASSWORD, "admin");
         parameters.put(AnkaConstants.SSH_USER, "anka");
         parameters.put(AnkaConstants.AGENT_PATH, "/Users/anka/buildAgent");
@@ -115,6 +127,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
+        LOG.info(String.format("Checking if %s can be an Anka Agent", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String ankaCloudKey = availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY);
         return (ankaCloudKey != null && ankaCloudKey.equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE));

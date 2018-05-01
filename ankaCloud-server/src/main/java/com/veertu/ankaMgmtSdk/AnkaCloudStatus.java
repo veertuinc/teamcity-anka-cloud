@@ -3,6 +3,10 @@ package com.veertu.ankaMgmtSdk;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Created by Asaf Gur.
+ */
+
 public class AnkaCloudStatus {
 
     protected String status;
