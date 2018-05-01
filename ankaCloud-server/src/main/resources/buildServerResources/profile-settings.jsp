@@ -200,6 +200,7 @@
                                 var tags = JSON.parse(wrapper.text()).reverse();
                                 var tagSelect = $j("#tagSelect");
                                 tagSelect.empty();
+                                tagSelect.append($j('<option value="">Latest</option>'));
                                 for (var k = 0; k < tags.length; k++) {
                                     var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
                                     if (tags[k] ===  $j("#imageTagInput").val()) {
@@ -217,7 +218,7 @@
 
         var imageId = $j("#imageSelect option:selected").val();
         var tag = $j("#tagSelect").val();
-        if (imageId.length > 0 && tag.length > 0) {
+        if (imageId.length > 0) {
             $j("#imageNameInput").val($j("#imageSelect option:selected").text());
             $j("#imageIdInput").val(imageId);
             $j("#imageTagInput").val(tag);

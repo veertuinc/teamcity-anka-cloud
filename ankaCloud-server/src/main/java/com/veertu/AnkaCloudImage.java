@@ -28,7 +28,11 @@ public class AnkaCloudImage implements CloudImage {
         this.connector = connector;
         this.id = id;
         this.name = name;
-        this.tag = tag;
+        if (tag != null && tag.length() > 0) {
+            this.tag = tag;
+        } else {
+            this.tag = null;
+        }
         this.instances = new ConcurrentHashMap<>();
     }
 
