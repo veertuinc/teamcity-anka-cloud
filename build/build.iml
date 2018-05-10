@@ -9,7 +9,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ankaCloud-agent" />
-    <orderEntry type="module" module-name="ankaCloud-common" />
+    <orderEntry type="library" name="Maven: com.veertu:ankaCloud-common:1.0-SNAPSHOT" level="project" />
     <orderEntry type="module" module-name="ankaCloud-server" />
     <orderEntry type="library" name="Maven: org.jetbrains.teamcity.internal:server:10.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:1.3.9" level="project" />

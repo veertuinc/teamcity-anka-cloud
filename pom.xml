@@ -45,7 +45,6 @@
   <modules>
     <module>ankaCloud-server</module>
     <module>ankaCloud-agent</module>
-    <module>ankaCloud-common</module>
     <module>build</module>
   </modules>
 </project>

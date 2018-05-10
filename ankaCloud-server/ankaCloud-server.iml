@@ -28,7 +28,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ankaCloud-common" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains.teamcity:server-api:10.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: javax.servlet:jstl:1.1.2" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.tomcat:el-api:6.0.16" level="project" />
