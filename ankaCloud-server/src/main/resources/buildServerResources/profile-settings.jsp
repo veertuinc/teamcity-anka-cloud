@@ -106,7 +106,7 @@
     <th><label for="${paramSshPassword}">SSH Password: <l:star/></label></th>
     <td>
         <div>
-            <props:textProperty name="${paramSshPassword}" className="longField"/>
+            <props:passwordProperty name="${paramSshPassword}" className="longField"/>
         </div>
         <span class="error option-error option-error_${paramSshPassword}" id="error_${paramSshPassword}"></span>
     </td>
