@@ -2,14 +2,14 @@
 <teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
   <info>
     <name>ankaCloud</name>
-    <display-name>ankaCloud</display-name>
+    <display-name>Anka Build Cloud</display-name>
     <version>@Version@</version>
-    <description>Connects TeamCity with Anka Cloud</description>
+    <description>Connects TeamCity with Anka Build Cloud</description>
     <download-url>Plugin download URL</download-url>
     <email>support@veertu.com</email>
     <vendor>
-      <name>Veertu</name>
-      <url>veertu.com</url>
+      <name>Veertu Inc.</name>
+      <url>http://veertu.com</url>
       <logo>https://veertu.com/wp-content/uploads/2015/10/veertu-logo.svg</logo>
     </vendor>
   </info>

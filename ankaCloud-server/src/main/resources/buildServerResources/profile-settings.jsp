@@ -21,7 +21,7 @@
 
 <c:set var="paramUrl" value="<%=AnkaConstants.HOST_NAME%>"/>
 <tr>
-    <th><label for="${paramUrl}">Anka Cloud Host: <l:star/></label></th>
+    <th><label for="${paramUrl}">Controller Host: <l:star/></label></th>
     <td>
         <div>
             <props:textProperty name="${paramUrl}" id="hostName" className="longField"/>
@@ -32,7 +32,7 @@
 
 <c:set var="paramPort" value="<%=AnkaConstants.PORT%>"/>
 <tr>
-    <th><label for="${paramPort}">Port: <l:star/></label></th>
+    <th><label for="${paramPort}">Controller Port: <l:star/></label></th>
     <td>
         <div>
             <props:textProperty name="${paramPort}" id="hostPort" className="longField"/>
