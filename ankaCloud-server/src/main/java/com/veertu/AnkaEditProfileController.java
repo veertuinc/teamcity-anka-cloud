@@ -10,6 +10,8 @@ import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.serverSide.agentPools.AgentPoolManager;
 import jetbrains.buildServer.serverSide.agentPools.AgentPool;
 
+import jetbrains.buildServer.BuildProject;
+import jetbrains.buildServer.serverSide.agentPools.AgentPoolUtil;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
 import org.jdom.Element;
@@ -51,9 +53,11 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         ModelAndView modelAndView = new ModelAndView(pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTINGS_JSP));
         String projectId = request.getParameter("projectId");
         List<AgentPool> pools = new ArrayList<>();
-        Set<Integer> projectPools = agentPoolManager.getProjectPools(projectId);
-        for (Integer poolId: projectPools) {
-            pools.add(agentPoolManager.findAgentPoolById(poolId));
+        if (projectId != null) {
+            Set<Integer> projectPools = agentPoolManager.getProjectPools(projectId);
+            for (Integer poolId: projectPools) {
+                pools.add(agentPoolManager.findAgentPoolById(poolId));
+            }
         }
         // TODO: add only project agent pools
         pools.addAll(agentPoolManager.getAllAgentPools());
