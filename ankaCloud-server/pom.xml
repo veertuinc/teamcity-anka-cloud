@@ -10,11 +10,6 @@
     <artifactId>ankaCloud-server</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <kotlin.version>1.2.40</kotlin.version>
-    </properties>
-
-
     <dependencies>
 
         <dependency>
@@ -23,7 +18,6 @@
             <version>${teamcity-version}</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>server-web-api</artifactId>
@@ -31,15 +25,12 @@
             <type>war</type>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>tests-support</artifactId>
             <version>${teamcity-version}</version>
             <scope>test</scope>
         </dependency>
-
-
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>cloud-interface</artifactId>
@@ -74,52 +65,10 @@
             <version>0.1.54</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.jetbrains.teamcity.internal</groupId>
-            <artifactId>server</artifactId>
-            <version>${teamcity-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <jvmTarget>1.8</jvmTarget>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
