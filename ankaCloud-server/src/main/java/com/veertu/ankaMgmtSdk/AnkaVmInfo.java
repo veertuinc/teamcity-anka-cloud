@@ -20,10 +20,8 @@ public class AnkaVmInfo {
         this.uuid = jsonObject.getString("uuid");
         this.name = jsonObject.getString("name");
         this.status = jsonObject.getString("status");
-        this.vmIp = jsonObject.getString("ip");
-        if (jsonObject.has("host_ip")) {
-            this.hostIp = jsonObject.getString("host_ip");
-        }
+        this.vmIp = jsonObject.optString("ip");
+        this.hostIp = jsonObject.optString("host_ip");
         this.portForwardingRules = new ArrayList<PortForwardingRule>();
         if (!jsonObject.isNull("port_forwarding")) {
             JSONArray portForwardRulesJson = jsonObject.getJSONArray("port_forwarding");
