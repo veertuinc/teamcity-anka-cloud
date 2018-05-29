@@ -11,7 +11,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-
         <dependency>
             <groupId>org.jetbrains.teamcity</groupId>
             <artifactId>server-api</artifactId>
@@ -44,12 +43,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.teamcity.internal</groupId>
-            <artifactId>server</artifactId>
-            <version>${teamcity-version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20160212</version>
@@ -64,9 +57,7 @@
             <artifactId>jsch</artifactId>
             <version>0.1.54</version>
         </dependency>
-
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
