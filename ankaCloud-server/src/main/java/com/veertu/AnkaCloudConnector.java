@@ -1,5 +1,7 @@
 package com.veertu;
 
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaCloudStatus;
 import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
@@ -35,6 +37,8 @@ public class AnkaCloudConnector {
     private String sshPassword;
     private final AnkaAPI ankaAPI;
 
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+
     public AnkaCloudConnector(String host, String port, String sshUser,
                               String sshPassword, String agentPath, String serverUrl,
                               Integer agentPoolId, String profileId) {
@@ -57,37 +61,47 @@ public class AnkaCloudConnector {
 
     private void waitForBootAndSetVmProperties(AnkaMgmtVm vm, AnkaCloudImage cloudImage) {
         try {
-            vm.waitForBoot();
             HashMap<String, String > properties = new HashMap<>();
+
+            vm.waitForBoot();
+
+            String vmName = vm.getName();
+            if (vmName == null)
+                vmName = String.format("%s_%s", cloudImage.getId(), vm.getId());
+
+            LOG.info(String.format("VM %s (%s) has booted, starting SSH session...", vmName, vm.getId()));
+
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
                 properties.put(AnkaConstants.SERVER_URL_KEY, this.serverUrl);
             }
-
+            properties.put(AnkaConstants.AGENT_NAME, vmName);
             properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vm.getId());
             properties.put(AnkaConstants.ENV_IMAGE_ID_KEY, cloudImage.getId());
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
             properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
-            String vmName = vm.getName();
-            if (vmName != null) {
-                properties.put(AnkaConstants.AGENT_NAME, vmName);
-            } else {
-                properties.put(AnkaConstants.AGENT_NAME, String.format("%s_%s", cloudImage.getId(), vm.getId()));
-            }
+
             AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath);
             try {
                 propertiesSetter.setProperties(properties);
             } catch (AnkaUnreachableInstanceException e) {
+                LOG.error(e.getMessage());
                 vm.terminate();
             }
-
         } catch (AnkaMgmtException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void terminateInstance(CloudInstance cloudInstance) {
+
         AnkaCloudInstance instance = (AnkaCloudInstance)cloudInstance;
         AnkaMgmtVm vm = instance.getVm();
+        String vmName = vm.getName();
+        if (vmName == null)
+            vmName = String.format("%s_%s", cloudInstance.getImageId(), vm.getId());
+
+        LOG.info(String.format("terminating instance %s", vmName));
+
         vm.terminate();
         AnkaCloudImage image = (AnkaCloudImage) instance.getImage();
         image.populateInstances();

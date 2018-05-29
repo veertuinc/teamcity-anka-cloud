@@ -8,6 +8,7 @@ import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +23,7 @@ import java.util.Map;
 
 public class AnkaCloudClientFactory implements CloudClientFactory {
 
-    private static final Logger LOG = Logger.getInstance(AnkaCloudClientFactory.class.getName());
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
 
     @NotNull
@@ -127,7 +128,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
-        LOG.info(String.format("Checking if %s can be an Anka Agent", agentDescription.toString()));
+        LOG.info(String.format("Checking if '%s' can be an Anka Agent", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String ankaCloudKey = availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY);
         return (ankaCloudKey != null && ankaCloudKey.equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE));

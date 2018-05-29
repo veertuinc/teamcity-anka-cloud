@@ -1,5 +1,8 @@
 package com.veertu.ankaMgmtSdk;
 
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
+import com.veertu.AnkaCloudConnector;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 
 import java.util.ArrayList;
@@ -20,7 +23,7 @@ public class AnkaAPI {
     public static AnkaAPI getInstance() {
         return ourInstance;
     }
-    private java.util.logging.Logger logger =  java.util.logging.Logger.getLogger("AnkaAPI");
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
     private AnkaAPI() {
         this.communicators = new HashMap<String, AnkaMgmtCommunicator>();
     }
@@ -38,7 +41,7 @@ public class AnkaAPI {
     public AnkaMgmtVm makeAnkaVm(String mgmtHost, String mgmtPort, String templateId,
                                  String tag, String nameTemplate, int sshPort) throws AnkaMgmtException {
 
-        logger.info(String.format("making anka vm, host: %s, port: %s, " +
+        LOG.info(String.format("making anka vm, host: %s, port: %s, " +
                 "templateId: %s, sshPort: %d", mgmtHost, mgmtPort, templateId, sshPort));
         if (nameTemplate == null || nameTemplate.isEmpty())
             nameTemplate = "$template_name-$node_name-$ts";

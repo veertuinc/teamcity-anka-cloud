@@ -1,6 +1,7 @@
 package com.veertu;
 
 import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 import com.veertu.utils.AnkaConstants;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;
@@ -17,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AnkaCloudClientEx implements CloudClientEx {
 
-    private static final Logger LOG = Logger.getInstance(AnkaCloudClientEx.class.getName());
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     private final AnkaCloudConnector connector;
     private InstanceUpdater updater;

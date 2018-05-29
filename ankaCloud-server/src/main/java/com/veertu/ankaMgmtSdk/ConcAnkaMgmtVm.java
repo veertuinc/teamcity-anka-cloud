@@ -1,6 +1,9 @@
 package com.veertu.ankaMgmtSdk;
 
 
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
+import com.veertu.AnkaCloudConnector;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 
 import java.io.IOException;
@@ -20,14 +23,15 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
     private AnkaVmSession cachedVmSession;
     private final int cacheTime = 60 * 5 * 1000; // 5 minutes
     private int lastCached = 0;
-    private static java.util.logging.Logger logger = java.util.logging.Logger.getLogger("anka-sdk");
+
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
 
     public ConcAnkaMgmtVm(String sessionId, AnkaMgmtCommunicator communicator, int sshConnectionPort) {
         this.communicator = communicator;
         this.sessionId = sessionId;
         this.sshConnectionPort = sshConnectionPort;
-        logger.info(String.format("init VM %s", sessionId));
+        LOG.info(String.format("init VM %s", sessionId));
     }
 
     public ConcAnkaMgmtVm(AnkaMgmtCommunicator communicator, AnkaVmSession session) {
@@ -85,7 +89,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
                 if (session != null) {
                     this.cachedVmSession = session;
                 } else {
-                    logger.info("info for vm is null");
+                    LOG.info("info for vm is null");
                 }
             }
             return this.cachedVmSession;
@@ -96,18 +100,18 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
     }
 
     public String waitForBoot() throws InterruptedException, IOException, AnkaMgmtException {
-        logger.info(String.format("waiting for vm %s to boot", this.sessionId));
+        LOG.info(String.format("waiting for vm %s to boot", this.sessionId));
         int timeWaited = 0;
         String status;
 
         while (getStatus().equals("Scheduling")) {
             Thread.sleep(waitUnit);
-            logger.info(String.format("waiting for vm %s %d to start", this.sessionId, timeWaited));
+            LOG.info(String.format("waiting for vm %s %d to start", this.sessionId, timeWaited));
         }
 
         status = getStatus();
         if (!status.equals("Starting") && !status.equals("Started") && !status.equals("Scheduled") && !status.equals("Scheduling")) {
-            logger.info(String.format("vm %s in unexpected state %s, terminating", this.sessionId, status));
+            LOG.info(String.format("vm %s in unexpected state %s, terminating", this.sessionId, status));
             this.terminate();
             throw new IOException("could not start vm");
         }
@@ -116,7 +120,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
             // wait for the vm to spin up TODO: put this in const
             Thread.sleep(waitUnit);
             timeWaited += waitUnit;
-            logger.info(String.format("waiting for vm %s %d to boot", this.sessionId, timeWaited));
+            LOG.info(String.format("waiting for vm %s %d to boot", this.sessionId, timeWaited));
             if (timeWaited > maxRunningTimeout) {
                 this.terminate();
                 throw new IOException("could not start vm");
@@ -126,7 +130,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
 
         String ip;
         timeWaited = 0;
-        logger.info(String.format("waiting for vm %s to get an ip ", this.sessionId));
+        LOG.info(String.format("waiting for vm %s to get an ip ", this.sessionId));
         while (true) { // wait to get machine ip
 
             ip = this.getIp();
@@ -135,7 +139,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
 
             Thread.sleep(waitUnit);
             timeWaited += waitUnit;
-            logger.info(String.format("waiting for vm %s %d to get ip ", this.sessionId, timeWaited));
+            LOG.info(String.format("waiting for vm %s %d to get ip ", this.sessionId, timeWaited));
             if (timeWaited > maxIpTimeout) {
                 this.terminate();
                 throw new IOException("VM started but couldn't acquire ip");

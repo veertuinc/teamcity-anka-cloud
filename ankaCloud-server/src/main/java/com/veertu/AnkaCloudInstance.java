@@ -1,5 +1,7 @@
 package com.veertu;
 
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
 import com.veertu.utils.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
@@ -21,6 +23,7 @@ import java.util.Map;
 
 public class AnkaCloudInstance implements CloudInstance {
 
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     public AnkaMgmtVm getVm() {
         return vm;
@@ -114,9 +117,12 @@ public class AnkaCloudInstance implements CloudInstance {
     }
 
     @Override
-    public boolean containsAgent(@NotNull AgentDescription agentDescription){
+    public boolean containsAgent(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get("env.INSTANCE_ID");
+
+        LOG.info(String.format("containsAgent: instanceId=%s", instanceId == null ? "nil" : instanceId));
+
         if (instanceId == null || vm == null)
             return false;
         return instanceId.equals(vm.getId());
