@@ -3,7 +3,7 @@ package com.veertu;
 import com.intellij.openapi.diagnostic.Logger;
 import jetbrains.buildServer.log.Loggers;
 import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
-import com.veertu.utils.AnkaConstants;
+import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;

@@ -2,7 +2,7 @@ package com.veertu;
 
 import com.intellij.openapi.diagnostic.Logger;
 import jetbrains.buildServer.log.Loggers;
-import com.veertu.utils.AnkaConstants;
+import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import org.jetbrains.annotations.NotNull;

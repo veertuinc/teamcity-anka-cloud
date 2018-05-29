@@ -1,4 +1,4 @@
-package com.veertu.utils;
+package com.veertu.common;
 
 public interface AnkaConstants {
 
@@ -20,13 +20,12 @@ public interface AnkaConstants {
     String AGENT_POOL_ID = "agentPoolId";
     String MAX_INSTANCES = "clouds.anka.maxInstances";
 
-
     // Agent Configuration constants
     String ENV_INSTANCE_ID_KEY = "env.INSTANCE_ID";
     String ENV_IMAGE_ID_KEY = "env.IMAGE_ID";
-    String SERVER_URL_KEY = "serverUrl";
+    String ENV_SERVER_URL_KEY = "serverUrl";
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";
     String ENV_ANKA_CLOUD_VALUE = "ANKA";
     String ENV_PROFILE_ID = "env.ANKA_PROFILE_ID";
-    String AGENT_NAME = "name";
+    String ENV_AGENT_NAME_KEY = "name";
 }

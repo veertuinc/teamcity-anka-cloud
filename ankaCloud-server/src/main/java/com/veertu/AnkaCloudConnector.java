@@ -5,13 +5,9 @@ import jetbrains.buildServer.log.Loggers;
 import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaCloudStatus;
 import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
-import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
-import com.veertu.utils.AnkaConstants;
-import jetbrains.buildServer.clouds.CloudException;
-import jetbrains.buildServer.clouds.CloudImage;
+import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudInstance;
-import jetbrains.buildServer.clouds.CloudInstanceUserData;
 
 import java.io.IOException;
 import java.util.*;
@@ -72,9 +68,9 @@ public class AnkaCloudConnector {
             LOG.info(String.format("VM %s (%s) has booted, starting SSH session...", vmName, vm.getId()));
 
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
-                properties.put(AnkaConstants.SERVER_URL_KEY, this.serverUrl);
+                properties.put(AnkaConstants.ENV_SERVER_URL_KEY, this.serverUrl);
             }
-            properties.put(AnkaConstants.AGENT_NAME, vmName);
+            properties.put(AnkaConstants.ENV_AGENT_NAME_KEY, vmName);
             properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vm.getId());
             properties.put(AnkaConstants.ENV_IMAGE_ID_KEY, cloudImage.getId());
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);

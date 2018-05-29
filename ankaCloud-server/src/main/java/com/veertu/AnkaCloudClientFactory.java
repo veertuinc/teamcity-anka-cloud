@@ -1,6 +1,6 @@
 package com.veertu;
 
-import com.veertu.utils.AnkaConstants;
+import com.veertu.common.AnkaConstants;
 import com.veertu.utils.AnkaCloudPropertiesProcesser;
 import jetbrains.buildServer.clouds.*;
 import jetbrains.buildServer.serverSide.AgentDescription;

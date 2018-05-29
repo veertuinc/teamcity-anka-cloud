@@ -6,6 +6,8 @@ import com.jcraft.jsch.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 
 
 /**
@@ -24,6 +26,8 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
     private String password;
     private Session session;
 
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+
     public AnkaSSHPropertiesSetter(AnkaMgmtVm vm, String userName, String password, String agentPath) {
         this.vm = vm;
         this.host = vm.getConnectionIp();
@@ -33,7 +37,6 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
         this.agentPath = agentPath;
         this.propetiesFilePath = String.format("%s/conf/buildAgent.properties", this.agentPath);
         this.loadScriptPath = String.format("%s/bin/mac.launchd.sh", this.agentPath);
-
     }
 
     public void setProperties(Map<String, String> properties) throws AnkaUnreachableInstanceException {
@@ -41,7 +44,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
             this.sshConnect();
             String commandFmt = "echo \"%s=%s\" >> " + this.propetiesFilePath;
 
-//            this.sendCommand("cat /dev/null > " + this.propetiesFilePath);
+            //this.sendCommand("cat /dev/null > " + this.propetiesFilePath);
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 String command = String.format(commandFmt, entry.getKey(), entry.getValue());
                 String output = this.sendCommand(command);
@@ -50,6 +53,8 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
             }
             this.sendCommand(this.loadScriptPath + " unload");
             this.sendCommand(this.loadScriptPath + " load");
+
+            LOG.info("SSH properties set successfully");
         } catch (JSchException e) {
            throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh", this.vm.getId()));
         } finally {
