@@ -15,8 +15,8 @@
         <moduleSet>
             <useAllReactorProjects>true</useAllReactorProjects>
             <includes>
-                <include>com.veertu:ankaCloud-agent</include>
-                <include>com.veertu:ankaCloud-common</include>
+                <include>com.veertu:anka-build-tc-agent</include>
+                <include>com.veertu:anka-build-tc-common</include>
             </includes>
             <binaries>
                 <outputDirectory>lib</outputDirectory>

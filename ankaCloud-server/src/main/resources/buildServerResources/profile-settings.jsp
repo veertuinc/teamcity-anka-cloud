@@ -1,4 +1,4 @@
-<%@ page import="com.veertu.utils.AnkaConstants" %>
+<%@ page import="com.veertu.common.AnkaConstants" %>
 <%@ taglib prefix="props" tagdir="/WEB-INF/tags/props" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ include file="/include.jsp" %>
@@ -19,25 +19,14 @@
 </style>
 
 
-<c:set var="paramUrl" value="<%=AnkaConstants.HOST_NAME%>"/>
+<c:set var="paramUrl" value="<%=AnkaConstants.CONTROLLER_URL_NAME%>"/>
 <tr>
-    <th><label for="${paramUrl}">Controller Host: <l:star/></label></th>
+    <th><label for="${paramUrl}">Controller URL: <l:star/></label></th>
     <td>
         <div>
-            <props:textProperty name="${paramUrl}" id="hostName" className="longField"/>
+            <props:textProperty name="${paramUrl}" id="controllerURL" className="longField"/>
         </div>
         <span class="error option-error option-error_${paramUrl}" id="error_${paramUrl}"></span>
-    </td>
-</tr>
-
-<c:set var="paramPort" value="<%=AnkaConstants.PORT%>"/>
-<tr>
-    <th><label for="${paramPort}">Controller Port: <l:star/></label></th>
-    <td>
-        <div>
-            <props:textProperty name="${paramPort}" id="hostPort" className="longField"/>
-        </div>
-        <span class="error option-error option-error_${paramPort}" id="error_${paramPort}"></span>
     </td>
 </tr>
 
@@ -226,10 +215,10 @@
         }
      }
 
-         var portField = $j("#hostPort");
-         var hostField = $j("#hostName");
-         hostField.on("change", getImages);
-         portField.on("change", getImages);
+
+         var contUrl = $j("#controllerURL");
+         contUrl.on("change", getImages);
+
          var imageSelect = $j("#imageSelect");
          imageSelect.on("change", function() {
             getTags();
@@ -240,7 +229,7 @@
          tagSelect.on("change", updateInputs);
 
 
-         if (hostField.val().length > 0 && portField.val().length > 0) {
+         if (contUrl.val().length > 0) {
             getImages();
          }
 

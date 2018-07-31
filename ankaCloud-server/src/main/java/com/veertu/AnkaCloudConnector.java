@@ -23,8 +23,7 @@ import java.util.*;
 
 public class AnkaCloudConnector {
 
-    private final String host;
-    private final String port;
+    private final String mgmtURL;
     private final String agentPath;
     private final String serverUrl;
     private final Integer agentPoolId;
@@ -35,11 +34,10 @@ public class AnkaCloudConnector {
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-    public AnkaCloudConnector(String host, String port, String sshUser,
+    public AnkaCloudConnector(String mgmtURL, String sshUser,
                               String sshPassword, String agentPath, String serverUrl,
                               Integer agentPoolId, String profileId) {
-        this.host = host;
-        this.port = port;
+        this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
         this.agentPath = agentPath;
@@ -50,7 +48,7 @@ public class AnkaCloudConnector {
     }
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
-        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.host, this.port, cloudImage.getId(), cloudImage.getTag(), null, 22);
+        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22);
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vm, cloudImage));
         return new AnkaCloudInstance(vm, cloudImage);
     }
@@ -107,7 +105,7 @@ public class AnkaCloudConnector {
     public Collection<AnkaCloudInstance> getImageInstances(AnkaCloudImage image) {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         try {
-            List<AnkaMgmtVm> ankaMgmtVms = this.ankaAPI.listVms(this.host, this.port);
+            List<AnkaMgmtVm> ankaMgmtVms = this.ankaAPI.listVms(this.mgmtURL);
 
             for (AnkaMgmtVm vm: ankaMgmtVms) {
                 if (vm.getImageId().equals(image.getId())) {
@@ -125,7 +123,7 @@ public class AnkaCloudConnector {
 
 
     public boolean isRunning() {
-        AnkaCloudStatus ankaCloudStatus = this.ankaAPI.status(this.host, this.port);
+        AnkaCloudStatus ankaCloudStatus = this.ankaAPI.status(this.mgmtURL);
         if (ankaCloudStatus == null) {
             return false;
         }

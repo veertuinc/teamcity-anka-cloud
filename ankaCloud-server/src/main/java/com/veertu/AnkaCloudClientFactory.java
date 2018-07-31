@@ -51,8 +51,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @NotNull
     @Override
     public CloudClientEx createNewClient(@NotNull CloudState cloudState, @NotNull CloudClientParameters cloudClientParameters) {
-        String host = cloudClientParameters.getParameter(AnkaConstants.HOST_NAME);
-        String port = cloudClientParameters.getParameter(AnkaConstants.PORT);
+        String mgmtURL = cloudClientParameters.getParameter(AnkaConstants.CONTROLLER_URL_NAME);
         String sshUser = cloudClientParameters.getParameter(AnkaConstants.SSH_USER);
         String sshPassword = cloudClientParameters.getParameter(AnkaConstants.SSH_PASSWORD);
         String imageId = cloudClientParameters.getParameter(AnkaConstants.IMAGE_ID);
@@ -78,13 +77,13 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         }
 
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
-        AnkaCloudConnector connector = new AnkaCloudConnector(host, port, sshUser,
+        AnkaCloudConnector connector = new AnkaCloudConnector(mgmtURL, sshUser,
                                     sshPassword, agentPath, serverUrl, agentPoolId, profileId);
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);
-        LOG.info(String.format("Creating AnkaCloudClientEx for server %s:%s , image %s(%s) tag %s",
-                host, port, imageName, imageId, imageTag ));
+        LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s) tag %s",
+                mgmtURL, imageName, imageId, imageTag ));
 
         return new AnkaCloudClientEx(connector, updater, images, maxInstances);
 
@@ -112,8 +111,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @Override
     public Map<String, String> getInitialParameterValues() {
         HashMap<String, String> parameters = new HashMap<String, String>();
-        parameters.put(AnkaConstants.HOST_NAME, "");
-        parameters.put(AnkaConstants.PORT, "");
+        parameters.put(AnkaConstants.CONTROLLER_URL_NAME, "");
         parameters.put(AnkaConstants.SSH_PASSWORD, "admin");
         parameters.put(AnkaConstants.SSH_USER, "anka");
         parameters.put(AnkaConstants.AGENT_PATH, "/Users/anka/buildAgent");

@@ -4,6 +4,7 @@ import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
+import jetbrains.buildServer.BuildProject;
 import jetbrains.buildServer.controllers.BaseFormXmlController;
 import jetbrains.buildServer.controllers.BasePropertiesBean;
 import jetbrains.buildServer.serverSide.SBuildServer;
@@ -50,14 +51,13 @@ public class AnkaEditProfileController extends BaseFormXmlController {
     @Override
     protected ModelAndView doGet(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) {
         ModelAndView modelAndView = new ModelAndView(pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTINGS_JSP));
-        String projectId = request.getParameter("projectId");
-        List<AgentPool> pools = new ArrayList<>();
-        if (projectId != null) {
-            Set<Integer> projectPools = agentPoolManager.getProjectPools(projectId);
-            for (Integer poolId: projectPools) {
-                pools.add(agentPoolManager.findAgentPoolById(poolId));
-            }
+        final String projectId = request.getParameter("projectId");
+        final List<AgentPool> pools = new ArrayList<>();
+        if (!BuildProject.ROOT_PROJECT_ID.equals(projectId)){
+            pools.add(AgentPoolUtil.DUMMY_PROJECT_POOL);
         }
+        pools.addAll(agentPoolManager.getProjectOwnedAgentPools(projectId));
+
         // TODO: add only project agent pools
         pools.addAll(agentPoolManager.getAllAgentPools());
         modelAndView.getModel().put("agentPools", pools);
@@ -68,9 +68,8 @@ public class AnkaEditProfileController extends BaseFormXmlController {
     @Override
     protected void doPost(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Element xmlResponse) {
         final BasePropertiesBean propsBean = new BasePropertiesBean(null);
-        String host = request.getParameter(PROP_PREFIX+ AnkaConstants.HOST_NAME);
-        String port = request.getParameter(PROP_PREFIX + AnkaConstants.PORT);
-        if (host == null || port == null) {
+        String mgmtURL = request.getParameter(PROP_PREFIX+ AnkaConstants.CONTROLLER_URL_NAME);
+        if (mgmtURL == null) {
             response.setStatus(400);
             return;
         }
@@ -79,10 +78,10 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         String toGet = request.getParameter("get");
         try {
             if (imageId != null && toGet.equals("tags")) {
-                List<String> tags = ankaApi.listTemplateTags(host, port, imageId);
+                List<String> tags = ankaApi.listTemplateTags(mgmtURL, imageId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
             } else {
-                xmlResponse.addContent(templatesToJson(ankaApi.listTemplates(host, port)));
+                xmlResponse.addContent(templatesToJson(ankaApi.listTemplates(mgmtURL)));
             }
         } catch (AnkaMgmtException e) {
             response.setStatus(400);

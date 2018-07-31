@@ -12,17 +12,13 @@ public class AnkaCloudPropertiesProcesser implements PropertiesProcessor {
     public Collection<InvalidProperty> process(Map<String, String> properties) {
         ArrayList<InvalidProperty> invalidProperties = new ArrayList<>();
 
-        List<String> notEmpties = Arrays.asList(AnkaConstants.HOST_NAME, AnkaConstants.PORT, AnkaConstants.AGENT_PATH, AnkaConstants.IMAGE_ID
+        List<String> notEmpties = Arrays.asList(AnkaConstants.CONTROLLER_URL_NAME, AnkaConstants.AGENT_PATH, AnkaConstants.IMAGE_ID
         , AnkaConstants.SSH_USER, AnkaConstants.SSH_PASSWORD);
         for (String key: notEmpties) {
             String value = properties.get(key);
             if (isNullOrEmpty(value)) {
                 invalidProperties.add(new InvalidProperty(key, "Must not be empty"));
             }
-        }
-        String hostPort = properties.get(AnkaConstants.PORT);
-        if (!isNullOrEmpty(hostPort) && !hasNumericValue(hostPort)) {
-            invalidProperties.add(new InvalidProperty(AnkaConstants.PORT, "Must be a number"));
         }
         String maxInstances = properties.get(AnkaConstants.MAX_INSTANCES);
         if (!isNullOrEmpty(maxInstances) && !hasNumericValue(maxInstances)) {

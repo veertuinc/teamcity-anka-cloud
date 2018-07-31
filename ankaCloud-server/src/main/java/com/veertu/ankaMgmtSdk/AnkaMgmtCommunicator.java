@@ -1,9 +1,14 @@
 package com.veertu.ankaMgmtSdk;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import jetbrains.buildServer.log.Loggers;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import javax.net.ssl.SSLContext;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -24,6 +29,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.URL;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Created by asafgur on 09/05/2017.
@@ -31,25 +38,31 @@ import java.util.List;
 public class AnkaMgmtCommunicator {
 
 
-    private final String host;
-    private final String port;
+    private final URL mgmtUrl;
     private final int timeout;
-    private String scheme;
     private final int maxRetries;
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-    public AnkaMgmtCommunicator(String host, String port) throws AnkaMgmtException {
+    public AnkaMgmtCommunicator(String url) throws AnkaMgmtException {
         this.maxRetries = 10;
         this.timeout = 4000;
-        this.host = host;
-        this.port = port;
-        this.scheme = "https";
+        if (url == null || url == "") {
+            throw new AnkaMgmtException("no url given");
+        }
         try {
-            String url = String.format("%s://%s:%s", this.scheme, this.host, this.port);
-            this.doRequest(RequestMethod.GET, url);
-        } catch (SSLException e) {
-            this.scheme = "http";
+            LOG.info(String.format("url: %s", url));
+            URL tmpUrl = new URL(url);
+            URIBuilder b = new URIBuilder();
+            b.setScheme(tmpUrl.getProtocol());
+            b.setHost( tmpUrl.getHost());
+            b.setPort(tmpUrl.getPort());
+            mgmtUrl = b.build().toURL();
+
+            String statusUrl = String.format("%s/api/v1/status", mgmtUrl.toString());
+            this.doRequest(RequestMethod.GET, statusUrl);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new AnkaMgmtException(e);
+        } catch (java.net.URISyntaxException e) {
             throw new AnkaMgmtException(e);
         }
         this.listTemplates();
@@ -57,7 +70,8 @@ public class AnkaMgmtCommunicator {
 
     public List<AnkaVmTemplate> listTemplates() throws AnkaMgmtException {
         List<AnkaVmTemplate> templates = new ArrayList<AnkaVmTemplate>();
-        String url = String.format("%s://%s:%s/api/v1/registry/vm", this.scheme, this.host, this.port);
+        String url = String.format("%s/api/v1/registry/vm", mgmtUrl.toString());
+        LOG.info(String.format("List: %s", url));
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
             String logicalResult = jsonResponse.getString("status");
@@ -79,7 +93,7 @@ public class AnkaMgmtCommunicator {
 
     public List<String> getTemplateTags(String templateId) throws AnkaMgmtException {
         List<String> tags = new ArrayList<String>();
-        String url = String.format("%s://%s:%s/api/v1/registry/vm?id=%s", this.scheme, this.host, this.port, templateId);
+        String url = String.format("%s/api/v1/registry/vm?id=%s", mgmtUrl.toString(), templateId);
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
             String logicalResult = jsonResponse.getString("status");
@@ -101,7 +115,7 @@ public class AnkaMgmtCommunicator {
     }
 
     public String startVm(String templateId, String tag, String nameTemplate) throws AnkaMgmtException {
-        String url = String.format("%s://%s:%s/api/v1/vm", this.scheme, this.host, this.port);
+        String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
         if (tag != null)
@@ -128,7 +142,7 @@ public class AnkaMgmtCommunicator {
     }
 
     public AnkaVmSession showVm(String sessionId) throws AnkaMgmtException {
-        String url = String.format("%s://%s:%s/api/v1/vm?id=%s", this.scheme, this.host, this.port, sessionId);
+        String url = String.format("%s/api/v1/vm?id=%s", mgmtUrl.toString(), sessionId);
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
             String logicalResult = jsonResponse.getString("status");
@@ -144,7 +158,7 @@ public class AnkaMgmtCommunicator {
     }
 
     public boolean terminateVm(String sessionId) throws AnkaMgmtException {
-        String url = String.format("%s://%s:%s/api/v1/vm", this.scheme, this.host, this.port);
+        String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("id", sessionId);
@@ -163,7 +177,7 @@ public class AnkaMgmtCommunicator {
 
     public List<AnkaVmSession> list() throws AnkaMgmtException {
         List<AnkaVmSession> vms = new ArrayList<>();
-        String url = String.format("%s://%s:%s/api/v1/vm", this.scheme, this.host, this.port);
+        String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
             String logicalResult = jsonResponse.getString("status");
@@ -186,7 +200,7 @@ public class AnkaMgmtCommunicator {
     }
 
     public AnkaCloudStatus status() {
-        String url = String.format("%s://%s:%s/api/v1/status", this.scheme, this.host, this.port);
+        String url = String.format("%s/api/v1/status", mgmtUrl.toString());
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
             String logicalResult = jsonResponse.getString("status");
@@ -216,8 +230,18 @@ public class AnkaMgmtCommunicator {
                 RequestConfig.Builder requestBuilder = RequestConfig.custom();
                 requestBuilder = requestBuilder.setConnectTimeout(timeout);
                 requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
-                CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestBuilder.build()).build();
-//        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+                HttpClientBuilder builder = HttpClientBuilder.create();
+
+                // allow self-signed certs
+                SSLContext sslContext = new SSLContextBuilder()
+                        .loadTrustMaterial(null, (certificate, authType) -> true).build();
+                builder.setSslcontext(sslContext);
+                //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
+
+                builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
+                        SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+                CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
+
                 HttpRequestBase request;
                 try {
                     switch (method) {
@@ -240,7 +264,7 @@ public class AnkaMgmtCommunicator {
                     HttpResponse response = httpClient.execute(request);
                     int responseCode = response.getStatusLine().getStatusCode();
                     if (responseCode != 200) {
-                        System.out.println(response.toString());
+                        LOG.error(String.format("url: %s response: %s", url, response.toString()));
                         return null;
                     }
                     HttpEntity entity = response.getEntity();
@@ -277,7 +301,7 @@ public class AnkaMgmtCommunicator {
                 if (retry >= maxRetries) {
                     continue;
                 }
-                throw e;
+                throw new AnkaMgmtException(e);
             }
         }
 

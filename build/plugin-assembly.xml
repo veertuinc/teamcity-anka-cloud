@@ -11,7 +11,7 @@
          <outputDirectory>/</outputDirectory>
      </file> 
      <file>
-         <source>target/ankaCloud-agent.zip</source>
+         <source>target/anka-build-tc-agent.zip</source>
          <outputDirectory>agent</outputDirectory>
      </file> 
   </files>
@@ -19,8 +19,8 @@
     <moduleSet>
        <useAllReactorProjects>true</useAllReactorProjects>
        <includes>
-           <include>com.veertu:ankaCloud-server</include>
-           <include>com.veertu:ankaCloud-common</include>
+           <include>com.veertu:anka-build-tc-server</include>
+           <include>com.veertu:anka-build-tc-common</include>
        </includes> 
        <binaries>
            <outputDirectory>server</outputDirectory>

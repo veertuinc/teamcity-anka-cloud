@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>ankaCloud</artifactId>
+    <artifactId>anka-build-tc</artifactId>
     <groupId>com.veertu</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
@@ -17,17 +17,17 @@
   <dependencies>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>ankaCloud-agent</artifactId>
+           <artifactId>anka-build-tc-agent</artifactId>
            <version>1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>ankaCloud-common</artifactId>
+           <artifactId>anka-build-tc-common</artifactId>
            <version>1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>ankaCloud-server</artifactId>
+           <artifactId>anka-build-tc-server</artifactId>
            <version>1.0-SNAPSHOT</version>
       </dependency>
   </dependencies>
@@ -75,7 +75,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>ankaCloud-agent</finalName>
+                  <finalName>anka-build-tc-agent</finalName>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>
                     <descriptor>plugin-agent-assembly.xml</descriptor>
@@ -89,7 +89,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>ankaCloud</finalName>
+                  <finalName>anka-build-tc</finalName>
                   <outputDirectory>${project.parent.build.directory}</outputDirectory>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>
