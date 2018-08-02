@@ -13,5 +13,5 @@
       <logo>https://veertu.com/wp-content/uploads/2015/10/veertu-logo.svg</logo>
     </vendor>
   </info>
-  <deployment use-separate-classloader="false" />
+  <deployment use-separate-classloader="true" />
 </teamcity-plugin>
