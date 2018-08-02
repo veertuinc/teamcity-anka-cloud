@@ -53,9 +53,10 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         ModelAndView modelAndView = new ModelAndView(pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTINGS_JSP));
         final String projectId = request.getParameter("projectId");
         final List<AgentPool> pools = new ArrayList<>();
-        if (!BuildProject.ROOT_PROJECT_ID.equals(projectId)){
+        if (!BuildProject.ROOT_PROJECT_ID.equals(projectId)) {
             pools.add(AgentPoolUtil.DUMMY_PROJECT_POOL);
         }
+
         pools.addAll(agentPoolManager.getProjectOwnedAgentPools(projectId));
         modelAndView.getModel().put("agentPools", pools);
         modelAndView.getModel().put("pluginResourcePath", pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML));
