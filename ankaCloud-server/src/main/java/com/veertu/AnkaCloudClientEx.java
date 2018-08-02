@@ -113,11 +113,9 @@ public class AnkaCloudClientEx implements CloudClientEx {
     }
 
     @Override
-    public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull final CloudImage cloudImage) {
+    public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
         Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-        if (imageInstances.size() >= this.maxInstances)
-            return CanStartNewInstanceResult.no("Anka instance limit exceeded.");
-        return CanStartNewInstanceResult.yes();
+        return imageInstances.size() < this.maxInstances;
     }
 
     @Nullable
