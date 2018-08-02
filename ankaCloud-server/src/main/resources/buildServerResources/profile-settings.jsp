@@ -124,15 +124,14 @@
     </td>
 </tr>
 
-<c:set var="paramAgentPoolId" value="<%=AnkaConstants.AGENT_POOL_ID%>" />
+
 <tr class="dialog hidden">
-    <th><label for="${paramAgentPoolId}">Agent pool:</label></th>
+    <th><label for="${paramAgentPoolId}">Agent pool:&nbsp;<l:star/></label></th>
         <td>
             <props:selectProperty name="${paramAgentPoolId}" className="longField">
-              <props:option value=""><c:out value="<Please select agent pool>"/></props:option>
-                  <c:forEach var="ap" items="${agentPools}">
-                    <props:option value="${ap.agentPoolId}"><c:out value="${ap.name}"/></props:option>
-                  </c:forEach>
+                <c:forEach var="ap" items="${agentPools}">
+                    <props:option selected="${ap.agentPoolId eq propertiesBean.properties['agent_pool_id']}" value="${ap.agentPoolId}"><c:out value="${ap.name}"/></props:option>
+                </c:forEach>
             </props:selectProperty>
             <span id="error_${paramAgentPoolId}" class="error"></span>
       </td>
