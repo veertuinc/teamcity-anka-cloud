@@ -19,6 +19,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
@@ -114,7 +115,33 @@ public class AnkaMgmtCommunicator {
         return tags;
     }
 
-    public String startVm(String templateId, String tag, String nameTemplate) throws AnkaMgmtException {
+
+    public List<NodeGroup> getNodeGroups() throws AnkaMgmtException {
+        List<NodeGroup> groups = new ArrayList<>();
+        String url = String.format("%s/api/v1/group", mgmtUrl.toString());
+        try {
+            JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
+            String logicalResponse = jsonResponse.getString("status");
+            if (logicalResponse.equals("OK")) {
+                JSONArray groupsJson = jsonResponse.getJSONArray("body");
+                for (int i = 0; i < groupsJson.length(); i++) {
+                    JSONObject groupJsonObject = groupsJson.getJSONObject(i);
+                    NodeGroup nodeGroup = new NodeGroup(groupJsonObject);
+                    groups.add(nodeGroup);
+                }
+            } else {
+                throw new AnkaMgmtException(jsonResponse.getString("message"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new AnkaMgmtException(e);
+        } catch (JSONException e) {
+            return groups;
+        }
+        return groups;
+    }
+
+    public String startVm(String templateId, String tag, String nameTemplate, String groupId) throws AnkaMgmtException {
         String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
@@ -122,6 +149,9 @@ public class AnkaMgmtCommunicator {
             jsonObject.put("tag", tag);
         if (nameTemplate != null)
             jsonObject.put("name_template", nameTemplate);
+        if (groupId != null && groupId.length() > 0) {
+            jsonObject.put("group_id", groupId);
+        }
         JSONObject jsonResponse = null;
         try {
             jsonResponse = this.doRequest(RequestMethod.POST, url, jsonObject);

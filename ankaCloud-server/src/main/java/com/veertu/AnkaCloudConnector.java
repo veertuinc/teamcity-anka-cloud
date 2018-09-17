@@ -48,7 +48,7 @@ public class AnkaCloudConnector {
     }
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
-        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22);
+        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22, cloudImage.getGroupId());
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vm, cloudImage));
         return new AnkaCloudInstance(vm, cloudImage);
     }

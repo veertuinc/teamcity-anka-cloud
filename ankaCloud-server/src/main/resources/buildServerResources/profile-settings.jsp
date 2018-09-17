@@ -48,6 +48,15 @@
     </td>
 </tr>
 
+<tr class="dialog hidden">
+    <th><label for="groupSelect">Group (optional): </label></th>
+    <td>
+        <select id="groupSelect" class="longField">
+                  <option value="">Select Group</option>
+        </select>
+    </td>
+</tr>
+
 <c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
 <tr class="hidden">
     <th><label for="${paramImageName}">Image Name</label></th>
@@ -75,6 +84,17 @@
             <props:textProperty className="disabled" name="${paramImageTag}" id="imageTagInput" disabled="true" />
         </div>
         <span class="error option-error option-error_${paramImageTag}" id="error_${paramImageTag}"></span>
+    </td>
+</tr>
+
+<c:set var="paramGroupId" value="<%=AnkaConstants.GROUP_ID%>"/>
+<tr class="hidden">
+    <th><label for="${paramGroupId}">Group </label></th>
+    <td>
+        <div>
+            <props:textProperty className="disabled" name="${paramGroupId}" id="groupIdInput" disabled="true" />
+        </div>
+        <span class="error option-error option-error_${paramGroupId}" id="error_${paramGroupId}"></span>
     </td>
 </tr>
 
@@ -204,6 +224,36 @@
 
      }
 
+      function getGroups() {
+         if (!BS) BS = {};
+                 BS.ajaxRequest(
+                     "<c:url value="${pluginResourcePath}"/>"+"?get=groups" ,
+                         {
+                             parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
+                             onFailure: function (response) {
+                                     console.log(response);
+                                     // might want to show some error message
+                             },
+                             onSuccess: function (response) {
+                                 var xmlDoc = $j(response.responseXML);
+                                 var wrapper = xmlDoc.find( "response" );
+                                 var groups = JSON.parse(wrapper.text()).reverse();
+                                 var groupSelect = $j("#groupSelect");
+                                 groupSelect.empty();
+                                 groupSelect.append($j('<option value="">None</option>'));
+                                 for (var k = 0; k < groups.length; k++) {
+                                     var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
+                                     if (groups[k].id ===  $j("#groupIdInput").val()) {
+                                        group.prop("selected", true);
+                                     }
+                                     groupSelect.append(group);
+                                 }
+                             }
+                     });
+
+      }
+
+
      function updateInputs() {
 
         var imageId = $j("#imageSelect option:selected").val();
@@ -218,6 +268,7 @@
 
          var contUrl = $j("#controllerURL");
          contUrl.on("change", getImages);
+         contUrl.on("change", getGroups);
 
          var imageSelect = $j("#imageSelect");
          imageSelect.on("change", function() {
@@ -228,9 +279,15 @@
          var tagSelect = $j("#tagSelect");
          tagSelect.on("change", updateInputs);
 
-
+         var groupSelect = $j("#groupSelect");
+         groupSelect.on("change", function() {
+            var groupSelectValue = $j("#groupSelect").val();
+            var groupIdInput = $j("#groupIdInput");
+            groupIdInput.val(groupSelectValue);
+         }) ;
          if (contUrl.val().length > 0) {
             getImages();
+            getGroups();
          }
 
          $j(".disabled").on("data-attribute-change", function() {

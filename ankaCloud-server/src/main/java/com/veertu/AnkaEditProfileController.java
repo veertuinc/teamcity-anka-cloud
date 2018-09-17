@@ -2,6 +2,7 @@ package com.veertu;
 
 import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
+import com.veertu.ankaMgmtSdk.NodeGroup;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.BuildProject;
@@ -77,8 +78,11 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             if (imageId != null && toGet.equals("tags")) {
                 List<String> tags = ankaApi.listTemplateTags(mgmtURL, imageId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
-            } else {
+            } else if (toGet.equals("images")) {
                 xmlResponse.addContent(templatesToJson(ankaApi.listTemplates(mgmtURL)));
+            } else if (toGet.equals("groups")) {
+                List<NodeGroup> nodeGroups = ankaApi.getNodeGroups(mgmtURL);
+                xmlResponse.addContent(groupsToJson(nodeGroups));
             }
         } catch (AnkaMgmtException e) {
             response.setStatus(400);
@@ -104,6 +108,17 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             JSONObject templateJson = new JSONObject();
             templateJson.put("id", template.getId());
             templateJson.put("name", template.getName());
+            arr.put(templateJson);
+        }
+        return arr.toString();
+    }
+
+    private String groupsToJson(List<NodeGroup> nodeGroups) {
+        JSONArray arr = new JSONArray();
+        for (NodeGroup group : nodeGroups) {
+            JSONObject templateJson = new JSONObject();
+            templateJson.put("id", group.getId());
+            templateJson.put("name", group.getName());
             arr.put(templateJson);
         }
         return arr.toString();
