@@ -39,7 +39,7 @@ public class AnkaAPI {
     }
 
     public AnkaMgmtVm makeAnkaVm(String mgmtURL, String templateId,
-                                 String tag, String nameTemplate, int sshPort, int priority) throws AnkaMgmtException {
+                                 String tag, String nameTemplate, int sshPort, int priority, String groupId) throws AnkaMgmtException {
 
         LOG.info(String.format("making anka vm, url: %s, " +
                 "templateId: %s, sshPort: %d", mgmtURL, templateId, sshPort));
@@ -49,7 +49,7 @@ public class AnkaAPI {
             nameTemplate = String.format("%s-%d", nameTemplate, vmCounter++);
 
         AnkaMgmtCommunicator communicator = getCommunicator(mgmtURL);
-        String sessionId = communicator.startVm(templateId, tag, nameTemplate, priority);
+        String sessionId = communicator.startVm(templateId, tag, nameTemplate, priority, groupId);
         AnkaMgmtVm vm = new ConcAnkaMgmtVm(sessionId, communicator, sshPort);
         return vm;
 
@@ -80,6 +80,11 @@ public class AnkaAPI {
     public List<String> listTemplateTags(String mgmtURL, String masterVmId) throws AnkaMgmtException {
         AnkaMgmtCommunicator communicator = getCommunicator(mgmtURL);
         return communicator.getTemplateTags(masterVmId);
+    }
+
+    public List<NodeGroup> getNodeGroups(String mgmtUrl) throws AnkaMgmtException {
+        AnkaMgmtCommunicator communicator = getCommunicator(mgmtUrl);
+        return communicator.getNodeGroups();
     }
 
     public AnkaCloudStatus status(String mgmtURL) {

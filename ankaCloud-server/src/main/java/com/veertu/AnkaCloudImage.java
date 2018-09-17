@@ -21,14 +21,16 @@ public class AnkaCloudImage implements CloudImage {
     private final String id;
     private final String name;
     private final String tag;
+    private final String groupId;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
 
-    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag) {
+    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag, String groupId) {
         this.connector = connector;
         this.id = id;
         this.name = name;
+        this.groupId = groupId;
         if (tag != null && tag.length() > 0) {
             this.tag = tag;
         } else {
@@ -53,6 +55,10 @@ public class AnkaCloudImage implements CloudImage {
 
     public String getTag() {
         return tag;
+    }
+
+    public String getGroupId() {
+        return groupId;
     }
 
 

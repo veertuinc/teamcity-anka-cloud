@@ -59,6 +59,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String imageTag = cloudClientParameters.getParameter(AnkaConstants.IMAGE_TAG);
         String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
+        String groupId = cloudClientParameters.getParameter(AnkaConstants.GROUP_ID);
         Integer agentPoolId = null;
         String agentPoolIdVal = cloudClientParameters.getParameter(AnkaConstants.AGENT_POOL_ID);
         String priorityVal = cloudClientParameters.getParameter(AnkaConstants.PRIORITY);
@@ -88,7 +89,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
         AnkaCloudConnector connector = new AnkaCloudConnector(mgmtURL, sshUser,
                                     sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority);
-        AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag);
+        AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag, groupId);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);
         LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s) tag %s",

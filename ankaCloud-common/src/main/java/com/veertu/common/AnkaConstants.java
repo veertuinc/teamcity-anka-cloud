@@ -9,6 +9,7 @@ public interface AnkaConstants {
     String IMAGE_ID = "image_id";
     String IMAGE_NAME = "image_name";
     String IMAGE_TAG = "image_tag";
+    String GROUP_ID = "group_id";
     String CONTROLLER_URL_NAME = "clouds.anka.url";
     String CLOUD_CODE = "anka";
     String CLOUD_DISPLAY_NAME = "Anka Build Cloud";
