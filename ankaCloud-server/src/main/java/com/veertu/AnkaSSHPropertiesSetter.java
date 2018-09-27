@@ -51,6 +51,17 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
                 System.out.println(command);
                 System.out.println(output);
             }
+            this.sendCommand("touch ~/.profile ");
+            commandFmt = "echo \"export %s=%s\" >> ~/.profile";
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                String command = String.format(commandFmt, entry.getKey(), entry.getValue());
+                String output = this.sendCommand(command);
+                System.out.println(command);
+                System.out.println(output);
+            }
+            this.sendCommand("source ~/.profile");
+            System.out.println(this.sendCommand("cat ~/.profile"));
+            System.out.println(this.sendCommand("cat "  + this.propetiesFilePath));
             this.sendCommand(this.loadScriptPath + " unload");
             this.sendCommand(this.loadScriptPath + " load");
 
