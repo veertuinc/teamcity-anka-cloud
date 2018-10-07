@@ -65,14 +65,18 @@ public class AnkaCloudConnector {
 
             LOG.info(String.format("VM %s (%s) has booted, starting SSH session...", vmName, vm.getId()));
 
-            if (this.serverUrl != null && this.serverUrl.length() > 0) {
+            /*if (this.serverUrl != null && this.serverUrl.length() > 0) {
                 properties.put(AnkaConstants.ENV_SERVER_URL_KEY, this.serverUrl);
             }
             properties.put(AnkaConstants.ENV_AGENT_NAME_KEY, vmName);
             properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vm.getId());
             properties.put(AnkaConstants.ENV_IMAGE_ID_KEY, cloudImage.getId());
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
-            properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
+            properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);*/
+            properties.put(AnkaConstants.INSTANCE_ID, vm.getId());
+            properties.put(AnkaConstants.IMAGE_ID, cloudImage.getId());
+            properties.put(AnkaConstants.IMAGE_NAME, cloudImage.getName());
+            properties.put(AnkaConstants.INSTANCE_NAME, vmName);
 
             AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath);
             try {

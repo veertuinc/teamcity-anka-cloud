@@ -7,7 +7,8 @@ import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,13 +60,17 @@ public class AnkaCloudImage implements CloudImage {
     @NotNull
     @Override
     public Collection<? extends CloudInstance> getInstances() {
-        return this.instances.values();
+        synchronized (this.instances) {
+            return this.instances.values();
+        }
     }
 
     @Nullable
     @Override
     public CloudInstance findInstanceById(@NotNull String id) {
-        return this.instances.get(id);
+        synchronized (this.instances) {
+            return this.instances.get(id);
+        }
     }
 
     @Nullable
@@ -86,6 +91,9 @@ public class AnkaCloudImage implements CloudImage {
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater);
+            synchronized (this.instances) {
+                this.instances.put(instance.getInstanceId(), instance);
+            }
             populateInstances();
             return instance;
         } catch (AnkaMgmtException e) {
@@ -94,15 +102,28 @@ public class AnkaCloudImage implements CloudImage {
         }
     }
 
-    public void populateInstances() {
-        Collection<AnkaCloudInstance> imageInstances = this.connector.getImageInstances(this);
+    public  void removeInstance(String id) {
         synchronized (this.instances) {
-            this.instances.clear();
-            for (AnkaCloudInstance instance: imageInstances) {
-                this.instances.put(instance.getInstanceId(), instance);
-            }
+            this.instances.remove(id);
         }
     }
 
+    public void populateInstances() {
+        Collection<AnkaCloudInstance> imageInstances = this.connector.getImageInstances(this);
+        Set<String> ids = new HashSet<>();
 
+        synchronized (this.instances) {
+            for (AnkaCloudInstance instance: imageInstances) {
+                ids.add(instance.getInstanceId());
+                if (instances.containsKey(instance.getInstanceId())) {
+                    this.instances.put(instance.getInstanceId(), instance);
+                }
+            }
+            for (String instanceId: instances.keySet()) {
+                if (!ids.contains(instanceId))
+                    instances.remove(instanceId);
+
+            }
+        }
+    }
 }

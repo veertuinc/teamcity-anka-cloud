@@ -58,6 +58,8 @@ public class AnkaCloudClientEx implements CloudClientEx {
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
         LOG.info(String.format("Terminating instance %s(%s) on AnkaCloudClientEx %s",
                                     cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
+        AnkaCloudImage image = (AnkaCloudImage)cloudInstance.getImage();
+        image.removeInstance(cloudInstance.getInstanceId());
         this.connector.terminateInstance(cloudInstance);
 
     }
@@ -84,8 +86,9 @@ public class AnkaCloudClientEx implements CloudClientEx {
         // this is how tc figures out which agent belongs to which instance
         LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        String instanceId = availableParameters.get("env.INSTANCE_ID");
-        String imageId = availableParameters.get("env.IMAGE_ID");
+
+        String instanceId = availableParameters.get(AnkaConstants.INSTANCE_ID);
+        String imageId = availableParameters.get(AnkaConstants.IMAGE_ID);
         if (instanceId == null || imageId == null) {
             LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;

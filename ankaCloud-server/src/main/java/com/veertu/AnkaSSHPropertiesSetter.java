@@ -41,10 +41,10 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
     public void setProperties(Map<String, String> properties) throws AnkaUnreachableInstanceException {
         try {
+            String fname= "/tmp/tc-anka.txt";
             this.sshConnect();
-            String commandFmt = "echo \"%s=%s\" >> " + this.propetiesFilePath;
+            String commandFmt = "echo \"%s=%s\" >> " + fname;
 
-            //this.sendCommand("cat /dev/null > " + this.propetiesFilePath);
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 String command = String.format(commandFmt, entry.getKey(), entry.getValue());
                 String output = this.sendCommand(command);
@@ -56,7 +56,8 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
             LOG.info("SSH properties set successfully");
         } catch (JSchException e) {
-           throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh", this.vm.getId()));
+            LOG.info(String.format("ssh connect failed: %s", e.getMessage()));
+            throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh", this.vm.getId()));
         } finally {
             this.closeConnection();
         }
@@ -68,6 +69,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
         JSch jsch=new JSch();
 
+        LOG.info(String.format("Connect to %s@%s:%d", userName, host, port));
         Session session = jsch.getSession(userName, host, port);
         session.setPassword(password);
         session.setConfig("StrictHostKeyChecking", "no");

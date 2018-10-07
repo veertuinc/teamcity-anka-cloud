@@ -126,9 +126,9 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
     @Override
     public boolean canBeAgentOfType(@NotNull AgentDescription agentDescription) {
-        LOG.info(String.format("Checking if '%s' can be an Anka Agent", agentDescription.toString()));
-        Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        String ankaCloudKey = availableParameters.get(AnkaConstants.ENV_ANKA_CLOUD_KEY);
-        return (ankaCloudKey != null && ankaCloudKey.equals(AnkaConstants.ENV_ANKA_CLOUD_VALUE));
+        final Map<String, String> configParams = agentDescription.getConfigurationParameters();
+        LOG.info(String.format("Checking if '%s' can be an Anka Agent : %s", agentDescription.toString(),
+                            configParams.get(AnkaConstants.IMAGE_NAME)));
+        return configParams.containsKey(AnkaConstants.IMAGE_NAME);
     }
 }
