@@ -84,12 +84,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
         // this is how tc figures out which agent belongs to which instance
         LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        String instanceId = availableParameters.get("env.INSTANCE_ID");
-        String imageId = availableParameters.get("env.IMAGE_ID");
+        String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
+        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
         if (instanceId == null || imageId == null) {
             LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;
         }
+        LOG.info(String.format("findInstanceByAgent -> image id: %s , instance_id", imageId, instanceId));
         CloudImage image = findImageById(imageId);
         if (image != null) {
             LOG.info(String.format("Found instance %s for %s", instanceId, agentDescription.toString()));
