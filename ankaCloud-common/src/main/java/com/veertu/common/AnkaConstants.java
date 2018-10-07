@@ -20,7 +20,7 @@ public interface AnkaConstants {
     String MAX_INSTANCES = "clouds.anka.maxInstances";
 
     // Agent Configuration constants
-    String ENV_INSTANCE_ID_KEY = "env.INSTANCE_ID";
+    String ENV_INSTANCE_ID_KEY = "env.ANKA_INSTANCE_ID";
     String ENV_IMAGE_ID_KEY = "env.IMAGE_ID";
     String ENV_SERVER_URL_KEY = "serverUrl";
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";

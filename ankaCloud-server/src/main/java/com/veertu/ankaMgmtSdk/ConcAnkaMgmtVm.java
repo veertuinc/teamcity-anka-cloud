@@ -18,6 +18,7 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
     private final String sessionId;
     private final int waitUnit = 4000;
     private final int maxRunningTimeout = waitUnit * 20;
+    private final int maxSchedulingTimeout = 1000 * 60 * 60; // 1 hour
     private final int maxIpTimeout = waitUnit * 20;
     private final int sshConnectionPort;
     private AnkaVmSession cachedVmSession;
@@ -105,8 +106,14 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
         String status;
 
         while (getStatus().equals("Scheduling")) {
-            Thread.sleep(waitUnit);
             LOG.info(String.format("waiting for vm %s %d to start", this.sessionId, timeWaited));
+            Thread.sleep(waitUnit);
+            timeWaited += waitUnit;
+            if (timeWaited > maxSchedulingTimeout) {
+                this.terminate();
+                throw new IOException("VM too long in scheduling state");
+
+            }
         }
 
         status = getStatus();
@@ -115,6 +122,8 @@ public class ConcAnkaMgmtVm implements AnkaMgmtVm {
             this.terminate();
             throw new IOException("could not start vm");
         }
+
+        timeWaited = 0;
 
         while (!getStatus().equals("Started") || getSessionInfoCache() == null) {
             // wait for the vm to spin up TODO: put this in const

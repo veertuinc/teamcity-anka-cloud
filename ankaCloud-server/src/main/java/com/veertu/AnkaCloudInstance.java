@@ -119,10 +119,11 @@ public class AnkaCloudInstance implements CloudInstance {
     @Override
     public boolean containsAgent(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        String instanceId = availableParameters.get("env.INSTANCE_ID");
+        String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
 
-        LOG.info(String.format("containsAgent: instanceId=%s", instanceId == null ? "nil" : instanceId));
-
+        LOG.info(String.format("containsAgent: property instanceId = %s, VM instance id: %s",
+                instanceId == null ? "null" : instanceId,
+                vm == null ? "null": vm.getId()));
         if (instanceId == null || vm == null)
             return false;
         return instanceId.equals(vm.getId());
