@@ -3,6 +3,7 @@ package com.veertu.ankaMgmtSdk;
 import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import jetbrains.buildServer.log.Loggers;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -113,6 +114,40 @@ public class AnkaMgmtCommunicator {
         }
         return tags;
     }
+
+    public String startVm(String templateId, String tag, String nameTemplate, String startUpScript) throws AnkaMgmtException {
+        String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("vmid", templateId);
+        if (tag != null)
+            jsonObject.put("tag", tag);
+        if (nameTemplate != null)
+            jsonObject.put("name_template", nameTemplate);
+        if (startUpScript != null) {
+            String b64Script = Base64.encodeBase64String(startUpScript.getBytes());
+            jsonObject.put("startup_script", b64Script);
+        }
+
+        JSONObject jsonResponse = null;
+        try {
+            jsonResponse = this.doRequest(RequestMethod.POST, url, jsonObject);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        String logicalResult = jsonResponse.getString("status");
+        if (logicalResult.equals("OK")) {
+            JSONArray uuidsJson = jsonResponse.getJSONArray("body");
+            if (uuidsJson.length() >= 1 ){
+                return uuidsJson.getString(0);
+            }
+
+//            return jsonResponse.getString("body");
+        }
+        return null;
+    }
+
+
 
     public String startVm(String templateId, String tag, String nameTemplate) throws AnkaMgmtException {
         String url = String.format("%s/api/v1/vm", mgmtUrl.toString());

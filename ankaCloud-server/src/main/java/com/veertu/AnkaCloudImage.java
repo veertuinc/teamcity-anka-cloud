@@ -7,9 +7,8 @@ import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Collection;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -24,6 +23,7 @@ public class AnkaCloudImage implements CloudImage {
     private final String tag;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
+    private String connectionMethod;
     private String errorMsg;
 
     public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag) {
@@ -35,7 +35,13 @@ public class AnkaCloudImage implements CloudImage {
         } else {
             this.tag = null;
         }
+        this.connectionMethod = "ssh";
         this.instances = new ConcurrentHashMap<>();
+    }
+
+    public AnkaCloudImage(AnkaCloudConnector connector, String imageId, String imageName, String imageTag, String connectionMethod) {
+        this(connector, imageId, imageName, imageTag);
+        this.connectionMethod = connectionMethod;
     }
 
 
@@ -69,6 +75,10 @@ public class AnkaCloudImage implements CloudImage {
     @Override
     public CloudInstance findInstanceById(@NotNull String id) {
         synchronized (this.instances) {
+            String realId = IdMap.getRealIdFromGenId(id);
+            if (realId != null) {
+                return this.instances.get(realId);
+            }
             return this.instances.get(id);
         }
     }
@@ -89,6 +99,13 @@ public class AnkaCloudImage implements CloudImage {
     }
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
+        if (connectionMethod.equals("ssh")) {
+            return this.startNewInstanceWithSSH(userData, updater);
+        }
+        return this.startNewInstanceWithAnkaRun(userData, updater);
+    }
+
+    private AnkaCloudInstance startNewInstanceWithSSH(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater);
             synchronized (this.instances) {
@@ -102,9 +119,26 @@ public class AnkaCloudImage implements CloudImage {
         }
     }
 
+    private AnkaCloudInstance startNewInstanceWithAnkaRun(CloudInstanceUserData userData, InstanceUpdater updater) {
+        try {
+            String genId = UUID.randomUUID().toString();
+            AnkaCloudInstance instance = this.connector.startNewInstance(genId,this, updater);
+            synchronized (this.instances) {
+                IdMap.setGenIdToId(genId, instance.getInstanceId());
+                this.instances.put(instance.getInstanceId(), instance);
+            }
+            populateInstances();
+            return instance;
+        } catch (AnkaMgmtException e) {
+            this.errorMsg = e.getMessage();
+            return null;
+        }
+    }
+
     public  void removeInstance(String id) {
         synchronized (this.instances) {
             this.instances.remove(id);
+            IdMap.removeInstanceId(id);
         }
     }
 
@@ -120,8 +154,11 @@ public class AnkaCloudImage implements CloudImage {
                 }
             }
             for (String instanceId: instances.keySet()) {
-                if (!ids.contains(instanceId))
+                if (!ids.contains(instanceId)){
                     instances.remove(instanceId);
+                    IdMap.removeInstanceId(instanceId);
+                }
+
 
             }
         }

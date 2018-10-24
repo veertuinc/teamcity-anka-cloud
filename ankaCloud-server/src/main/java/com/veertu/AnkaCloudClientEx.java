@@ -87,16 +87,17 @@ public class AnkaCloudClientEx implements CloudClientEx {
         LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
 
-        String instanceId = availableParameters.get(AnkaConstants.INSTANCE_ID);
+        String genId = availableParameters.get(AnkaConstants.INSTANCE_ID);
         String imageId = availableParameters.get(AnkaConstants.IMAGE_ID);
-        if (instanceId == null || imageId == null) {
+        if (genId == null || imageId == null) {
             LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;
         }
         CloudImage image = findImageById(imageId);
         if (image != null) {
-            LOG.info(String.format("Found instance %s for %s", instanceId, agentDescription.toString()));
-            return image.findInstanceById(instanceId);
+
+            LOG.info(String.format("Found instance %s for %s", genId, agentDescription.toString()));
+            return image.findInstanceById(genId);
         }
         LOG.info(String.format("No instance for %s", agentDescription.toString()));
         return null;

@@ -78,9 +78,23 @@
     </td>
 </tr>
 
+<c:set var="paramLaunchMethod" value="<%=AnkaConstants.LAUNCH_METHOD%>"/>
+<tr class="dialog hidden">
+    <th><label for="${paramLaunchMethod}">Launch Method: <l:star/></label></th>
+    <td>
+        <div>
+        <props:selectProperty name="${paramLaunchMethod}" id="launchMethod" className="longField">
+                    <props:option value="ssh"><c:out value="SSH"/></props:option>
+                    <props:option value="ankaRun"><c:out value="ConnectWithAnkaRun"/></props:option>
+        </props:selectProperty>
+        </div>
+        <span class="error option-error option-error_${paramSshPassword}" id="error_${paramSshPassword}"></span>
+    </td>
+</tr>
+
 
 <c:set var="paramSshUser" value="<%=AnkaConstants.SSH_USER%>"/>
-<tr class="dialog hidden">
+<tr class="dialog hidden ssh">
     <th><label for="${paramSshUser}">SSH User: <l:star/></label></th>
     <td>
         <div>
@@ -91,7 +105,7 @@
 </tr>
 
 <c:set var="paramSshPassword" value="<%=AnkaConstants.SSH_PASSWORD%>"/>
-<tr class="dialog hidden">
+<tr class="dialog hidden ssh">
     <th><label for="${paramSshPassword}">SSH Password: <l:star/></label></th>
     <td>
         <div>
@@ -240,6 +254,19 @@
 
          $j(".error").on("change",  function() {
             $j(".disabled").prop("disabled", true);
+         });
+
+         var launchMethod = $j("#launchMethod");
+         if (launchMethod.val() != 'ssh') {
+             $j(".ssh").addClass("hidden");
+         }                      }
+         launchMethod.on("change", function() {
+            var launchMethod = $j("#launchMethod");
+            if (launchMethod.val() != 'ssh') {
+                $j(".ssh").addClass("hidden");
+            } else {
+                $j(".ssh").removeClass("hidden");
+            }
          });
 
 </script>

@@ -119,7 +119,15 @@ public class AnkaCloudInstance implements CloudInstance {
     @Override
     public boolean containsAgent(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
-        LOG.info(String.format("containsAgent(%s): instanceId=%s", getInstanceId(), availableParameters.get(AnkaConstants.INSTANCE_ID)));
-        return getInstanceId().equals(availableParameters.get(AnkaConstants.INSTANCE_ID));
+        String vmInstanceId = availableParameters.get(AnkaConstants.INSTANCE_ID);
+        if (vmInstanceId == null) {
+            return false;
+        }
+        CloudInstance instanceById = image.findInstanceById(vmInstanceId);
+        if (instanceById == null) {
+            return false;
+        }
+        LOG.info(String.format("containsAgent(%s): instanceId=%s", getInstanceId(), instanceById.getInstanceId()));
+        return getInstanceId().equals(instanceById.getInstanceId());
     }
 }

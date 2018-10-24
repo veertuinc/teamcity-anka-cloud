@@ -55,6 +55,23 @@ public class AnkaAPI {
 
     }
 
+    public AnkaMgmtVm makeAnkaVm(String mgmtURL, String templateId,
+                                 String tag, String nameTemplate, int sshPort, String startUpScript) throws AnkaMgmtException {
+
+        LOG.info(String.format("making anka vm, url: %s, " +
+                "templateId: %s, sshPort: %d", mgmtURL, templateId, sshPort));
+        if (nameTemplate == null || nameTemplate.isEmpty())
+            nameTemplate = "$template_name-$node_name-$ts";
+        else if (!nameTemplate.contains("$ts"))
+            nameTemplate = String.format("%s-%d", nameTemplate, vmCounter++);
+
+        AnkaMgmtCommunicator communicator = getCommunicator(mgmtURL);
+        String sessionId = communicator.startVm(templateId, tag, nameTemplate, startUpScript);
+        AnkaMgmtVm vm = new ConcAnkaMgmtVm(sessionId, communicator, sshPort);
+        return vm;
+
+    }
+
     public AnkaMgmtVm getVm(String mgmtURL, String sessionId) throws AnkaMgmtException {
         AnkaMgmtCommunicator communicator = getCommunicator(mgmtURL);
         AnkaVmSession ankaVmSession = communicator.showVm(sessionId);

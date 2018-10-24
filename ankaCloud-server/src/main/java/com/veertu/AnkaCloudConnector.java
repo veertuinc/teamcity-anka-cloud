@@ -47,10 +47,36 @@ public class AnkaCloudConnector {
         this.ankaAPI = AnkaAPI.getInstance();
     }
 
+    public AnkaCloudInstance startNewInstance(String genId, AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
+
+        StartUpScriptBuilder scriptBuilder = new StartUpScriptBuilder(this.serverUrl, genId, agentPath);
+
+        String vmName = String.format("%s_%s", cloudImage.getId(), genId);
+        HashMap<String, String > properties = new HashMap<>();
+        properties.put(AnkaConstants.IMAGE_ID, cloudImage.getId());
+        properties.put(AnkaConstants.IMAGE_NAME, cloudImage.getName());
+        properties.put(AnkaConstants.INSTANCE_NAME, vmName);
+
+        String script = scriptBuilder.makeStartupScript(properties);
+
+        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22, script);
+        updater.executeTaskInBackground(() -> this.waitForBoot(vm));
+        return new AnkaCloudInstance(vm, cloudImage);
+    }
+
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
         AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22);
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vm, cloudImage));
         return new AnkaCloudInstance(vm, cloudImage);
+    }
+
+    private void waitForBoot(AnkaMgmtVm vm) {
+        try {
+            vm.waitForBoot();
+        }  catch (AnkaMgmtException | InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private void waitForBootAndSetVmProperties(AnkaMgmtVm vm, AnkaCloudImage cloudImage) {
