@@ -39,7 +39,7 @@ public class AnkaAPI {
     }
 
     public AnkaMgmtVm makeAnkaVm(String mgmtURL, String templateId,
-                                 String tag, String nameTemplate, int sshPort) throws AnkaMgmtException {
+                                 String tag, String nameTemplate, int sshPort, int priority) throws AnkaMgmtException {
 
         LOG.info(String.format("making anka vm, url: %s, " +
                 "templateId: %s, sshPort: %d", mgmtURL, templateId, sshPort));
@@ -49,7 +49,7 @@ public class AnkaAPI {
             nameTemplate = String.format("%s-%d", nameTemplate, vmCounter++);
 
         AnkaMgmtCommunicator communicator = getCommunicator(mgmtURL);
-        String sessionId = communicator.startVm(templateId, tag, nameTemplate);
+        String sessionId = communicator.startVm(templateId, tag, nameTemplate, priority);
         AnkaMgmtVm vm = new ConcAnkaMgmtVm(sessionId, communicator, sshPort);
         return vm;
 

@@ -114,7 +114,7 @@ public class AnkaMgmtCommunicator {
         return tags;
     }
 
-    public String startVm(String templateId, String tag, String nameTemplate) throws AnkaMgmtException {
+    public String startVm(String templateId, String tag, String nameTemplate, int priority) throws AnkaMgmtException {
         String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
@@ -122,6 +122,9 @@ public class AnkaMgmtCommunicator {
             jsonObject.put("tag", tag);
         if (nameTemplate != null)
             jsonObject.put("name_template", nameTemplate);
+        if (priority > 0) {
+            jsonObject.put("priority", priority);
+        }
         JSONObject jsonResponse = null;
         try {
             jsonResponse = this.doRequest(RequestMethod.POST, url, jsonObject);

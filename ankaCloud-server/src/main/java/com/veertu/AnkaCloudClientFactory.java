@@ -61,6 +61,15 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
         Integer agentPoolId = null;
         String agentPoolIdVal = cloudClientParameters.getParameter(AnkaConstants.AGENT_POOL_ID);
+        String priorityVal = cloudClientParameters.getParameter(AnkaConstants.PRIORITY);
+        int priority = 0;
+        try {
+            if (!priorityVal.isEmpty()) {
+                priority = Integer.parseInt(priorityVal);
+            }
+        } catch (NullPointerException | NumberFormatException e) {
+            // so nothing priority will be 0
+        }
         try {
             if (!agentPoolIdVal.isEmpty()) {
                 agentPoolId = Integer.valueOf(agentPoolIdVal);
@@ -78,7 +87,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
         AnkaCloudConnector connector = new AnkaCloudConnector(mgmtURL, sshUser,
-                                    sshPassword, agentPath, serverUrl, agentPoolId, profileId);
+                                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority);
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);

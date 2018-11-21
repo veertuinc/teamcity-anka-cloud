@@ -30,13 +30,14 @@ public class AnkaCloudConnector {
     private final String profileId;
     private String sshUser;
     private String sshPassword;
+    private final int priority;
     private final AnkaAPI ankaAPI;
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     public AnkaCloudConnector(String mgmtURL, String sshUser,
                               String sshPassword, String agentPath, String serverUrl,
-                              Integer agentPoolId, String profileId) {
+                              Integer agentPoolId, String profileId, int priority) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
@@ -44,11 +45,12 @@ public class AnkaCloudConnector {
         this.serverUrl = serverUrl;
         this.agentPoolId = agentPoolId;
         this.profileId = profileId;
+        this.priority = priority;
         this.ankaAPI = AnkaAPI.getInstance();
     }
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
-        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22);
+        AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(this.mgmtURL, cloudImage.getId(), cloudImage.getTag(), null, 22, priority);
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vm, cloudImage));
         return new AnkaCloudInstance(vm, cloudImage);
     }

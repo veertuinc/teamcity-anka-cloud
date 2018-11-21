@@ -119,8 +119,22 @@
         <div>
             <props:textProperty name="${paramMaxInstances}" className="longField"/>
         </div>
-        <span>Leave this empty for unlimited intances</span>
+        <span>Leave this empty for unlimited instances</span>
         <span class="error option-error option-error_${paramMaxInstances}" id="error_${paramMaxInstances}"></span>
+    </td>
+</tr>
+
+
+<c:set var="paramPriority" value="<%=AnkaConstants.PRIORITY%>"/>
+<tr class="dialog hidden">
+    <th><label for="${paramPriority}">Priority: </label></th>
+    <td>
+        <div>
+            <props:textProperty name="${paramPriority}" className="longField"/>
+        </div>
+        <span>Set priority for this image, lower is more urgent. (Enterprise version)</span>
+
+        <span class="error option-error option-error_${paramPriority}" id="error_${paramPriority}"></span>
     </td>
 </tr>
 
