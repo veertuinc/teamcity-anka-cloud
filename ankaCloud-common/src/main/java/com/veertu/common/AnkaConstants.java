@@ -20,6 +20,14 @@ public interface AnkaConstants {
     String AGENT_POOL_ID = "agentPoolId";
     String PRIORITY = "priority";
     String MAX_INSTANCES = "clouds.anka.maxInstances";
+    String AUTH_METHOD = "auth.method";
+    String AUTH_METHOD_CERT = "cert";
+    String AUTH_METHID_OIDC = "oidc";
+    String OIDC_CLIENT_ID = "auth.oidc.client_id";
+    String OIDC_CLIENT_SECRET = "auth.oidc.client_secret";
+    String CERT_STRING = "auth.cert.cert";
+    String CERT_KEY_STRING = "auth.cert.cert_key";
+    String PROP_PREFIX = "prop:";
 
     // Agent Configuration constants
     String ENV_INSTANCE_ID_KEY = "env.ANKA_INSTANCE_ID";

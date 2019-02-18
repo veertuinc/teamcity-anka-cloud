@@ -2,6 +2,8 @@ package com.veertu.ankaMgmtSdk;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
 import jetbrains.buildServer.log.Loggers;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -18,20 +20,34 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.net.URL;
 import org.apache.http.client.utils.URIBuilder;
+import org.bouncycastle.openssl.PEMParser;
 
 /**
  * Created by asafgur on 09/05/2017.
@@ -39,17 +55,14 @@ import org.apache.http.client.utils.URIBuilder;
 public class AnkaMgmtCommunicator {
 
 
-    private final URL mgmtUrl;
-    private final int timeout;
-    private final int maxRetries;
-    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+    protected URL mgmtUrl;
+    protected final int timeout;
+    protected final int maxRetries;
+    protected static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-    public AnkaMgmtCommunicator(String url) throws AnkaMgmtException {
+    public AnkaMgmtCommunicator(String url) {
         this.maxRetries = 10;
         this.timeout = 4000;
-        if (url == null || url == "") {
-            throw new AnkaMgmtException("no url given");
-        }
         try {
             LOG.info(String.format("url: %s", url));
             URL tmpUrl = new URL(url);
@@ -59,15 +72,12 @@ public class AnkaMgmtCommunicator {
             b.setPort(tmpUrl.getPort());
             mgmtUrl = b.build().toURL();
 
-            String statusUrl = String.format("%s/api/v1/status", mgmtUrl.toString());
-            this.doRequest(RequestMethod.GET, statusUrl);
-        } catch (IOException e) {
-            throw new AnkaMgmtException(e);
-        } catch (java.net.URISyntaxException e) {
-            throw new AnkaMgmtException(e);
+        } catch (IOException | URISyntaxException e) {
+            LOG.info("Malformed or wrong url");
+            e.printStackTrace();
         }
-        this.listTemplates();
     }
+
 
     public List<AnkaVmTemplate> listTemplates() throws AnkaMgmtException {
         List<AnkaVmTemplate> templates = new ArrayList<AnkaVmTemplate>();
@@ -231,7 +241,7 @@ public class AnkaMgmtCommunicator {
         }
     }
 
-    public AnkaCloudStatus status() {
+    public AnkaCloudStatus status() throws AnkaMgmtException {
         String url = String.format("%s/api/v1/status", mgmtUrl.toString());
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
@@ -241,20 +251,20 @@ public class AnkaMgmtCommunicator {
                 return AnkaCloudStatus.fromJson(statusJson);
             }
             return null;
-        } catch (IOException | AnkaMgmtException e) {
+        } catch (IOException e) {
             return null;
         }
     }
 
-    private enum RequestMethod {
+    protected enum RequestMethod {
         GET, POST, DELETE
     }
 
-    private JSONObject doRequest(RequestMethod method, String url) throws IOException, AnkaMgmtException {
+    protected JSONObject doRequest(RequestMethod method, String url) throws IOException, AnkaMgmtException {
         return doRequest(method, url, null);
     }
 
-    private JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
+    protected JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
         int retry = 0;
         while (true){
             try {
@@ -263,6 +273,15 @@ public class AnkaMgmtCommunicator {
                 requestBuilder = requestBuilder.setConnectTimeout(timeout);
                 requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
                 HttpClientBuilder builder = HttpClientBuilder.create();
+
+//                KeyStore keystore = null;
+//                if (clientCert != null && !clientCert.isEmpty() && clientCertKey != null && !clientCertKey.isEmpty()) {
+//                    KeyStore trustStore = makeTrustStore();
+//                    if (trustStore != null) {
+//                        keystore = trustStore;
+//                    }
+//                }
+                //loadKeyMaterial(keystore, "somepassword".toCharArray())
 
                 // allow self-signed certs
                 SSLContext sslContext = new SSLContextBuilder()
@@ -295,6 +314,13 @@ public class AnkaMgmtCommunicator {
 
                     HttpResponse response = httpClient.execute(request);
                     int responseCode = response.getStatusLine().getStatusCode();
+                    if (responseCode == 401) {
+                        throw new AnkaUnAuthenticatedRequestException("Authentication Required");
+                    }
+                    if (responseCode == 403) {
+                        throw new AnkaUnauthorizedRequestException("Not authorized to perform this request");
+                    }
+
                     if (responseCode != 200) {
                         LOG.error(String.format("url: %s response: %s", url, response.toString()));
                         return null;
@@ -339,7 +365,7 @@ public class AnkaMgmtCommunicator {
 
     }
 
-    private HttpRequestBase setBody(HttpEntityEnclosingRequestBase request, JSONObject requestBody) throws UnsupportedEncodingException {
+    protected HttpRequestBase setBody(HttpEntityEnclosingRequestBase request, JSONObject requestBody) throws UnsupportedEncodingException {
         request.setHeader("content-type", "application/json");
         StringEntity body = new StringEntity(requestBody.toString());
         request.setEntity(body);

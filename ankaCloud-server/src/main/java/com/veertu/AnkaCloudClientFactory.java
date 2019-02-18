@@ -1,5 +1,6 @@
 package com.veertu;
 
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
 import com.veertu.utils.AnkaCloudPropertiesProcesser;
 import jetbrains.buildServer.clouds.*;
@@ -87,8 +88,21 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         }
 
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
-        AnkaCloudConnector connector = new AnkaCloudConnector(mgmtURL, sshUser,
-                                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority);
+
+        AnkaCloudConnector connector;
+
+        String authMethod = cloudClientParameters.getParameter(AnkaConstants.AUTH_METHOD);
+        if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHOD_CERT)){
+            String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
+            String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
+            connector = new AnkaCloudConnector(mgmtURL, sshUser,
+                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
+                    cert, key);
+        } else {
+            connector = new AnkaCloudConnector(mgmtURL, sshUser,
+                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority);
+        }
+
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag, groupId);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);

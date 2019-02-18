@@ -4,6 +4,8 @@ import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.NodeGroup;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
 import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.BuildProject;
 import jetbrains.buildServer.controllers.BaseFormXmlController;
@@ -71,19 +73,34 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             response.setStatus(400);
             return;
         }
-        AnkaAPI ankaApi = AnkaAPI.getInstance();
-        String imageId = request.getParameter("imageId");
-        String toGet = request.getParameter("get");
         try {
+            AnkaAPI ankaApi;
+
+            String authMethod = request.getParameter(PROP_PREFIX+ AnkaConstants.AUTH_METHOD);
+            String clientCert = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_STRING);
+            String clientCertKey = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_KEY_STRING);
+            if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
+                ankaApi = new AnkaAPI(mgmtURL, clientCert, clientCertKey);
+            } else {
+                ankaApi = new AnkaAPI(mgmtURL);
+            }
+
+            String imageId = request.getParameter("imageId");
+            String toGet = request.getParameter("get");
+
             if (imageId != null && toGet.equals("tags")) {
-                List<String> tags = ankaApi.listTemplateTags(mgmtURL, imageId);
+                List<String> tags = ankaApi.listTemplateTags(imageId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
             } else if (toGet.equals("images")) {
-                xmlResponse.addContent(templatesToJson(ankaApi.listTemplates(mgmtURL)));
+                xmlResponse.addContent(templatesToJson(ankaApi.listTemplates()));
             } else if (toGet.equals("groups")) {
-                List<NodeGroup> nodeGroups = ankaApi.getNodeGroups(mgmtURL);
+                List<NodeGroup> nodeGroups = ankaApi.getNodeGroups();
                 xmlResponse.addContent(groupsToJson(nodeGroups));
             }
+        } catch (AnkaUnAuthenticatedRequestException e) {
+            response.setStatus(401);
+        } catch (AnkaUnauthorizedRequestException e) {
+            response.setStatus(403);
         } catch (AnkaMgmtException e) {
             response.setStatus(400);
         }

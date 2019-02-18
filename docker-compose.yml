@@ -1,0 +1,12 @@
+version: '2'
+services:
+  teamcity:
+    image: jetbrains/teamcity-server:2018.2.2
+    volumes:
+      - "/data/teamcity/datadir:/data/teamcity_server/datadir"
+      - "/data/teamcity/logs:/opt/teamcity/logs"
+    ports:
+      - "8111:8111"
+      - "5005:5005"
+    environment:
+      TEAMCITY_SERVER_OPTS: "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"

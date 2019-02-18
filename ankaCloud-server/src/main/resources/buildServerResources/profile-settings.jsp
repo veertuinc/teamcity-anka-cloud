@@ -9,7 +9,7 @@
 <%@ taglib prefix="intprop" uri="/WEB-INF/functions/intprop" %>
 <%@ taglib prefix="admin" tagdir="/WEB-INF/tags/admin" %>
 <jsp:useBean id="agentPools" scope="request" type="java.util.Collection<jetbrains.buildServer.serverSide.agentPools.AgentPool>"/>
-
+<jsp:useBean id="propertiesBean" scope="request" type="jetbrains.buildServer.controllers.BasePropertiesBean" />
 <style>
 
 .hidden {
@@ -17,6 +17,8 @@
 }
 
 </style>
+
+
 
 
 <c:set var="paramUrl" value="<%=AnkaConstants.CONTROLLER_URL_NAME%>"/>
@@ -29,6 +31,45 @@
         <span class="error option-error option-error_${paramUrl}" id="error_${paramUrl}"></span>
     </td>
 </tr>
+
+
+<c:set var="paramAuthMethod" value="<%=AnkaConstants.AUTH_METHOD%>" />
+<tr class="auth-config hidden">
+    <th><label for="${paramAuthMethod}">Authentication Method: </label></th>
+        <td>
+            <props:selectProperty name="${paramAuthMethod}" id="authMethodSelect" className="longField">
+              <props:option value=""><c:out value="<Please select authentication method>"/></props:option>
+              <props:option value="openid"><c:out value="Openid Connect"/></props:option>
+              <props:option value="cert"><c:out value="Client Certificate"/></props:option>
+            </props:selectProperty>
+            <span id="error_${paramAuthMethod}" class="error"></span>
+      </td>
+</tr>
+<c:set var="clientCertStringKey" value="<%=AnkaConstants.CERT_STRING%>"/>
+<c:set var="clientCertString" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_STRING%>"/>
+<tr class="auth-config-cert hidden">
+    <th><label for="${clientCertString}">Client Certificate: <l:star/></label></th>
+    <td>
+        <div>
+            <props:textarea textAreaName="${clientCertString}" value="${empty value ? propertiesBean.properties[clientCertStringKey] : value}" linkTitle="certificate" cols="50" rows="10" name="${clientCertString}" className="certs"  expanded="false"/>
+        </div>
+        <span class="error option-error option-error_${clientCertString}" id="error_${clientCertString}"></span>
+    </td>
+</tr>
+
+<c:set var="clientCertKeyKey" value="<%=AnkaConstants.CERT_KEY_STRING%>"/>
+<c:set var="clientCertKey" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_KEY_STRING%>"/>
+<tr class="auth-config-cert hidden">
+    <th><label for="${clientCertKey}">Client Certificate Private key: <l:star/></label></th>
+    <td>
+        <div>
+            <props:textarea textAreaName="${clientCertKey}" value="${empty value ? propertiesBean.properties[clientCertKeyKey] : value}" linkTitle="key" cols="50" rows="10" name="${clientCertKey}" className="certs" expanded="false" />
+
+        </div>
+        <span class="error option-error option-error_${clientCertKey}" id="error_${clientCertKey}"></span>
+    </td>
+</tr>
+
 
 <tr class="dialog hidden">
     <th><label for="imageSelect">Image Name: <l:star/></label></th>
@@ -175,6 +216,23 @@
 
 <script type="text/javascript">
 
+    function showAuthMethods() {
+        var method = $j("#authMethodSelect").val();
+        let certConfig = $j(".auth-config-cert");
+        let oidcConfig = $j(".auth-config-oidc");
+        console.log('method: ', method);
+        if (method === 'cert') {
+             certConfig.removeClass("hidden");
+             oidcConfig.addClass("hidden");
+        } else if (method == "oidc") {
+             certConfig.addClass("hidden");
+             oidcConfig.removeClass("hidden");
+        }
+    }
+
+    function showAuth() {
+        $j(".auth-config").removeClass("hidden");
+    }
 
     function getImages() {
         if (!BS) BS = {};
@@ -185,6 +243,9 @@
                     parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                     onFailure: function (response) {
                             console.log(response);
+                            if (response.status === 401) {
+                                showAuth();
+                            }
                             // might want to show some error message
                     },
                     onSuccess: function (response) {
@@ -216,6 +277,9 @@
                             parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                             onFailure: function (response) {
                                     console.log(response);
+                                    if (response.status === 401) {
+                                        showAuth();
+                                    }
                                     // might want to show some error message
                             },
                             onSuccess: function (response) {
@@ -246,6 +310,9 @@
                              parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                              onFailure: function (response) {
                                      console.log(response);
+                                     if (response.code === 401) {
+                                         showAuth();
+                                     }
                                      // might want to show some error message
                              },
                              onSuccess: function (response) {
@@ -284,6 +351,10 @@
          contUrl.on("change", getImages);
          contUrl.on("change", getGroups);
 
+         var certs = $j(".certs");
+         certs.on("change", getImages);
+         certs.on("change", getGroups);
+
          var imageSelect = $j("#imageSelect");
          imageSelect.on("change", function() {
             getTags();
@@ -312,5 +383,12 @@
          $j(".error").on("change",  function() {
             $j(".disabled").prop("disabled", true);
          });
+         var authSelect = $j("#authMethodSelect");
+         authSelect.on("change", showAuthMethods);
+         if (authSelect.val() != null && authSelect.val().length > 0) {
+            showAuthMethods();
+         }
+
+
 
 </script>
