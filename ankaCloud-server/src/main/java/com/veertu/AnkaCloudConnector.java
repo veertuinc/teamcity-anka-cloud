@@ -50,7 +50,7 @@ public class AnkaCloudConnector {
         this.ankaAPI = new AnkaAPI(mgmtURL);
     }
 
-    public AnkaCloudConnector(String mgmtURL, String sshUser, String sshPassword, String agentPath,
+    public AnkaCloudConnector(String mgmtURL, boolean skipTLSVerification, String sshUser, String sshPassword, String agentPath,
                               String serverUrl, Integer agentPoolId, String profileId, int priority,
                               String cert, String key, AuthType authType) {
         this.mgmtURL = mgmtURL;
@@ -61,8 +61,9 @@ public class AnkaCloudConnector {
         this.agentPoolId = agentPoolId;
         this.profileId = profileId;
         this.priority = priority;
-        this.ankaAPI = new AnkaAPI(mgmtURL, cert, key, authType);
+        this.ankaAPI = new AnkaAPI(mgmtURL, skipTLSVerification, cert, key, authType);
     }
+
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
         AnkaMgmtVm vm = this.ankaAPI.makeAnkaVm(cloudImage.getId(), cloudImage.getTag(), null, 22, priority, cloudImage.getGroupId());

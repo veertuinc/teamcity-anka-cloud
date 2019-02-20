@@ -17,6 +17,7 @@ public interface AnkaConstants {
     String SSH_PASSWORD = "ssh_password";
     String AGENT_PATH = "agent_path";
     String OPTIONAL_SERVER_URL = "profileServerUrl";
+    String SKIP_TLS_VERIFICATION = "skipTLSVerification";
     String AGENT_POOL_ID = "agentPoolId";
     String PRIORITY = "priority";
     String MAX_INSTANCES = "clouds.anka.maxInstances";

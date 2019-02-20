@@ -24,17 +24,22 @@ public class AnkaAPI {
         this.communicator = new AnkaMgmtCommunicator(mgmtUrl);
     }
 
-    public AnkaAPI(String mgmtUrl, String client, String key, AuthType authType) {
+    public AnkaAPI(String mgmtUrl, boolean skipTLSVerification, String client, String key, AuthType authType) {
         this.mgmtURL = mgmtUrl;
 
         switch (authType) {
             case CERTIFICATE:
-                this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, client, key);
+                this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, skipTLSVerification, client, key);
                 break;
             case OPENID_CONNECT:
-                this.communicator = new AnkaMgmtOpenIdCommunicator(mgmtUrl, client, key);
+                this.communicator = new AnkaMgmtOpenIdCommunicator(mgmtUrl, skipTLSVerification, client, key);
                 break;
         }
+    }
+
+    public AnkaAPI(String mgmtURL, boolean skipTLSVerification) {
+        this.mgmtURL = mgmtURL;
+        this.communicator = new AnkaMgmtCommunicator(mgmtURL, skipTLSVerification);
     }
 
 

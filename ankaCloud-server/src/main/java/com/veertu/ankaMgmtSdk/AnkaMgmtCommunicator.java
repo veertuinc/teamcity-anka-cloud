@@ -50,11 +50,13 @@ public class AnkaMgmtCommunicator {
     protected URL mgmtUrl;
     protected final int timeout;
     protected final int maxRetries;
+    protected boolean skipTLSVerification;
     protected static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     public AnkaMgmtCommunicator(String url) {
         this.maxRetries = 10;
         this.timeout = 4000;
+        this.skipTLSVerification = false;
         try {
             LOG.info(String.format("url: %s", url));
             URL tmpUrl = new URL(url);
@@ -68,6 +70,12 @@ public class AnkaMgmtCommunicator {
             LOG.info("Malformed or wrong url");
             e.printStackTrace();
         }
+    }
+
+    public AnkaMgmtCommunicator(String mgmtURL, boolean skipTLSVerification) {
+        this(mgmtURL);
+        this.skipTLSVerification = skipTLSVerification;
+
     }
 
 
@@ -353,11 +361,16 @@ public class AnkaMgmtCommunicator {
         SSLContext sslContext = new SSLContextBuilder()
                 .loadTrustMaterial(null, (certificate, authType) -> true).build();
         builder.setSSLContext(sslContext);
-
-        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier()));
+        setTLSVerificationIfDefined(sslContext, builder);
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
 
+    }
+
+    protected void setTLSVerificationIfDefined(SSLContext sslContext, HttpClientBuilder builder) {
+        if (skipTLSVerification) {
+            builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier()));
+        }
     }
 
     protected HttpRequestBase setBody(HttpEntityEnclosingRequestBase request, JSONObject requestBody) throws UnsupportedEncodingException {

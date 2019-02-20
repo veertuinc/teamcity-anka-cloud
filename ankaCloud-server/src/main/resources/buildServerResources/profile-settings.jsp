@@ -33,6 +33,24 @@
 </tr>
 
 
+<c:set var="paramSkipTLSVerification" value="<%=AnkaConstants.SKIP_TLS_VERIFICATION%>"/>
+<tr>
+    <th><label for="${paramSkipTLSVerification}">Skip TLS Verification (for self signed certificates): </label></th>
+    <td>
+        <div>
+            <props:checkboxProperty name="${paramSkipTLSVerification}" />
+        </div>
+        <span class="error option-error option-error_${paramSkipTLSVerification}" id="error_${paramSkipTLSVerification}" uncheckedValue="false" ></span>
+    </td>
+</tr>
+
+<tr>
+    <th></th>
+    <td>
+        <button id="testConnectionBtn">Test Connection</button>
+    </td>
+</tr>
+
 <c:set var="paramAuthMethod" value="<%=AnkaConstants.AUTH_METHOD%>" />
 <tr class="auth-config hidden">
     <th><label for="${paramAuthMethod}">Authentication Method: </label></th>
@@ -400,6 +418,12 @@
             getImages();
             getGroups();
          }
+
+         $j("#testConnectionBtn").on("click", function(e) {
+            e.preventDefault();
+            getImages();
+            getGroups();
+         });
 
          $j(".disabled").on("data-attribute-change", function() {
             $j(".disabled").prop("disabled", true);

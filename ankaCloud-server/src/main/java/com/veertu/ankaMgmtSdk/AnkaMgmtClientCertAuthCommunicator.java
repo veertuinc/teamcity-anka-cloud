@@ -1,10 +1,9 @@
 package com.veertu.ankaMgmtSdk;
 
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -20,6 +19,10 @@ public class AnkaMgmtClientCertAuthCommunicator extends AnkaMgmtCommunicator {
         this.authenticator = new ClientCertAuthenticator(clientCert, clientCertKey);
     }
 
+    public AnkaMgmtClientCertAuthCommunicator(String mgmtUrl, boolean skipTLSVerification, String client, String key) {
+        super(mgmtUrl, skipTLSVerification);
+        this.authenticator = new ClientCertAuthenticator(client, key);
+    }
 
 
     protected CloseableHttpClient makeHttpClient() throws CertificateException, NoSuchAlgorithmException,
@@ -30,15 +33,13 @@ public class AnkaMgmtClientCertAuthCommunicator extends AnkaMgmtCommunicator {
         HttpClientBuilder builder = HttpClientBuilder.create();
 
         KeyStore keyStore = this.authenticator.getKeyStore();
-        // allow self-signed certs
+
         SSLContext sslContext = new SSLContextBuilder()
                 .loadKeyMaterial(keyStore, authenticator.getPemPassword().toCharArray())
                 .loadTrustMaterial(keyStore, (certificate, authType) -> true).build();
-        builder.setSslcontext(sslContext);
-        //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
+        builder.setSSLContext(sslContext);
 
-        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
-                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+        setTLSVerificationIfDefined(sslContext, builder);
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
     }

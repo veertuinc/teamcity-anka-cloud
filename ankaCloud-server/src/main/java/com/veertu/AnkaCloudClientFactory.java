@@ -62,6 +62,9 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
         String groupId = cloudClientParameters.getParameter(AnkaConstants.GROUP_ID);
+        if (groupId != null && groupId.isEmpty()) {
+            groupId = null;
+        }
         Integer agentPoolId = null;
         String agentPoolIdVal = cloudClientParameters.getParameter(AnkaConstants.AGENT_POOL_ID);
         String priorityVal = cloudClientParameters.getParameter(AnkaConstants.PRIORITY);
@@ -87,7 +90,11 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         } catch (NullPointerException | NumberFormatException e) {
             // do nothing - maxInstances will just be MAX (unlimited)...
         }
-
+        String skipTLSVerificationString = cloudClientParameters.getParameter(AnkaConstants.SKIP_TLS_VERIFICATION);
+        boolean skipTLSVerification = false;
+        if (skipTLSVerificationString != null && skipTLSVerificationString.equals("true")) {
+            skipTLSVerification = true;
+        }
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
 
         AnkaCloudConnector connector;
@@ -96,13 +103,13 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHOD_CERT)) {
             String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
             String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
-            connector = new AnkaCloudConnector(mgmtURL, sshUser,
+            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
                     sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
                     cert, key, AuthType.CERTIFICATE);
         } else if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHID_OIDC)) {
             String client = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_ID);
             String secret = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_SECRET);
-            connector = new AnkaCloudConnector(mgmtURL, sshUser,
+            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
                     sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
                     client, secret, AuthType.OPENID_CONNECT);
         } else {
