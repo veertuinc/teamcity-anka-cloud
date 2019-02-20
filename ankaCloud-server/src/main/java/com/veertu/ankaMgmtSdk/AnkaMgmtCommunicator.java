@@ -6,10 +6,11 @@ import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 import jetbrains.buildServer.log.Loggers;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import javax.net.ssl.SSLContext;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -21,6 +22,7 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -140,7 +142,7 @@ public class AnkaMgmtCommunicator {
         return groups;
     }
 
-    public String startVm(String templateId, String tag, String nameTemplate, int priority, String groupId) throws AnkaMgmtException {
+    public String startVm(String templateId, String tag, String nameTemplate, String startUpScript, String groupId, int priority) throws AnkaMgmtException {
         String url = String.format("%s/api/v1/vm", mgmtUrl.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
@@ -148,11 +150,15 @@ public class AnkaMgmtCommunicator {
             jsonObject.put("tag", tag);
         if (nameTemplate != null)
             jsonObject.put("name_template", nameTemplate);
+        if (startUpScript != null) {
+            String b64Script = Base64.encodeBase64String(startUpScript.getBytes());
+            jsonObject.put("startup_script", b64Script);
+        }
+        if (groupId != null) {
+            jsonObject.put("group_id", groupId);
+        }
         if (priority > 0) {
             jsonObject.put("priority", priority);
-        }
-        if (groupId != null && groupId.length() > 0) {
-            jsonObject.put("group_id", groupId);
         }
         JSONObject jsonResponse = null;
         try {
@@ -164,7 +170,7 @@ public class AnkaMgmtCommunicator {
         String logicalResult = jsonResponse.getString("status");
         if (logicalResult.equals("OK")) {
             JSONArray uuidsJson = jsonResponse.getJSONArray("body");
-            if (uuidsJson.length() >= 1) {
+            if (uuidsJson.length() >= 1 ){
                 return uuidsJson.getString(0);
             }
 
@@ -346,11 +352,9 @@ public class AnkaMgmtCommunicator {
         // allow self-signed certs
         SSLContext sslContext = new SSLContextBuilder()
                 .loadTrustMaterial(null, (certificate, authType) -> true).build();
-        builder.setSslcontext(sslContext);
-        //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
+        builder.setSSLContext(sslContext);
 
-        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
-                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier()));
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
 

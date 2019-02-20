@@ -48,7 +48,7 @@ public class AnkaAPI {
         else if (!nameTemplate.contains("$ts"))
             nameTemplate = String.format("%s-%d", nameTemplate, vmCounter++);
 
-        String sessionId = communicator.startVm(templateId, tag, nameTemplate, priority, groupId);
+        String sessionId = communicator.startVm(templateId, tag, nameTemplate, null, groupId, priority);
         AnkaMgmtVm vm = new ConcAnkaMgmtVm(sessionId, communicator, sshPort);
         return vm;
 

@@ -24,16 +24,9 @@ public class AnkaVmSession extends AnkaVMRepresentation {
         this.id = id;
         this.sessionState = jsonObject.getString("instance_state");
         String dateString = jsonObject.getString("cr_time");
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd'T'HH:mm:ss.nx");
         org.joda.time.format.DateTimeFormatter formatter = DateTimeFormat.forPattern("YYYY-MM-dd'T'HH:mm:ss.SSSSSSSSSZ");
         DateTime dt = formatter.parseDateTime(dateString);
         this.created = dt.toDate();
-//        int i = dateString.lastIndexOf(':');
-//        StringBuilder sb = new StringBuilder(dateString);
-//        sb.deleteCharAt(i);
-//        dateString = sb.toString();
-//        LocalDateTime ldate = LocalDateTime.from(formatter.parse(dateString));
-//        this.created = new Date(ldate.toLocalDate().toEpochDay());
         this.vmId = jsonObject.getString("vmid");
         if (jsonObject.has("vminfo")) {
             JSONObject ankaVmInfo = jsonObject.getJSONObject("vminfo");
