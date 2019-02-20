@@ -24,9 +24,17 @@ public class AnkaAPI {
         this.communicator = new AnkaMgmtCommunicator(mgmtUrl);
     }
 
-    public AnkaAPI(String mgmtUrl, String clientCert, String clientCertKey) {
+    public AnkaAPI(String mgmtUrl, String client, String key, AuthType authType) {
         this.mgmtURL = mgmtUrl;
-        this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, clientCert, clientCertKey);
+
+        switch (authType) {
+            case CERTIFICATE:
+                this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, client, key);
+                break;
+            case OPENID_CONNECT:
+                this.communicator = new AnkaMgmtOpenIdCommunicator(mgmtUrl, client, key);
+                break;
+        }
     }
 
 

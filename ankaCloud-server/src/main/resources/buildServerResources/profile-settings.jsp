@@ -38,9 +38,9 @@
     <th><label for="${paramAuthMethod}">Authentication Method: </label></th>
         <td>
             <props:selectProperty name="${paramAuthMethod}" id="authMethodSelect" className="longField">
-              <props:option value=""><c:out value="<Please select authentication method>"/></props:option>
-              <props:option value="openid"><c:out value="Openid Connect"/></props:option>
               <props:option value="cert"><c:out value="Client Certificate"/></props:option>
+              <props:option value=""><c:out value="<Please select authentication method>"/></props:option>
+              <props:option value="oidc"><c:out value="Openid Connect"/></props:option>
             </props:selectProperty>
             <span id="error_${paramAuthMethod}" class="error"></span>
       </td>
@@ -67,6 +67,28 @@
 
         </div>
         <span class="error option-error option-error_${clientCertKey}" id="error_${clientCertKey}"></span>
+    </td>
+</tr>
+
+<c:set var="oidcClientId" value="<%=AnkaConstants.OIDC_CLIENT_ID%>"/>
+<tr class="auth-config-oidc hidden">
+    <th><label for="${oidcClientId}">Openid Client ID</label></th>
+    <td>
+        <div>
+            <props:textProperty className="longField oidcs" name="${oidcClientId}" id="oidcClientId" />
+        </div>
+        <span class="error option-error option-error_${paramImageId}" id="error_${oidcClientId}"></span>
+    </td>
+</tr>
+
+<c:set var="oidcClientSecret" value="<%=AnkaConstants.OIDC_CLIENT_SECRET%>"/>
+<tr class="auth-config-oidc hidden">
+    <th><label for="${oidcClientSecret}">Openid Client Secret</label></th>
+    <td>
+        <div>
+            <props:textProperty className="longField oidcs" name="${oidcClientSecret}" id="oidcClientSecret" />
+        </div>
+        <span class="error option-error option-error_${paramImageId}" id="error_${oidcClientSecret}"></span>
     </td>
 </tr>
 
@@ -231,7 +253,8 @@
     }
 
     function showAuth() {
-        $j(".auth-config").removeClass("hidden");
+        //$j(".auth-config").removeClass("hidden");
+        $j(".auth-config-cert").removeClass("hidden");
     }
 
     function getImages() {
@@ -354,6 +377,9 @@
          var certs = $j(".certs");
          certs.on("change", getImages);
          certs.on("change", getGroups);
+         let oidcs = $j(".oidcs");
+         oidcs.on("change", getImages);
+         oidcs.on("change", getGroups);
 
          var imageSelect = $j("#imageSelect");
          imageSelect.on("change", function() {
@@ -383,11 +409,12 @@
          $j(".error").on("change",  function() {
             $j(".disabled").prop("disabled", true);
          });
-         var authSelect = $j("#authMethodSelect");
-         authSelect.on("change", showAuthMethods);
-         if (authSelect.val() != null && authSelect.val().length > 0) {
-            showAuthMethods();
-         }
+         //var authSelect = $j("#authMethodSelect");
+         //authSelect.on("change", showAuthMethods);
+         //if (authSelect.val() != null && authSelect.val().length > 0) {
+            //showAuthMethods();
+            //showAuth();
+         //}
 
 
 

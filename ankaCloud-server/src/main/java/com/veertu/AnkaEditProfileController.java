@@ -2,6 +2,7 @@ package com.veertu;
 
 import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
+import com.veertu.ankaMgmtSdk.AuthType;
 import com.veertu.ankaMgmtSdk.NodeGroup;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
@@ -79,8 +80,12 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             String authMethod = request.getParameter(PROP_PREFIX+ AnkaConstants.AUTH_METHOD);
             String clientCert = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_STRING);
             String clientCertKey = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_KEY_STRING);
+            String clientId = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_ID);
+            String clientSecret = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_SECRET);
             if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
-                ankaApi = new AnkaAPI(mgmtURL, clientCert, clientCertKey);
+                ankaApi = new AnkaAPI(mgmtURL, clientCert, clientCertKey, AuthType.CERTIFICATE);
+            } else if(authMethod.equals("oidc") && clientId != null && !clientId.isEmpty()) {
+                ankaApi = new AnkaAPI(mgmtURL, clientId, clientSecret, AuthType.OPENID_CONNECT);
             } else {
                 ankaApi = new AnkaAPI(mgmtURL);
             }

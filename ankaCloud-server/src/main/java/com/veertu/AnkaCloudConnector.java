@@ -1,6 +1,7 @@
 package com.veertu;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.ankaMgmtSdk.AuthType;
 import jetbrains.buildServer.log.Loggers;
 import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaCloudStatus;
@@ -49,7 +50,9 @@ public class AnkaCloudConnector {
         this.ankaAPI = new AnkaAPI(mgmtURL);
     }
 
-    public AnkaCloudConnector(String mgmtURL, String sshUser, String sshPassword, String agentPath, String serverUrl, Integer agentPoolId, String profileId, int priority, String cert, String key) {
+    public AnkaCloudConnector(String mgmtURL, String sshUser, String sshPassword, String agentPath,
+                              String serverUrl, Integer agentPoolId, String profileId, int priority,
+                              String cert, String key, AuthType authType) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
@@ -58,7 +61,7 @@ public class AnkaCloudConnector {
         this.agentPoolId = agentPoolId;
         this.profileId = profileId;
         this.priority = priority;
-        this.ankaAPI = new AnkaAPI(mgmtURL, cert, key);
+        this.ankaAPI = new AnkaAPI(mgmtURL, cert, key, authType);
     }
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {

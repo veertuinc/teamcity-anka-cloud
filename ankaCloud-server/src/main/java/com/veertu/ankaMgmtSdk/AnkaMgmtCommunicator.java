@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
+import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 import jetbrains.buildServer.log.Loggers;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -20,34 +21,23 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLException;
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.*;
-import java.security.cert.Certificate;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.net.URL;
 import org.apache.http.client.utils.URIBuilder;
-import org.bouncycastle.openssl.PEMParser;
 
 /**
  * Created by asafgur on 09/05/2017.
@@ -269,30 +259,8 @@ public class AnkaMgmtCommunicator {
         while (true){
             try {
                 retry++;
-                RequestConfig.Builder requestBuilder = RequestConfig.custom();
-                requestBuilder = requestBuilder.setConnectTimeout(timeout);
-                requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
-                HttpClientBuilder builder = HttpClientBuilder.create();
 
-//                KeyStore keystore = null;
-//                if (clientCert != null && !clientCert.isEmpty() && clientCertKey != null && !clientCertKey.isEmpty()) {
-//                    KeyStore trustStore = makeTrustStore();
-//                    if (trustStore != null) {
-//                        keystore = trustStore;
-//                    }
-//                }
-                //loadKeyMaterial(keystore, "somepassword".toCharArray())
-
-                // allow self-signed certs
-                SSLContext sslContext = new SSLContextBuilder()
-                        .loadTrustMaterial(null, (certificate, authType) -> true).build();
-                builder.setSslcontext(sslContext);
-                //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
-
-                builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
-                        SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
-                CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
-
+                CloseableHttpClient httpClient = makeHttpClient();
                 HttpRequestBase request;
                 try {
                     switch (method) {
@@ -320,6 +288,9 @@ public class AnkaMgmtCommunicator {
                     if (responseCode == 403) {
                         throw new AnkaUnauthorizedRequestException("Not authorized to perform this request");
                     }
+                    if (responseCode >= 400) {
+                        throw new ClientException(request.getMethod() + request.getURI().toString() + "Bad Request");
+                    }
 
                     if (responseCode != 200) {
                         LOG.error(String.format("url: %s response: %s", url, response.toString()));
@@ -338,16 +309,14 @@ public class AnkaMgmtCommunicator {
                         return jsonResponse;
                     }
 
+                } catch (ClientException | SSLException e) {
+                    // don't retry on client exception
+                    throw e;
                 } catch (HttpHostConnectException | ConnectTimeoutException e) {
                     throw new AnkaMgmtException(e);
-                } catch (SSLException e) {
-                    throw e;
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new AnkaMgmtException(e);
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new AnkaMgmtException(e);
@@ -355,6 +324,9 @@ public class AnkaMgmtCommunicator {
                     httpClient.close();
                 }
                 return null;
+            } catch (ClientException e) {
+                // don't retry on client exception
+                throw new AnkaMgmtException(e);
             } catch (Exception e) {
                 if (retry >= maxRetries) {
                     continue;
@@ -362,6 +334,25 @@ public class AnkaMgmtCommunicator {
                 throw new AnkaMgmtException(e);
             }
         }
+
+    }
+
+    protected CloseableHttpClient makeHttpClient() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException, CertificateException, IOException, UnrecoverableKeyException {
+        RequestConfig.Builder requestBuilder = RequestConfig.custom();
+        requestBuilder = requestBuilder.setConnectTimeout(timeout);
+        requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+        HttpClientBuilder builder = HttpClientBuilder.create();
+
+        // allow self-signed certs
+        SSLContext sslContext = new SSLContextBuilder()
+                .loadTrustMaterial(null, (certificate, authType) -> true).build();
+        builder.setSslcontext(sslContext);
+        //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
+
+        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
+                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+        CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
+        return httpClient;
 
     }
 
