@@ -95,6 +95,12 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         if (skipTLSVerificationString != null && skipTLSVerificationString.equals("true")) {
             skipTLSVerification = true;
         }
+        String rootCA = null;
+        String rootCAParam =  cloudClientParameters.getParameter(AnkaConstants.ROOT_CA);
+        if (!rootCAParam.isEmpty()) {
+            rootCA = rootCAParam;
+        }
+
         String profileId = cloudClientParameters.getParameter("system.cloud.profile_id");
 
         AnkaCloudConnector connector;
@@ -105,16 +111,16 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
             String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
             connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
                     sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
-                    cert, key, AuthType.CERTIFICATE);
+                    cert, key, AuthType.CERTIFICATE, rootCA);
         } else if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHID_OIDC)) {
             String client = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_ID);
             String secret = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_SECRET);
             connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
                     sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
-                    client, secret, AuthType.OPENID_CONNECT);
+                    client, secret, AuthType.OPENID_CONNECT, rootCA);
         } else {
             connector = new AnkaCloudConnector(mgmtURL, sshUser,
-                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority);
+                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
         }
 
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag, groupId);

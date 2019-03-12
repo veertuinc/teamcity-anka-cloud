@@ -63,9 +63,22 @@
             <span id="error_${paramAuthMethod}" class="error"></span>
       </td>
 </tr>
+
+<c:set var="rootCertKey" value="<%=AnkaConstants.ROOT_CA%>"/>
+<c:set var="rootCert" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.ROOT_CA%>"/>
+<tr class="auth-config-cert ">
+    <th><label for="${rootCert}">Root CA Certificate: <l:star/></label></th>
+    <td>
+        <div>
+            <props:textarea textAreaName="${rootCert}" value="${empty value ? propertiesBean.properties[rootCertKey] : value}" linkTitle="root certificate" cols="50" rows="10" name="${rootCert}"   expanded="false"/>
+        </div>
+        <span class="error option-error option-error_${rootCert}" id="error_${rootCert}"></span>
+    </td>
+</tr>
+
 <c:set var="clientCertStringKey" value="<%=AnkaConstants.CERT_STRING%>"/>
 <c:set var="clientCertString" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_STRING%>"/>
-<tr class="auth-config-cert hidden">
+<tr class="auth-config-cert ">
     <th><label for="${clientCertString}">Client Certificate: <l:star/></label></th>
     <td>
         <div>
@@ -77,7 +90,7 @@
 
 <c:set var="clientCertKeyKey" value="<%=AnkaConstants.CERT_KEY_STRING%>"/>
 <c:set var="clientCertKey" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_KEY_STRING%>"/>
-<tr class="auth-config-cert hidden">
+<tr class="auth-config-cert ">
     <th><label for="${clientCertKey}">Client Certificate Private key: <l:star/></label></th>
     <td>
         <div>

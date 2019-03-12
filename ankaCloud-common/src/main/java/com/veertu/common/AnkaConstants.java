@@ -28,6 +28,7 @@ public interface AnkaConstants {
     String OIDC_CLIENT_SECRET = "auth.oidc.client_secret";
     String CERT_STRING = "auth.cert.cert";
     String CERT_KEY_STRING = "auth.cert.cert_key";
+    String ROOT_CA = "auth.cert.rootca";
     String PROP_PREFIX = "prop:";
 
     // Agent Configuration constants

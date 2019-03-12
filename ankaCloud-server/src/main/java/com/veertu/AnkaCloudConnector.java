@@ -38,7 +38,7 @@ public class AnkaCloudConnector {
 
     public AnkaCloudConnector(String mgmtURL, String sshUser,
                               String sshPassword, String agentPath, String serverUrl,
-                              Integer agentPoolId, String profileId, int priority) {
+                              Integer agentPoolId, String profileId, int priority, String rootCA) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
@@ -47,12 +47,12 @@ public class AnkaCloudConnector {
         this.agentPoolId = agentPoolId;
         this.profileId = profileId;
         this.priority = priority;
-        this.ankaAPI = new AnkaAPI(mgmtURL);
+        this.ankaAPI = new AnkaAPI(mgmtURL,false, rootCA);
     }
 
     public AnkaCloudConnector(String mgmtURL, boolean skipTLSVerification, String sshUser, String sshPassword, String agentPath,
                               String serverUrl, Integer agentPoolId, String profileId, int priority,
-                              String cert, String key, AuthType authType) {
+                              String cert, String key, AuthType authType, String rootCA) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
@@ -61,7 +61,7 @@ public class AnkaCloudConnector {
         this.agentPoolId = agentPoolId;
         this.profileId = profileId;
         this.priority = priority;
-        this.ankaAPI = new AnkaAPI(mgmtURL, skipTLSVerification, cert, key, authType);
+        this.ankaAPI = new AnkaAPI(mgmtURL, skipTLSVerification, cert, key, authType, rootCA);
     }
 
 

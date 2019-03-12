@@ -87,12 +87,17 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             if (skipTLSVerificationString != null && skipTLSVerificationString.equals("true")) {
                 skipTLSVerification = true;
             }
+            String rootCA = null;
+            String rootCAParam =  request.getParameter(PROP_PREFIX + AnkaConstants.ROOT_CA);
+            if (!rootCAParam.isEmpty()) {
+                rootCA = rootCAParam;
+            }
             if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
-                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientCert, clientCertKey, AuthType.CERTIFICATE);
+                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientCert, clientCertKey, AuthType.CERTIFICATE, rootCA);
             } else if(authMethod.equals("oidc") && clientId != null && !clientId.isEmpty()) {
-                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientId, clientSecret, AuthType.OPENID_CONNECT);
+                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientId, clientSecret, AuthType.OPENID_CONNECT, rootCA);
             } else {
-                ankaApi = new AnkaAPI(mgmtURL,  skipTLSVerification);
+                ankaApi = new AnkaAPI(mgmtURL,  skipTLSVerification, rootCA);
             }
 
             String imageId = request.getParameter("imageId");

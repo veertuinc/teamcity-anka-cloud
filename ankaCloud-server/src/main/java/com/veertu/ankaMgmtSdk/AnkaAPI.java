@@ -19,27 +19,22 @@ public class AnkaAPI {
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-    public AnkaAPI(String mgmtUrl) {
+    public AnkaAPI(String mgmtUrl, boolean skipTLSVerification, String rootCA) {
         this.mgmtURL = mgmtUrl;
-        this.communicator = new AnkaMgmtCommunicator(mgmtUrl);
+        this.communicator = new AnkaMgmtCommunicator(mgmtUrl, skipTLSVerification, rootCA);
     }
 
-    public AnkaAPI(String mgmtUrl, boolean skipTLSVerification, String client, String key, AuthType authType) {
+    public AnkaAPI(String mgmtUrl, boolean skipTLSVerification, String client, String key, AuthType authType, String rootCA) {
         this.mgmtURL = mgmtUrl;
 
         switch (authType) {
             case CERTIFICATE:
-                this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, skipTLSVerification, client, key);
+                this.communicator = new AnkaMgmtClientCertAuthCommunicator(mgmtUrl, skipTLSVerification, client, key, rootCA);
                 break;
             case OPENID_CONNECT:
-                this.communicator = new AnkaMgmtOpenIdCommunicator(mgmtUrl, skipTLSVerification, client, key);
+                this.communicator = new AnkaMgmtOpenIdCommunicator(mgmtUrl, skipTLSVerification, client, key, rootCA);
                 break;
         }
-    }
-
-    public AnkaAPI(String mgmtURL, boolean skipTLSVerification) {
-        this.mgmtURL = mgmtURL;
-        this.communicator = new AnkaMgmtCommunicator(mgmtURL, skipTLSVerification);
     }
 
 
