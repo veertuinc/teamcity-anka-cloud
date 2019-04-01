@@ -106,12 +106,20 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         AnkaCloudConnector connector;
 
         String authMethod = cloudClientParameters.getParameter(AnkaConstants.AUTH_METHOD);
+
         if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHOD_CERT)) {
             String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
             String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
-            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
-                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
-                    cert, key, AuthType.CERTIFICATE, rootCA);
+            if (cert != null && !cert.isEmpty() && key != null && !key.isEmpty()) {
+                connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
+                        sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
+                        cert, key, AuthType.CERTIFICATE, rootCA);
+            } else {
+                connector = new AnkaCloudConnector(mgmtURL, sshUser,
+                        sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
+            }
+
+
         } else if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHID_OIDC)) {
             String client = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_ID);
             String secret = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_SECRET);
