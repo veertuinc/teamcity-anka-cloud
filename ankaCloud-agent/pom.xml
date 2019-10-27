@@ -4,7 +4,7 @@
   <parent>
     <artifactId>anka-build-tc</artifactId>
     <groupId>com.veertu</groupId>
-    <version>1.6</version>
+    <version>1.7</version>
   </parent>
   <artifactId>anka-build-tc-agent</artifactId>
   <packaging>jar</packaging>
@@ -12,7 +12,7 @@
 
     <dependency>
       <groupId>com.veertu</groupId>
-      <version>1.6</version>
+      <version>1.7</version>
       <artifactId>anka-build-tc-common</artifactId>
       <scope>compile</scope>
     </dependency>
