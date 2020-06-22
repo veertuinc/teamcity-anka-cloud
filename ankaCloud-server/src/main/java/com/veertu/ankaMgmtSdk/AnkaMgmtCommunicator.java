@@ -390,6 +390,7 @@ public class AnkaMgmtCommunicator {
         SSLContext sslContext = new SSLContextBuilder()
                     .loadTrustMaterial(keystore, getTrustStartegy()).build();
         builder.setSSLContext(sslContext);
+        builder.disableAutomaticRetries();
         setTLSVerificationIfDefined(sslContext, builder);
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
