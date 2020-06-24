@@ -18,8 +18,5 @@ public class AnkaVMRepresentation {
     }
 
 
-    public String getVmId() {
-        return null;
-    }
 }
 

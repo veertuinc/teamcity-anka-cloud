@@ -5,8 +5,8 @@ import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
 
@@ -41,13 +42,17 @@ public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
         authenticator = new OpenIdConnectAuthenticator(mgmtUrl, client, key);
     }
 
-    protected JSONObject doRequest(RequestMethod method, String url, JSONObject requestBody) throws IOException, AnkaMgmtException {
+    public AnkaMgmtOpenIdCommunicator(List<String> mgmtURLS, boolean skipTLSVerification, String client, String key, String rootCA) {
+        super(mgmtURLS, skipTLSVerification, rootCA);
+        authenticator = new OpenIdConnectAuthenticator(mgmtURLS.get(0), client, key);
+    }
+
+    protected JSONObject doRequest(AnkaMgmtCommunicator.RequestMethod method, String url, JSONObject requestBody, int reqTimeout) throws IOException, AnkaMgmtException {
         int retry = 0;
+        CloseableHttpResponse response = null;
         while (true){
             try {
-                retry++;
-                CloseableHttpClient httpClient = makeHttpClient();
-
+                CloseableHttpClient httpClient = getHttpClient();
                 HttpRequestBase request;
                 try {
                     switch (method) {
@@ -67,10 +72,11 @@ public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
                             break;
                     }
 
+                    request.setConfig(makeRequestConfig(reqTimeout));
                     NameValuePair authHeader = authenticator.getAuthorization();
                     request.setHeader(authHeader.getName(), authHeader.getValue());
 
-                    HttpResponse response = httpClient.execute(request);
+                    response = httpClient.execute(request);
                     int responseCode = response.getStatusLine().getStatusCode();
                     if (responseCode == 401) {
                         throw new AnkaUnAuthenticatedRequestException("Authentication Required");
@@ -84,7 +90,6 @@ public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
                     }
 
                     if (responseCode != 200) {
-                        LOG.error(String.format("url: %s response: %s", url, response.toString()));
                         return null;
                     }
                     HttpEntity entity = response.getEntity();
@@ -112,16 +117,13 @@ public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
                     e.printStackTrace();
                     throw new AnkaMgmtException(e);
                 } finally {
-                    httpClient.close();
+                    if (response != null) {
+                        response.close();
+                    }
                 }
                 return null;
-            } catch (ClientException e) {
+            } catch (ClientException | Exception e) {
                 // don't retry on client exception
-                throw new AnkaMgmtException(e);
-            } catch (Exception e) {
-                if (retry >= maxRetries) {
-                    continue;
-                }
                 throw new AnkaMgmtException(e);
             }
         }

@@ -1,7 +1,6 @@
 package com.veertu;
 
 import com.veertu.ankaMgmtSdk.AuthType;
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
 import com.veertu.utils.AnkaCloudPropertiesProcesser;
 import jetbrains.buildServer.clouds.*;

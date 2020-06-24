@@ -1,14 +1,13 @@
 package com.veertu;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import jetbrains.buildServer.log.Loggers;
-import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
 import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.InstanceStatus;
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,35 +24,38 @@ public class AnkaCloudInstance implements CloudInstance {
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-    public AnkaMgmtVm getVm() {
-        return vm;
-    }
-
-    private final AnkaMgmtVm vm;
+    private final String vmId;
     private final CloudImage image;
     private Date createdTime;
 
-    public AnkaCloudInstance(AnkaMgmtVm vm, CloudImage image) {
-        this.vm = vm;
+    public AnkaCloudInstance(String vmId, CloudImage image) {
+        this.vmId = vmId;
         this.image = image;
         this.createdTime = new Date();
+    }
+
+    public AnkaVmInstance getVm() {
+        return ((AnkaCloudImage)image).showInstance(vmId);
     }
 
     @NotNull
     @Override
     public String getInstanceId() {
-        return vm.getId();
+        return vmId;
     }
 
     @NotNull
     @Override
     public String getName() {
-        String name = vm.getName();
-        if (name != null ) {
-            return name;
+        AnkaVmInstance vm = getVm();
+        if (vm == null) {
+            return "-";
         }
-        return "-";
-
+        String name = vm.getName();
+        if (name == null || name.equals("")) {
+            return "-";
+        }
+        return name;
     }
 
     @NotNull
@@ -71,27 +73,27 @@ public class AnkaCloudInstance implements CloudInstance {
     @NotNull
     @Override
     public Date getStartedTime() {
-        try {
-            Date created = this.vm.getCreatedTime();
-            if (created != null) {
-                this.createdTime = created;
-            }
-            return this.createdTime;
-        } catch (AnkaMgmtException e) {
-            return this.createdTime;
-        }
+        return this.createdTime;
     }
 
     @Nullable
     @Override
     public String getNetworkIdentity() {
-        return this.vm.getConnectionIp();
+        AnkaVmInstance vm = getVm();
+        if (vm == null) {
+            return null;
+        }
+        return vm.getVmInfo().getHostIp();
     }
 
     @NotNull
     @Override
     public InstanceStatus getStatus() {
-        String state = this.vm.getState();
+        AnkaVmInstance vm = getVm();
+        if (vm == null) {
+            return InstanceStatus.UNKNOWN;
+        }
+        String state = vm.getSessionState();
         switch (state.toLowerCase()) {
             case "scheduling":
                 return InstanceStatus.SCHEDULED_TO_START;
@@ -123,10 +125,10 @@ public class AnkaCloudInstance implements CloudInstance {
 
         LOG.info(String.format("containsAgent: property instanceId = %s, VM instance id: %s",
                 instanceId == null ? "null" : instanceId,
-                vm == null ? "null": vm.getId()));
-        if (instanceId == null || vm == null)
+                vmId == null ? "null": vmId));
+        if (instanceId == null || vmId == null)
             return false;
-        return instanceId.equals(vm.getId());
+        return instanceId.equals(vmId);
 
     }
 }

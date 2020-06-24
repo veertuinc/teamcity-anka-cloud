@@ -1,5 +1,6 @@
 package com.veertu;
 
+import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
@@ -39,6 +40,9 @@ public class AnkaCloudImage implements CloudImage {
         this.instances = new ConcurrentHashMap<>();
     }
 
+    public AnkaVmInstance showInstance(String vmId) {
+        return connector.showInstance(vmId);
+    }
 
     @NotNull
     @Override

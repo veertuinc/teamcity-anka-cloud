@@ -14,7 +14,7 @@ public class AnkaVmInfo {
     private final String vmIp;
     private final List<PortForwardingRule> portForwardingRules;
 
-    private String hostIp;
+    private final String hostIp;
 
     public AnkaVmInfo(JSONObject jsonObject) {
         this.uuid = jsonObject.getString("uuid");
@@ -22,14 +22,13 @@ public class AnkaVmInfo {
         this.status = jsonObject.getString("status");
         this.vmIp = jsonObject.optString("ip");
         this.hostIp = jsonObject.optString("host_ip");
-        this.portForwardingRules = new ArrayList<PortForwardingRule>();
+        this.portForwardingRules = new ArrayList<>();
         if (!jsonObject.isNull("port_forwarding")) {
             JSONArray portForwardRulesJson = jsonObject.getJSONArray("port_forwarding");
             for (int i=0; i < portForwardRulesJson.length(); i++) {
                 this.portForwardingRules.add(new PortForwardingRule(portForwardRulesJson.getJSONObject(i)));
             }
         }
-
     }
 
     public String getUuid() {
@@ -50,6 +49,17 @@ public class AnkaVmInfo {
 
     public String getHostIp() {
         return hostIp;
+    }
+
+
+    public int getForwardedPort(int guestPort) {
+
+        for (PortForwardingRule rule: getPortForwardingRules()) {
+            if (rule.getGuestPort() == guestPort) {
+                return rule.getHostPort();
+            }
+        }
+        return 0;
     }
 
     public List<PortForwardingRule> getPortForwardingRules() {

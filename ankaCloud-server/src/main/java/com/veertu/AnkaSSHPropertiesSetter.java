@@ -1,12 +1,12 @@
 package com.veertu;
 
-import com.veertu.ankaMgmtSdk.AnkaMgmtVm;
 import com.jcraft.jsch.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import jetbrains.buildServer.log.Loggers;
 
 
@@ -18,7 +18,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
     private final String host;
     private final int port;
-    private final AnkaMgmtVm vm;
+    private final AnkaVmInstance vm;
     private final String agentPath;
     private final String propetiesFilePath;
     private final String loadScriptPath;
@@ -27,11 +27,12 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
     private Session session;
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+    private final int SSH_PORT = 22;  // TODO: add option for user to specify this per cloud profile
 
-    public AnkaSSHPropertiesSetter(AnkaMgmtVm vm, String userName, String password, String agentPath) {
+    public AnkaSSHPropertiesSetter(AnkaVmInstance vm, String userName, String password, String agentPath) {
         this.vm = vm;
-        this.host = vm.getConnectionIp();
-        this.port = vm.getConnectionPort();
+        this.host = vm.getVmInfo().getHostIp();
+        this.port = vm.getVmInfo().getForwardedPort(SSH_PORT);
         this.userName = userName;
         this.password = password;
         this.agentPath = agentPath;

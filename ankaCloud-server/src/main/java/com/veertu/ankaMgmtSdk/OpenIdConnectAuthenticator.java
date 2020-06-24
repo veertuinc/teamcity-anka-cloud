@@ -1,36 +1,35 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.ankaMgmtSdk.exceptions.ClientException;
-import jetbrains.buildServer.log.Loggers;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.*;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.naming.Name;
 import javax.net.ssl.SSLContext;
+import javax.xml.bind.DatatypeConverter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 public class OpenIdConnectAuthenticator {
@@ -59,8 +58,6 @@ public class OpenIdConnectAuthenticator {
 
     private final String grantTypeClientCredentials = "client_credentials";
     private final String grantTypeRefreshToken = "refresh_token";
-
-    protected static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
 
     public OpenIdConnectAuthenticator(String mgmtUrl, String clientId, String clientSecret) {
@@ -130,7 +127,7 @@ public class OpenIdConnectAuthenticator {
             scopes.add(groupsField);
         }
         if (!scopes.isEmpty()){
-            String scope = String.join(" ", scopes);
+            String scope = StringUtils.join(scopes, " ");
             params.add(new BasicNameValuePair("scope", scope));
         }
 
@@ -187,7 +184,7 @@ public class OpenIdConnectAuthenticator {
 
     private NameValuePair makeAuthorization() {
         String authorizationPair = String.format("%s:%s", clientId, clientSecret);
-        String encoded = Base64.getEncoder().encodeToString(authorizationPair.getBytes());
+        String encoded = DatatypeConverter.printBase64Binary(authorizationPair.getBytes());
         return new BasicNameValuePair("Authorization", String.format("Basic %s", encoded));
     }
 
@@ -257,15 +254,11 @@ public class OpenIdConnectAuthenticator {
         requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
         HttpClientBuilder builder = HttpClientBuilder.create();
 
-
-        // allow self-signed certs
         SSLContext sslContext = new SSLContextBuilder()
-                .loadTrustMaterial(null, (certificate, authType) -> true).build();
-        builder.setSslcontext(sslContext);
-        //builder.setSSLHostnameVerifier(new NoopHostnameVerifier());
-
-        builder.setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext,
-                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER));
+                .loadTrustMaterial(null, utils.strategyLambda()).build();
+        builder.setSSLContext(sslContext);
+//        setTLSVerificationIfDefined(sslContext, builder);
+        // TODO: add support for self signed certs
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
     }
@@ -273,11 +266,9 @@ public class OpenIdConnectAuthenticator {
     private boolean checkIfNeedsContinue(HttpResponse response) throws HttpResponseException {
         int responseCode = response.getStatusLine().getStatusCode();
         if (responseCode >= 400 && responseCode < 500) {
-            LOG.error(String.format("Got client error,  response: %s", response.toString()));
             throw new HttpResponseException(responseCode, response.getStatusLine().getReasonPhrase());
         }
         if (responseCode >= 500) {
-            LOG.error(String.format("Got Server error, response: %s", response.toString()));
             return true;
         }
         return false;
@@ -305,7 +296,7 @@ public class OpenIdConnectAuthenticator {
     }
 
     private long timeNow() {
-        return  Instant.now().getEpochSecond();
+        return  System.currentTimeMillis() / 1000;
     }
 
     private String processResponse(String response) {

@@ -1,6 +1,5 @@
 package com.veertu;
 
-import com.veertu.ankaMgmtSdk.AnkaAPI;
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.AuthType;
 import com.veertu.ankaMgmtSdk.NodeGroup;
@@ -28,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -75,13 +73,14 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             return;
         }
         try {
-            AnkaAPI ankaApi;
+            AnkaCloudConnector connector;
+
 
             String authMethod = request.getParameter(PROP_PREFIX+ AnkaConstants.AUTH_METHOD);
             String clientCert = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_STRING);
             String clientCertKey = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_KEY_STRING);
-            String clientId = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_ID);
-            String clientSecret = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_SECRET);
+            String oidcClientId = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_ID);
+            String oidcClientSecret = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_SECRET);
             String skipTLSVerificationString = request.getParameter(PROP_PREFIX + AnkaConstants.SKIP_TLS_VERIFICATION);
             boolean skipTLSVerification = false;
             if (skipTLSVerificationString != null && skipTLSVerificationString.equals("true")) {
@@ -92,24 +91,26 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             if (!rootCAParam.isEmpty()) {
                 rootCA = rootCAParam;
             }
+            AuthType authType = null;
             if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
-                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientCert, clientCertKey, AuthType.CERTIFICATE, rootCA);
-            } else if(authMethod.equals("oidc") && clientId != null && !clientId.isEmpty()) {
-                ankaApi = new AnkaAPI(mgmtURL, skipTLSVerification, clientId, clientSecret, AuthType.OPENID_CONNECT, rootCA);
-            } else {
-                ankaApi = new AnkaAPI(mgmtURL,  skipTLSVerification, rootCA);
+                authType = AuthType.CERTIFICATE;
+            } else if(authMethod.equals("oidc") && oidcClientId != null && !oidcClientId.isEmpty()) {
+                authType = AuthType.OPENID_CONNECT;
             }
+
+            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, rootCA, authType, clientCert, clientCertKey,
+                    oidcClientId, oidcClientSecret);
 
             String imageId = request.getParameter("imageId");
             String toGet = request.getParameter("get");
 
             if (imageId != null && toGet.equals("tags")) {
-                List<String> tags = ankaApi.listTemplateTags(imageId);
+                List<String> tags = connector.listTemplateTags(imageId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
             } else if (toGet.equals("images")) {
-                xmlResponse.addContent(templatesToJson(ankaApi.listTemplates()));
+                xmlResponse.addContent(templatesToJson(connector.listTemplates()));
             } else if (toGet.equals("groups")) {
-                List<NodeGroup> nodeGroups = ankaApi.getNodeGroups();
+                List<NodeGroup> nodeGroups = connector.getNodeGroups();
                 xmlResponse.addContent(groupsToJson(nodeGroups));
             }
         } catch (AnkaUnAuthenticatedRequestException e) {

@@ -15,6 +15,7 @@ import java.io.StringReader;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.List;
 
 public class AnkaMgmtClientCertAuthCommunicator extends AnkaMgmtCommunicator {
 
@@ -35,11 +36,18 @@ public class AnkaMgmtClientCertAuthCommunicator extends AnkaMgmtCommunicator {
         this.authenticator = new ClientCertAuthenticator(client, key);
     }
 
+    public AnkaMgmtClientCertAuthCommunicator(List<String> mgmtURLS, boolean skipTLSVerification, String client, String key, String rootCA) {
+        super(mgmtURLS, skipTLSVerification, rootCA);
+        this.authenticator = new ClientCertAuthenticator(client, key);
+    }
+
     protected CloseableHttpClient makeHttpClient() throws CertificateException, NoSuchAlgorithmException,
             KeyStoreException, IOException, UnrecoverableKeyException, KeyManagementException {
         RequestConfig.Builder requestBuilder = RequestConfig.custom();
         requestBuilder = requestBuilder.setConnectTimeout(timeout);
         requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
+        requestBuilder.setSocketTimeout(timeout);
+
         HttpClientBuilder builder = HttpClientBuilder.create();
 
         KeyStore keyStore = this.authenticator.getKeyStore();
@@ -51,14 +59,14 @@ public class AnkaMgmtClientCertAuthCommunicator extends AnkaMgmtCommunicator {
             Certificate certificate = new JcaX509CertificateConverter().setProvider(bouncyCastleProvider).getCertificate(holder);
             keyStore.setCertificateEntry("rootCA", certificate);
         }
-        SSLContext sslContext;
-        sslContext = new SSLContextBuilder()
+
+        SSLContext sslContext = new SSLContextBuilder()
                 .loadKeyMaterial(keyStore, authenticator.getPemPassword().toCharArray())
                 .loadTrustMaterial(keyStore, getTrustStartegy()).build();
-
         builder.setSSLContext(sslContext);
 
         setTLSVerificationIfDefined(sslContext, builder);
+        builder.disableAutomaticRetries();
         CloseableHttpClient httpClient = builder.setDefaultRequestConfig(requestBuilder.build()).build();
         return httpClient;
     }
