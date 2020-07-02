@@ -91,7 +91,7 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             if (!rootCAParam.isEmpty()) {
                 rootCA = rootCAParam;
             }
-            AuthType authType = null;
+            AuthType authType = AuthType.NONE;
             if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
                 authType = AuthType.CERTIFICATE;
             } else if(authMethod.equals("oidc") && oidcClientId != null && !oidcClientId.isEmpty()) {
