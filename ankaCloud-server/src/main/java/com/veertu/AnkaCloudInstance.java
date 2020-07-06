@@ -90,8 +90,8 @@ public class AnkaCloudInstance implements CloudInstance {
     @Override
     public InstanceStatus getStatus() {
         AnkaVmInstance vm = getVm();
-        if (vm == null) {
-            return InstanceStatus.UNKNOWN;
+        if (vm == null) {  // vm does not exist in controller
+            return InstanceStatus.STOPPED;
         }
         String state = vm.getSessionState();
         switch (state.toLowerCase()) {
