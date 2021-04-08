@@ -47,7 +47,7 @@
 <tr>
     <th></th>
     <td>
-        <button id="testConnectionBtn">Test Connection</button>
+        <button id="testConnectionBtn">Test Connection</button> (prints to browser's console)
     </td>
 </tr>
 
@@ -151,12 +151,13 @@
     </td>
 </tr>
 
-<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
+<c:set var="paramTemplateName" value="<%=AnkaConstants.TEMPLATE_NAME%>"/>
+<c:set var="paramTemplateUUID" value="<%=AnkaConstants.TEMPLATE_UUID%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageName}">Image Name</label></th>
+    <th><label for="${paramTemplateName}">Template Name</label></th>
     <td>
         <div>
-            <props:textProperty className="disabled" name="${paramImageName}" id="imageNameInput" disabled="true" />
+            <props:textProperty className="disabled" name="${paramTemplateName}" id="templateNameInput" disabled="true" />
         </div>
         <span class="error option-error option-error_${paramImageId}" id="error_${paramImageId}"></span>
     </td>
@@ -170,7 +171,7 @@
     </td>
 </tr>
 
-<c:set var="paramImageTag" value="<%=AnkaConstants.IMAGE_TAG%>"/>
+<c:set var="paramImageTag" value="<%=AnkaConstants.TEMPLATE_TAG%>"/>
 <tr class="hidden">
     <th><label for="${paramImageTag}">Image Tag</label></th>
     <td>
@@ -310,7 +311,7 @@
                         imageSelect.empty();
                         for (var k = 0; k < templates.length; k++) {
                             var template = templates[k];
-                            var newTemplate = $j('<option value="' + template.id + '">' + template.name + '</option>');
+                            var newTemplate = $j('<option value="' + template.id + '">' + template.name + " (" + template.id + ")" + '</option>');
                             if (template.id === $j("#imageIdInput").val()) {
                                 newTemplate.prop("selected", true);
                             }
@@ -342,7 +343,7 @@
                                 var tags = JSON.parse(wrapper.text()).reverse();
                                 var tagSelect = $j("#tagSelect");
                                 tagSelect.empty();
-                                tagSelect.append($j('<option value="">Latest</option>'));
+                                tagSelect.append($j('<option value="">(latest)</option>'));
                                 for (var k = 0; k < tags.length; k++) {
                                     var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
                                     if (tags[k] ===  $j("#imageTagInput").val()) {
@@ -394,7 +395,7 @@
         var imageId = $j("#imageSelect option:selected").val();
         var tag = $j("#tagSelect").val();
         if (imageId.length > 0) {
-            $j("#imageNameInput").val($j("#imageSelect option:selected").text());
+            $j("#templateNameInput").val($j("#imageSelect option:selected").text());
             $j("#imageIdInput").val(imageId);
             $j("#imageTagInput").val(tag);
         }

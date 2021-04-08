@@ -4,7 +4,7 @@
   <parent>
     <artifactId>anka-build-tc</artifactId>
     <groupId>com.veertu</groupId>
-    <version>1.7.1</version>
+    <version>1.8.0</version>
   </parent>
   <artifactId>build</artifactId>
   <packaging>pom</packaging>
@@ -18,17 +18,17 @@
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-agent</artifactId>
-           <version>1.7.1</version>
+           <version>1.8.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-common</artifactId>
-           <version>1.7.1</version>
+           <version>1.8.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-server</artifactId>
-           <version>1.7.1</version>
+           <version>1.8.0</version>
       </dependency>
   </dependencies>
   <build>
