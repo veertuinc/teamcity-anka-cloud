@@ -4,7 +4,7 @@
   <parent>
     <artifactId>anka-build-tc</artifactId>
     <groupId>com.veertu</groupId>
-    <version>1.7</version>
+    <version>1.7.1</version>
   </parent>
   <artifactId>build</artifactId>
   <packaging>pom</packaging>
@@ -18,17 +18,17 @@
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-agent</artifactId>
-           <version>1.7</version>
+           <version>1.7.1</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-common</artifactId>
-           <version>1.7</version>
+           <version>1.7.1</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>anka-build-tc-server</artifactId>
-           <version>1.7</version>
+           <version>1.7.1</version>
       </dependency>
   </dependencies>
   <build>
@@ -36,7 +36,7 @@
         <plugin>
             <groupId>com.google.code.maven-replacer-plugin</groupId>
             <artifactId>replacer</artifactId>
-            <version>1.5.2</version>
+            <version>1.5.3</version>
             <executions>                
                 <execution>
                     <phase>process-sources</phase>
@@ -66,7 +66,7 @@
         </plugin>
         <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.4</version>
+            <version>3.3.0</version>
             <executions>
               <execution>
                 <id>make-agent-assembly</id>
