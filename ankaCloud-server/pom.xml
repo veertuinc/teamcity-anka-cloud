@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20160212</version>
+            <version>20180130</version>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
@@ -72,12 +72,12 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.61</version>
+            <version>1.69</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.61</version>
+            <version>1.69</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
