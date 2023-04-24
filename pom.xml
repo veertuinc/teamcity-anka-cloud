@@ -12,7 +12,7 @@
   <repositories>
     <repository>
         <id>JetBrains</id>
-        <url>http://download.jetbrains.com/teamcity-repository</url>
+        <url>https://download.jetbrains.com/teamcity-repository</url>
     </repository>
   </repositories>
   <pluginRepositories>
@@ -35,7 +35,7 @@
               <plugin>
                   <groupId>org.jetbrains.teamcity</groupId>
                   <artifactId>teamcity-sdk-maven-plugin</artifactId>
-                  <version>0.2</version>
+                  <version>0.4</version>
                   <configuration>
                       <!-- <teamcityDir>/path/to/tc/distro</teamcityDir> -->
                   </configuration>
