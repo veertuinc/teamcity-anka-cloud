@@ -5,7 +5,7 @@ pipeline {
     agent { node { label 'maven' } }
     stages {
         stage('Build Plugin') { steps {
-            sh 'mvn package'
+            sh 'JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 mvn package'
         } }
         stage('Archive') { steps {
             archiveArtifacts artifacts: 'target/anka-build-tc.zip', onlyIfSuccessful: true, allowEmptyArchive: true
