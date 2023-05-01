@@ -96,7 +96,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         }
         String rootCA = null;
         String rootCAParam =  cloudClientParameters.getParameter(AnkaConstants.ROOT_CA);
-        if (!rootCAParam.isEmpty()) {
+        if (rootCAParam != null && !rootCAParam.isEmpty()) {
             rootCA = rootCAParam;
         }
 
