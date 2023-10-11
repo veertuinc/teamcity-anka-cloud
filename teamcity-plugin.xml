@@ -8,9 +8,11 @@
     <download-url>Plugin download URL</download-url>
     <email>support@veertu.com</email>
     <vendor>
-      <name>Veertu Inc.</name>
-      <url>http://veertu.com</url>
+      <name>veertu</name>
+      <url>https://veertu.com</url>
+      <email>support@veertu.com</email>
       <logo>https://veertu.com/wp-content/uploads/2020/07/veertu-logo.svg</logo>
+      veertu
     </vendor>
   </info>
   <deployment use-separate-classloader="true" />
