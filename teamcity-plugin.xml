@@ -5,11 +5,11 @@
     <display-name>Anka Build Cloud</display-name>
     <version>1.8.0</version>
     <description>Connects TeamCity with Anka Build Cloud</description>
-    <download-url>Plugin download URL</download-url>
+    <download-url>https://veertu.com/downloads/ankabuild-tc-latest</download-url>
     <email>support@veertu.com</email>
-    <vendor>
+    <vendor email="support@veertu.com" url="https://veertu.com">
+      veertu
       <name>Veertu Inc.</name>
-      <url>http://veertu.com</url>
       <logo>https://veertu.com/wp-content/uploads/2020/07/veertu-logo.svg</logo>
     </vendor>
   </info>
