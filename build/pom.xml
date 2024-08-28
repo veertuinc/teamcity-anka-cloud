@@ -75,7 +75,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>anka-build-cloud-teamcity-plugin-${project.version}</finalName>
+                  <finalName>agent</finalName>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>
                     <descriptor>plugin-agent-assembly.xml</descriptor>
@@ -89,7 +89,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>anka-build-cloud-teamcity-plugin</finalName>
+                  <finalName>anka-build-cloud-teamcity-plugin-${project.version}</finalName>
                   <outputDirectory>${project.parent.build.directory}</outputDirectory>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>

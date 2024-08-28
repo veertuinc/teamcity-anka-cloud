@@ -45,6 +45,5 @@
       <version>2017.2</version>
       <scope>provided</scope>
     </dependency>
-
   </dependencies>
 </project>

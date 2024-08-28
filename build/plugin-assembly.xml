@@ -11,7 +11,7 @@
          <outputDirectory>/</outputDirectory>
      </file> 
      <file>
-        <source>target/anka-build-cloud-teamcity-plugin-${project.version}.zip</source>
+        <source>target/agent.zip</source>
         <outputDirectory>agent</outputDirectory>
      </file> 
   </files>
