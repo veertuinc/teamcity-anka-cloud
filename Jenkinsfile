@@ -8,7 +8,7 @@ pipeline {
             sh 'JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 mvn package'
         } }
         stage('Archive') { steps {
-            archiveArtifacts artifacts: 'target/anka-build-cloud-teamcity-plugin.zip', onlyIfSuccessful: true, allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/anka-build-cloud-teamcity-plugin-.*.zip', onlyIfSuccessful: true, allowEmptyArchive: true
         } }
     }
 }
