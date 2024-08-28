@@ -90,7 +90,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <release>8</release>
+                    <release>11</release>
                 </configuration>
                 <executions>
                     <execution>
