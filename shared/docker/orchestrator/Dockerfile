@@ -1,6 +1,14 @@
 FROM ubuntu:24.04
 # RUN apt update && apt install --yes python3-pip python3.12-venv libffi-dev curl rsync sshpass vim tar jq git zip openjdk-21-jre
-RUN apt update && apt install --yes tar jq git zip maven
+RUN apt update && apt install --yes tar jq git zip curl openjdk-17-jre
+RUN curl -O https://dlcdn.apache.org/maven/maven-4/4.0.0-beta-3/binaries/apache-maven-4.0.0-beta-3-bin.tar.gz && tar -xzvf apache-maven-4.0.0-beta-3-bin.tar.gz
+
+COPY <<EOF /usr/local/bin/set_path.sh
+#!/bin/sh
+export PATH="/apache-maven-4.0.0-beta-3/bin:$PATH"
+exec "\$@"
+EOF
+RUN chmod +x /usr/local/bin/set_path.sh
 
 RUN chown -R 1000:1000 /opt
 
@@ -13,3 +21,4 @@ USER ubuntu
 # RUN pip3 install -r /tmp/requirements.txt
 # RUN ansible-galaxy collection install community.general && ansible-galaxy collection install ansible.posix
 # RUN chown -R 1000:1000 /opt/venv3.12
+ENTRYPOINT ["/usr/local/bin/set_path.sh"]
