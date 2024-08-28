@@ -3,8 +3,8 @@
   <info>
     <name>ankaCloud</name>
     <display-name>Anka Build Cloud</display-name>
-    <version>1.8.0</version>
-    <description>Connects TeamCity with Anka Build Cloud</description>
+    <version>1.9.0</version>
+    <description>Connects TeamCity with the Anka Build Cloud</description>
     <download-url>Plugin download URL</download-url>
     <email>support@veertu.com</email>
     <vendor>

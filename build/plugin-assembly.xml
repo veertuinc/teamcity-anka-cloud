@@ -11,16 +11,16 @@
          <outputDirectory>/</outputDirectory>
      </file> 
      <file>
-         <source>target/anka-build-tc-agent.zip</source>
-         <outputDirectory>agent</outputDirectory>
+        <source>target/anka-build-cloud-teamcity-plugin-${project.version}.zip</source>
+        <outputDirectory>agent</outputDirectory>
      </file> 
   </files>
   <moduleSets>
     <moduleSet>
        <useAllReactorProjects>true</useAllReactorProjects>
        <includes>
-           <include>com.veertu:anka-build-tc-server</include>
-           <include>com.veertu:anka-build-tc-common</include>
+           <include>com.veertu:server</include>
+           <include>com.veertu:common</include>
        </includes> 
        <binaries>
            <outputDirectory>server</outputDirectory>
