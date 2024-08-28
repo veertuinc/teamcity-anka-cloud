@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 # RUN apt update && apt install --yes python3-pip python3.12-venv libffi-dev curl rsync sshpass vim tar jq git zip openjdk-21-jre
-RUN apt update && apt install --yes tar jq git zip openjdk-21-jre
+RUN apt update && apt install --yes tar jq git zip maven
 
 RUN chown -R 1000:1000 /opt
 
