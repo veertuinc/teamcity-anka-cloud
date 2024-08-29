@@ -11,7 +11,10 @@ pipeline {
     } }
     stages {
         stage('Build Plugin') { steps {
-            sh 'mvn package'
+            sh '''
+                env
+                mvn package
+            '''
         } }
         stage('Archive') { steps {
             archiveArtifacts artifacts: 'target/anka-build-cloud-teamcity-plugin-.*.zip', onlyIfSuccessful: true, allowEmptyArchive: true
