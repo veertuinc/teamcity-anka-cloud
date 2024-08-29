@@ -15,6 +15,7 @@ public interface AnkaConstants {
     String CLOUD_DISPLAY_NAME = "Anka Build Cloud";
     String SSH_USER = "ssh_user";
     String SSH_PASSWORD = "ssh_password";
+    String SSH_FORWARDING_PORT = "sshForwardingPort";
     String AGENT_PATH = "agent_path";
     String OPTIONAL_SERVER_URL = "profileServerUrl";
     String SKIP_TLS_VERIFICATION = "skipTLSVerification";

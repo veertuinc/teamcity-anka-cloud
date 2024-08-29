@@ -1,21 +1,27 @@
 package com.veertu;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.AuthType;
 import com.veertu.common.AnkaConstants;
 import com.veertu.utils.AnkaCloudPropertiesProcesser;
-import jetbrains.buildServer.clouds.*;
+
+import jetbrains.buildServer.clouds.CloudClientEx;
+import jetbrains.buildServer.clouds.CloudClientFactory;
+import jetbrains.buildServer.clouds.CloudClientParameters;
+import jetbrains.buildServer.clouds.CloudRegistrar;
+import jetbrains.buildServer.clouds.CloudState;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.AgentDescription;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
-import com.intellij.openapi.diagnostic.Logger;
-import jetbrains.buildServer.log.Loggers;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -82,6 +88,16 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         } catch (NullPointerException | NumberFormatException e) {
             // do nothing - agentPoolId will just be null...
         }
+        int sshForwardingPort = 22;
+        String sshForwardingPortString = cloudClientParameters.getParameter(AnkaConstants.SSH_FORWARDING_PORT);
+        if (sshForwardingPortString != null && !sshForwardingPortString.isEmpty()) {
+            try {
+                sshForwardingPort = Integer.parseInt(sshForwardingPortString);
+            } catch (NumberFormatException e) {
+                LOG.error(String.format("Invalid SSH forwarded port: %s", sshForwardingPortString));
+            }
+        }
+
         Integer maxInstances = Integer.MAX_VALUE;
         try {
             String maxInstancesString = cloudClientParameters.getParameter(AnkaConstants.MAX_INSTANCES);
@@ -110,31 +126,40 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
             String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
             String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
             if (cert != null && !cert.isEmpty() && key != null && !key.isEmpty()) {
-                connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
-                        sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
+                connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, 
+                    sshUser,sshPassword, sshForwardingPort, 
+                    agentPath, serverUrl, agentPoolId, profileId, priority,
                         cert, key, AuthType.CERTIFICATE, rootCA);
             } else {
-                connector = new AnkaCloudConnector(mgmtURL, sshUser,
-                        sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
+                connector = new AnkaCloudConnector(mgmtURL, 
+                        sshUser, sshPassword, sshForwardingPort, 
+                        agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
             }
 
 
         } else if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHID_OIDC)) {
             String client = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_ID);
             String secret = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_SECRET);
-            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, sshUser,
-                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority,
+            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification,
+                    sshUser, sshPassword, sshForwardingPort, 
+                    agentPath, serverUrl, agentPoolId, profileId, priority,
                     client, secret, AuthType.OPENID_CONNECT, rootCA);
         } else {
-            connector = new AnkaCloudConnector(mgmtURL, sshUser,
-                    sshPassword, agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
+            connector = new AnkaCloudConnector(mgmtURL, 
+                sshUser, sshPassword, sshForwardingPort, 
+                agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
         }
 
         AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, imageName, imageTag, groupId);
         ArrayList<AnkaCloudImage> images = new ArrayList<>();
         images.add(newImage);
-        LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s) tag %s",
-                mgmtURL, imageName, imageId, imageTag ));
+        if (imageTag != null && imageTag.length() > 0) {
+            LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s) tag %s",
+                    mgmtURL, imageName, imageId, imageTag));
+        } else {
+            LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s), and latest tag",
+                    mgmtURL, imageName, imageId));
+        }
 
         return new AnkaCloudClientEx(connector, updater, images, maxInstances);
 
@@ -165,6 +190,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         parameters.put(AnkaConstants.CONTROLLER_URL_NAME, "");
         parameters.put(AnkaConstants.SSH_PASSWORD, "admin");
         parameters.put(AnkaConstants.SSH_USER, "anka");
+        parameters.put(AnkaConstants.SSH_FORWARDING_PORT, "22");
         parameters.put(AnkaConstants.AGENT_PATH, "/Users/anka/buildAgent");
         return parameters;
     }

@@ -1,14 +1,23 @@
 package com.veertu;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+
 import com.intellij.openapi.diagnostic.Logger;
-import com.veertu.ankaMgmtSdk.*;
-import jetbrains.buildServer.log.Loggers;
+import com.veertu.ankaMgmtSdk.AnkaAPI;
+import com.veertu.ankaMgmtSdk.AnkaCloudStatus;
+import com.veertu.ankaMgmtSdk.AnkaVmInstance;
+import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
+import com.veertu.ankaMgmtSdk.AuthType;
+import com.veertu.ankaMgmtSdk.NodeGroup;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
-import jetbrains.buildServer.clouds.CloudInstance;
 
-import java.io.IOException;
-import java.util.*;
+import jetbrains.buildServer.clouds.CloudInstance;
+import jetbrains.buildServer.log.Loggers;
 
 
 /**
@@ -28,6 +37,7 @@ public class AnkaCloudConnector {
     private final String profileId;
     private String sshUser;
     private String sshPassword;
+    private int sshForwardingPort;
     private final int priority;
     private final AnkaAPI ankaAPI;
     private final int waitUnit = 4000;
@@ -59,12 +69,15 @@ public class AnkaCloudConnector {
         }
     }
 
-    public AnkaCloudConnector(String mgmtURL, String sshUser,
-                              String sshPassword, String agentPath, String serverUrl,
-                              Integer agentPoolId, String profileId, int priority, String rootCA) {
+    public AnkaCloudConnector(
+        String mgmtURL, String sshUser, String sshPassword, int sshForwardingPort, 
+        String agentPath, String serverUrl,
+        Integer agentPoolId, String profileId, int priority, String rootCA
+    ) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
+        this.sshForwardingPort = sshForwardingPort;
         this.agentPath = agentPath;
         this.serverUrl = serverUrl;
         this.agentPoolId = agentPoolId;
@@ -73,12 +86,16 @@ public class AnkaCloudConnector {
         this.ankaAPI = new AnkaAPI(mgmtURL,false, rootCA);
     }
 
-    public AnkaCloudConnector(String mgmtURL, boolean skipTLSVerification, String sshUser, String sshPassword, String agentPath,
-                              String serverUrl, Integer agentPoolId, String profileId, int priority,
-                              String cert, String key, AuthType authType, String rootCA) {
+    public AnkaCloudConnector(
+        String mgmtURL, boolean skipTLSVerification, 
+        String sshUser, String sshPassword, int sshForwardingPort, String agentPath,
+        String serverUrl, Integer agentPoolId, String profileId, int priority,
+        String cert, String key, AuthType authType, String rootCA
+    ) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
         this.sshPassword = sshPassword;
+        this.sshForwardingPort = sshForwardingPort;
         this.agentPath = agentPath;
         this.serverUrl = serverUrl;
         this.agentPoolId = agentPoolId;
@@ -99,6 +116,8 @@ public class AnkaCloudConnector {
         try {
             HashMap<String, String > properties = new HashMap<>();
 
+            LOG.info(String.format("properties: %s", properties));
+
             AnkaVmInstance vm = waitForBoot(vmId);
 
             String vmName = vm.getName();
@@ -116,7 +135,7 @@ public class AnkaCloudConnector {
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
             properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
 
-            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath);
+            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath, sshForwardingPort);
             try {
                 propertiesSetter.setProperties(properties);
             } catch (AnkaUnreachableInstanceException e) {

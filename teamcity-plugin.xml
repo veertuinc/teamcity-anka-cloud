@@ -15,5 +15,5 @@
       veertu
     </vendor>
   </info>
-  <deployment use-separate-classloader="true" />
+  <deployment use-separate-classloader="true" allow-runtime-reload="true" />
 </teamcity-plugin>

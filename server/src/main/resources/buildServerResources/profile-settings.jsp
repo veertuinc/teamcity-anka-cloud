@@ -215,6 +215,19 @@
     </td>
 </tr>
 
+<c:set var="paramSshForwardingPort" value="<%=AnkaConstants.SSH_FORWARDING_PORT%>"/>
+<tr class="dialog hidden">
+    <th><label for="${paramSshForwardingPort}">Forwarding SSH Port: </label></th>
+    <td>
+        <div>
+            <props:textProperty name="${paramSshForwardingPort}" className="longField"/>
+        </div>
+        <span>Leave blank for 22. This is the port in the VM that's being forwarded (not the host level port)</span>
+        <span class="error option-error option-error_${paramSshForwardingPort}" id="error_${paramSshForwardingPort}"></span>
+    </td>
+</tr>
+
+
 <c:set var="paramAgentPath" value="<%=AnkaConstants.AGENT_PATH%>"/>
 <tr class="dialog hidden">
     <th><label for="${paramAgentPath}">Agent Path: <l:star/></label></th>

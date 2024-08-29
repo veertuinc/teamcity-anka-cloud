@@ -1,12 +1,17 @@
 package com.veertu;
 
-import com.jcraft.jsch.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
 import com.intellij.openapi.diagnostic.Logger;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import com.veertu.ankaMgmtSdk.AnkaVmInstance;
+
 import jetbrains.buildServer.log.Loggers;
 
 
@@ -24,15 +29,16 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
     private final String loadScriptPath;
     private String userName;
     private String password;
+    private int sshForwardingPort;
     private Session session;
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
-    private final int SSH_PORT = 22;  // TODO: add option for user to specify this per cloud profile
 
-    public AnkaSSHPropertiesSetter(AnkaVmInstance vm, String userName, String password, String agentPath) {
+    public AnkaSSHPropertiesSetter(AnkaVmInstance vm, String userName, String password, String agentPath, int sshForwardingPort) {
         this.vm = vm;
         this.host = vm.getVmInfo().getHostIp();
-        this.port = vm.getVmInfo().getForwardedPort(SSH_PORT);
+        this.sshForwardingPort = sshForwardingPort;
+        this.port = vm.getVmInfo().getForwardedPort(this.sshForwardingPort);
         this.userName = userName;
         this.password = password;
         this.agentPath = agentPath;
@@ -57,7 +63,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
 
             LOG.info("SSH properties set successfully");
         } catch (JSchException e) {
-           throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh", this.vm.getId()));
+           throw new AnkaUnreachableInstanceException(String.format("Instance %s is unreachable by ssh: %s", this.vm.getId(), e.getMessage()));
         } finally {
             this.closeConnection();
         }
@@ -68,6 +74,8 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
     private void sshConnect() throws JSchException {
 
         JSch jsch=new JSch();
+
+        LOG.info(String.format("attempting SSH connection to Instance %s with Username %s, Host %s, and Port %s", vm.getId(), userName, host, port));
 
         Session session = jsch.getSession(userName, host, port);
         session.setPassword(password);
