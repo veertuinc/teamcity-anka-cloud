@@ -14,10 +14,11 @@ pipeline {
             sh '''
                 export PATH="/apache-maven-4.0.0-beta-3/bin:$PATH"
                 mvn package
+                ls -laht target/
             '''
         } }
         stage('Archive') { steps {
-            archiveArtifacts artifacts: 'target/anka-build-cloud-teamcity-plugin-.*.zip', onlyIfSuccessful: true, allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/anka-build-cloud-teamcity-plugin-*.zip', onlyIfSuccessful: true, allowEmptyArchive: true
         } }
     }
 }
