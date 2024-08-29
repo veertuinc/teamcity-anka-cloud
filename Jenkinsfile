@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Build Plugin') { steps {
             sh '''
-                env
+                export PATH="/apache-maven-4.0.0-beta-3/bin:$PATH"
                 mvn package
             '''
         } }
