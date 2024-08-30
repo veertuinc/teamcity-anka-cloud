@@ -106,6 +106,11 @@ public class AnkaCloudConnector {
 
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
+        if (cloudImage.getTag() == null) {
+            LOG.info(String.format("starting new instance with template %s, latest tag, group %s", cloudImage.getId(), cloudImage.getGroupId()));
+        } else {
+            LOG.info(String.format("starting new instance with template %s, tag %s, group %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId()));
+        }
         String vmId = this.ankaAPI.startVM(cloudImage.getId(), cloudImage.getTag(), null, cloudImage.getGroupId(),
                 priority, null, null);
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage));
@@ -135,7 +140,7 @@ public class AnkaCloudConnector {
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
             properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
 
-            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath, sshForwardingPort);
+            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath, sshForwardingPort, this.serverUrl);
             try {
                 propertiesSetter.setProperties(properties);
             } catch (AnkaUnreachableInstanceException e) {
@@ -218,7 +223,7 @@ public class AnkaCloudConnector {
         }
 
         // Validate no unexpected state
-        if (!vm.isStarted() && !vm.isScheduling()) {
+        if (!vm.isStarted() && !vm.isScheduling() && !vm.isPulling()) {
             LOG.info(String.format("vm %s in unexpected state %s, terminating", vmId, vm.getSessionState()));
             ankaAPI.terminateInstance(vmId);
             throw new IOException("could not start vm");

@@ -48,6 +48,7 @@
     <th></th>
     <td>
         <button id="testConnectionBtn">Test Connection</button>
+        <span>Test results visible in Console Log</span>
     </td>
 </tr>
 
@@ -56,7 +57,7 @@
     <th><label for="${paramAuthMethod}">Authentication Method: </label></th>
         <td>
             <props:selectProperty name="${paramAuthMethod}" id="authMethodSelect" className="longField">
-              <props:option value="cert"><c:out value="Client Certificate"/></props:option>
+              <props:option value="cert"><c:out value="mTLS Client Certificate"/></props:option>
               <props:option value=""><c:out value="<Please select authentication method>"/></props:option>
               <props:option value="oidc"><c:out value="Openid Connect"/></props:option>
             </props:selectProperty>
@@ -67,7 +68,7 @@
 <c:set var="rootCertKey" value="<%=AnkaConstants.ROOT_CA%>"/>
 <c:set var="rootCert" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.ROOT_CA%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${rootCert}">Root CA Certificate: <l:star/></label></th>
+    <th><label for="${rootCert}">mTLS Root CA Certificate: <l:star/></label></th>
     <td>
         <div>
             <props:textarea textAreaName="${rootCert}" value="${empty value ? propertiesBean.properties[rootCertKey] : value}" linkTitle="root certificate" cols="50" rows="10" name="${rootCert}"   expanded="false"/>
@@ -79,7 +80,7 @@
 <c:set var="clientCertStringKey" value="<%=AnkaConstants.CERT_STRING%>"/>
 <c:set var="clientCertString" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_STRING%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${clientCertString}">Client Certificate: <l:star/></label></th>
+    <th><label for="${clientCertString}">mTLS Client Certificate: <l:star/></label></th>
     <td>
         <div>
             <props:textarea textAreaName="${clientCertString}" value="${empty value ? propertiesBean.properties[clientCertStringKey] : value}" linkTitle="certificate" cols="50" rows="10" name="${clientCertString}" className="certs"  expanded="false"/>
@@ -91,7 +92,7 @@
 <c:set var="clientCertKeyKey" value="<%=AnkaConstants.CERT_KEY_STRING%>"/>
 <c:set var="clientCertKey" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_KEY_STRING%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${clientCertKey}">Client Certificate Private key: <l:star/></label></th>
+    <th><label for="${clientCertKey}">mTLS Client Certificate Private key: <l:star/></label></th>
     <td>
         <div>
             <props:textarea textAreaName="${clientCertKey}" value="${empty value ? propertiesBean.properties[clientCertKeyKey] : value}" linkTitle="key" cols="50" rows="10" name="${clientCertKey}" className="certs" expanded="false" />
@@ -125,16 +126,16 @@
 
 
 <tr class="dialog hidden">
-    <th><label for="imageSelect">Image Name: <l:star/></label></th>
+    <th><label for="imageSelect">Template Name: <l:star/></label></th>
     <td>
         <select id="imageSelect" class="longField">
-                  <option value="">Please select Image</option>
+                  <option value="">Please select Template</option>
         </select>
     </td>
 </tr>
 
 <tr class="dialog hidden">
-    <th><label for="tagSelect">Image Tag: <l:star/></label></th>
+    <th><label for="tagSelect">Template Tag: <l:star/></label></th>
     <td>
         <select id="tagSelect" class="longField">
                   <option value="">Please select Tag</option>
@@ -143,17 +144,17 @@
 </tr>
 
 <tr class="dialog hidden">
-    <th><label for="groupSelect">Group (optional): </label></th>
+    <th><label for="groupSelect">Node Group (optional): </label></th>
     <td>
         <select id="groupSelect" class="longField">
-                  <option value="">Select Group</option>
+                  <option value="">Select Node Group</option>
         </select>
     </td>
 </tr>
 
 <c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageName}">Image Name</label></th>
+    <th><label for="${paramImageName}">Template Name</label></th>
     <td>
         <div>
             <props:textProperty className="disabled" name="${paramImageName}" id="imageNameInput" disabled="true" />
@@ -172,7 +173,7 @@
 
 <c:set var="paramImageTag" value="<%=AnkaConstants.IMAGE_TAG%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageTag}">Image Tag</label></th>
+    <th><label for="${paramImageTag}">Template Tag</label></th>
     <td>
         <div>
             <props:textProperty className="disabled" name="${paramImageTag}" id="imageTagInput" disabled="true" />
@@ -183,7 +184,7 @@
 
 <c:set var="paramGroupId" value="<%=AnkaConstants.GROUP_ID%>"/>
 <tr class="hidden">
-    <th><label for="${paramGroupId}">Group </label></th>
+    <th><label for="${paramGroupId}">Node Group </label></th>
     <td>
         <div>
             <props:textProperty className="disabled" name="${paramGroupId}" id="groupIdInput" disabled="true" />
@@ -235,6 +236,7 @@
         <div>
             <props:textProperty name="${paramAgentPath}" className="longField"/>
         </div>
+        <span>If the path does not exist in the VM, we will download the buildAgent from your Teamcity instance (Server Url) and install it for you.</span>
         <span class="error option-error option-error_${paramAgentPath}" id="error_${paramAgentPath}"></span>
     </td>
 </tr>
