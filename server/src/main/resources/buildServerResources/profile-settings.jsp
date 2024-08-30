@@ -28,7 +28,7 @@
         <div>
             <props:textProperty name="${paramUrl}" id="controllerURL" className="longField"/>
         </div>
-        <span class="error option-error option-error_${paramUrl}" id="error_${paramUrl}"></span>
+        <span class="controllerURLError error option-error option-error_${paramUrl}" id="error_${paramUrl}"></span>
     </td>
 </tr>
 
@@ -125,7 +125,7 @@
 </tr>
 
 
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="imageSelect">Template Name: <l:star/></label></th>
     <td>
         <select id="imageSelect" class="longField">
@@ -134,7 +134,7 @@
     </td>
 </tr>
 
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="tagSelect">Template Tag: <l:star/></label></th>
     <td>
         <select id="tagSelect" class="longField">
@@ -143,7 +143,7 @@
     </td>
 </tr>
 
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="groupSelect">Node Group (optional): </label></th>
     <td>
         <select id="groupSelect" class="longField">
@@ -195,7 +195,7 @@
 
 
 <c:set var="paramSshUser" value="<%=AnkaConstants.SSH_USER%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramSshUser}">SSH User: <l:star/></label></th>
     <td>
         <div>
@@ -206,7 +206,7 @@
 </tr>
 
 <c:set var="paramSshPassword" value="<%=AnkaConstants.SSH_PASSWORD%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramSshPassword}">SSH Password: <l:star/></label></th>
     <td>
         <div>
@@ -217,7 +217,7 @@
 </tr>
 
 <c:set var="paramSshForwardingPort" value="<%=AnkaConstants.SSH_FORWARDING_PORT%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramSshForwardingPort}">Forwarding SSH Port: </label></th>
     <td>
         <div>
@@ -230,7 +230,7 @@
 
 
 <c:set var="paramAgentPath" value="<%=AnkaConstants.AGENT_PATH%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramAgentPath}">Agent Path: <l:star/></label></th>
     <td>
         <div>
@@ -242,7 +242,7 @@
 </tr>
 
 <c:set var="paramMaxInstances" value="<%=AnkaConstants.MAX_INSTANCES%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramMaxInstances}">Max Instances: </label></th>
     <td>
         <div>
@@ -255,7 +255,7 @@
 
 
 <c:set var="paramPriority" value="<%=AnkaConstants.PRIORITY%>"/>
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramPriority}">Priority: </label></th>
     <td>
         <div>
@@ -268,7 +268,7 @@
 </tr>
 
 <c:set var="paramAgentPoolId" value="<%=AnkaConstants.AGENT_POOL_ID%>" />
-<tr class="dialog hidden">
+<tr class="dependentOnControllerConnection hidden">
     <th><label for="${paramAgentPoolId}">Agent pool:</label></th>
         <td>
             <props:selectProperty name="${paramAgentPoolId}" className="longField">
@@ -308,104 +308,107 @@
         // inspired by vmware plugin
         BS.ajaxRequest(
             "<c:url value="${pluginResourcePath}"/>"+"?get=images",
-                {
-                    parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
-                    onFailure: function (response) {
-                            console.log(response);
-                            if (response.status === 401) {
-                                showAuth();
-                            }
-                            // might want to show some error message
-                    },
-                    onSuccess: function (response) {
-                        var xmlDoc = $j(response.responseXML);
-                        var wrapper = xmlDoc.find( "response" );
-                        templates = JSON.parse(wrapper.text());
-                        var imageSelect = $j("#imageSelect");
-                        imageSelect.empty();
-                        for (var k = 0; k < templates.length; k++) {
-                            var template = templates[k];
-                            var newTemplate = $j('<option value="' + template.id + '">' + template.name + '</option>');
-                            if (template.id === $j("#imageIdInput").val()) {
-                                newTemplate.prop("selected", true);
-                            }
-                            imageSelect.append(newTemplate);
-                        }
-                        getTags();
-                        $j(".dialog").removeClass("hidden");
+            {
+                parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
+                onFailure: function (response) {
+                    $j(".controllerURLError").text('');
+                    $j(".controllerURLError").append('Error: Controller communication cannot be established.');
+                    console.log(response);
+                    if (response.status === 401) {
+                        showAuth();
                     }
-            });
-     }
+                    // might want to show some error message
+                },
+                onSuccess: function (response) {
+                    var xmlDoc = $j(response.responseXML);
+                    var wrapper = xmlDoc.find( "response" );
+                    templates = JSON.parse(wrapper.text());
+                    var imageSelect = $j("#imageSelect");
+                    imageSelect.empty();
+                    for (var k = 0; k < templates.length; k++) {
+                        var template = templates[k];
+                        var newTemplate = $j('<option value="' + template.id + '">' + template.name + '</option>');
+                        if (template.id === $j("#imageIdInput").val()) {
+                            newTemplate.prop("selected", true);
+                        }
+                        imageSelect.append(newTemplate);
+                    }
+                    getTags();
+                    $j(".dependentOnControllerConnection").removeClass("hidden");
+                    $j(".controllerURLError").text('');
+                }
+            }
+        )
+     };
 
-     function getTags() {
+    function getTags() {
         if (!BS) BS = {};
-                // inspired by vmware plugin
-                BS.ajaxRequest(
-                    "<c:url value="${pluginResourcePath}"/>"+"?get=tags&imageId=" + $j("#imageSelect option:selected").val(),
-                        {
-                            parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
-                            onFailure: function (response) {
-                                    console.log(response);
-                                    if (response.status === 401) {
-                                        showAuth();
-                                    }
-                                    // might want to show some error message
-                            },
-                            onSuccess: function (response) {
-                                var xmlDoc = $j(response.responseXML);
-                                var wrapper = xmlDoc.find( "response" );
-                                var tags = JSON.parse(wrapper.text()).reverse();
-                                var tagSelect = $j("#tagSelect");
-                                tagSelect.empty();
-                                tagSelect.append($j('<option value="">Latest</option>'));
-                                for (var k = 0; k < tags.length; k++) {
-                                    var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
-                                    if (tags[k] ===  $j("#imageTagInput").val()) {
-                                        tag.prop("selected", true);
-                                    }
-                                    tagSelect.append(tag);
-                                }
-                             updateInputs();
-                            }
-                    });
+        // inspired by vmware plugin
+        BS.ajaxRequest(
+            "<c:url value="${pluginResourcePath}"/>"+"?get=tags&imageId=" + $j("#imageSelect option:selected").val(),
+            {
+                parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
+                onFailure: function (response) {
+                    console.log(response);
+                    if (response.status === 401) {
+                        showAuth();
+                    }
+                    // might want to show some error message
+                },
+                onSuccess: function (response) {
+                    var xmlDoc = $j(response.responseXML);
+                    var wrapper = xmlDoc.find( "response" );
+                    var tags = JSON.parse(wrapper.text()).reverse();
+                    var tagSelect = $j("#tagSelect");
+                    tagSelect.empty();
+                    tagSelect.append($j('<option value="">Latest</option>'));
+                    for (var k = 0; k < tags.length; k++) {
+                        var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
+                        if (tags[k] ===  $j("#imageTagInput").val()) {
+                            tag.prop("selected", true);
+                        }
+                        tagSelect.append(tag);
+                    }
+                    updateInputs();
+                }
+            }
+        )
+    };
 
-     }
-
-      function getGroups() {
-         if (!BS) BS = {};
-                 BS.ajaxRequest(
-                     "<c:url value="${pluginResourcePath}"/>"+"?get=groups" ,
-                         {
-                             parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
-                             onFailure: function (response) {
-                                     console.log(response);
-                                     if (response.code === 401) {
-                                         showAuth();
-                                     }
-                                     // might want to show some error message
-                             },
-                             onSuccess: function (response) {
-                                 var xmlDoc = $j(response.responseXML);
-                                 var wrapper = xmlDoc.find( "response" );
-                                 var groups = JSON.parse(wrapper.text()).reverse();
-                                 var groupSelect = $j("#groupSelect");
-                                 groupSelect.empty();
-                                 groupSelect.append($j('<option value="">None</option>'));
-                                 for (var k = 0; k < groups.length; k++) {
-                                     var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
-                                     if (groups[k].id ===  $j("#groupIdInput").val()) {
-                                        group.prop("selected", true);
-                                     }
-                                     groupSelect.append(group);
-                                 }
-                             }
-                     });
-
-      }
+    function getGroups() {
+        if (!BS) BS = {};
+        BS.ajaxRequest(
+            "<c:url value="${pluginResourcePath}"/>"+"?get=groups",
+            {
+                parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
+                onFailure: function (response) {
+                    console.log(response);
+                    if (response.code === 401) {
+                        showAuth();
+                    }
+                    // might want to show some error message
+                },
+                onSuccess: function (response) {
+                    var xmlDoc = $j(response.responseXML);
+                    var wrapper = xmlDoc.find( "response" );
+                    var groups = JSON.parse(wrapper.text()).reverse();
+                    var groupSelect = $j("#groupSelect");
+                    groupSelect.empty();
+                    groupSelect.append($j('<option value="">None</option>'));
+                    for (var k = 0; k < groups.length; k++) {
+                        var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
+                        if (groups[k].id ===  $j("#groupIdInput").val()) {
+                        group.prop("selected", true);
+                        }
+                        groupSelect.append(group);
+                    }
+                }
+            }
+        )
+    };
 
 
-     function updateInputs() {
-
+    function updateInputs() {
         var imageId = $j("#imageSelect option:selected").val();
         var tag = $j("#tagSelect").val();
         if (imageId.length > 0) {
@@ -413,60 +416,75 @@
             $j("#imageIdInput").val(imageId);
             $j("#imageTagInput").val(tag);
         }
-     }
+    }
 
-
-         var contUrl = $j("#controllerURL");
-         contUrl.on("change", getImages);
-         contUrl.on("change", getGroups);
-
-         var certs = $j(".certs");
-         certs.on("change", getImages);
-         certs.on("change", getGroups);
-         let oidcs = $j(".oidcs");
-         oidcs.on("change", getImages);
-         oidcs.on("change", getGroups);
-
-         var imageSelect = $j("#imageSelect");
-         imageSelect.on("change", function() {
-            getTags();
-            updateInputs();
-         });
-
-         var tagSelect = $j("#tagSelect");
-         tagSelect.on("change", updateInputs);
-
-         var groupSelect = $j("#groupSelect");
-         groupSelect.on("change", function() {
-            var groupSelectValue = $j("#groupSelect").val();
-            var groupIdInput = $j("#groupIdInput");
-            groupIdInput.val(groupSelectValue);
-         }) ;
-         if (contUrl.val().length > 0) {
+    var contUrl = $j("#controllerURL");
+    var debounceTimeout;
+    contUrl.on("change", function() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(function() {
             getImages();
             getGroups();
-         }
+        }, 300); // Adjust the debounce delay as needed
+    });
 
-         $j("#testConnectionBtn").on("click", function(e) {
-            e.preventDefault();
+    var certs = $j(".certs");
+    var oidcs = $j(".oidcs");
+    certs.on("change", function() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(function() {
             getImages();
             getGroups();
-         });
+        }, 300); // Adjust the debounce delay as needed
+    });
+    oidcs.on("change", function() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(function() {
+            getImages();
+            getGroups();
+        }, 300); // Adjust the debounce delay as needed
+    });
 
-         $j(".disabled").on("data-attribute-change", function() {
-            $j(".disabled").prop("disabled", true);
+    var imageSelect = $j("#imageSelect");
+    imageSelect.on("change", function() {
+        getTags();
+        updateInputs();
+    });
 
-         });
+    var tagSelect = $j("#tagSelect");
+    tagSelect.on("change", updateInputs);
 
-         $j(".error").on("change",  function() {
-            $j(".disabled").prop("disabled", true);
-         });
-         //var authSelect = $j("#authMethodSelect");
-         //authSelect.on("change", showAuthMethods);
-         //if (authSelect.val() != null && authSelect.val().length > 0) {
-            //showAuthMethods();
-            //showAuth();
-         //}
+    var groupSelect = $j("#groupSelect");
+    groupSelect.on("change", function() {
+        var groupSelectValue = $j("#groupSelect").val();
+        var groupIdInput = $j("#groupIdInput");
+        groupIdInput.val(groupSelectValue);
+    });
+
+    if (contUrl.val().length > 0) {
+        getImages();
+        getGroups();
+    }
+
+    $j("#testConnectionBtn").on("click", function(e) {
+        e.preventDefault();
+        getImages();
+        getGroups();
+    });
+
+    $j(".disabled").on("data-attribute-change", function() {
+        $j(".disabled").prop("disabled", true);
+    });
+
+    $j(".error").on("change",  function() {
+        $j(".disabled").prop("disabled", true);
+    });
+    //var authSelect = $j("#authMethodSelect");
+    //authSelect.on("change", showAuthMethods);
+    //if (authSelect.val() != null && authSelect.val().length > 0) {
+    //showAuthMethods();
+    //showAuth();
+    //}
 
 
 
