@@ -1,16 +1,18 @@
 package com.veertu;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -23,11 +25,12 @@ public class AnkaCloudImage implements CloudImage {
     private final String name;
     private final String tag;
     private final String groupId;
+    private final String vmNameTemplate;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
 
-    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag, String groupId) {
+    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag, String groupId, String vmNameTemplate) {
         this.connector = connector;
         this.id = id;
         this.name = name;
@@ -38,6 +41,11 @@ public class AnkaCloudImage implements CloudImage {
             this.tag = null;
         }
         this.instances = new ConcurrentHashMap<>();
+        if (vmNameTemplate != null && vmNameTemplate.length() > 0) {
+            this.vmNameTemplate = vmNameTemplate;
+        } else {
+            this.vmNameTemplate = "$ts";
+        }
     }
 
     public AnkaVmInstance showInstance(String vmId) {
@@ -65,6 +73,9 @@ public class AnkaCloudImage implements CloudImage {
         return groupId;
     }
 
+    public String getvmNameTemplate() {
+        return vmNameTemplate;
+    }
 
     @NotNull
     @Override

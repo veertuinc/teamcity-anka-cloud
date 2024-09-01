@@ -111,8 +111,9 @@ public class AnkaCloudConnector {
         } else {
             LOG.info(String.format("starting new instance with template %s, tag %s, group %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId()));
         }
-        String vmId = this.ankaAPI.startVM(cloudImage.getId(), cloudImage.getTag(), null, cloudImage.getGroupId(),
-                priority, null, null);
+        String vmId = this.ankaAPI.startVM(
+            cloudImage.getId(), cloudImage.getTag(), null, cloudImage.getGroupId(),
+            priority, null, null, cloudImage.getvmNameTemplate());
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage));
         return new AnkaCloudInstance(vmId, cloudImage);
     }

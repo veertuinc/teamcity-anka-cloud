@@ -1,10 +1,15 @@
 package com.veertu.utils;
 
-import jetbrains.buildServer.serverSide.InvalidProperty;
-import jetbrains.buildServer.serverSide.PropertiesProcessor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.veertu.common.AnkaConstants;
 
-import java.util.*;
+import jetbrains.buildServer.serverSide.InvalidProperty;
+import jetbrains.buildServer.serverSide.PropertiesProcessor;
 
 public class AnkaCloudPropertiesProcesser implements PropertiesProcessor {
 

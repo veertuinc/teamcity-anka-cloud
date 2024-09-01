@@ -97,14 +97,14 @@ public class AnkaAPI {
         return communicator.status();
     }
 
-    public String startVM(String templateId, String tag, String nameTemplate, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
-        String id = communicator.startVm(templateId, tag, nameTemplate, startUpScript, groupId, priority, name, externalId);
-        invalidateCache();
-        return id;
-    }
+    // public String startVM(String templateId, String tag, String vmNameTemplate, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
+    //     String id = communicator.startVm(templateId, tag, vmNameTemplate, startUpScript, groupId, priority, name, externalId);
+    //     invalidateCache();
+    //     return id;
+    // }
 
-    public String startVM(String templateId, String tag, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
-        String id = communicator.startVm(templateId, tag, "$ts", startUpScript, groupId, priority, name, externalId);
+    public String startVM(String templateId, String tag, String startUpScript, String groupId, int priority, String name, String externalId, String vmNameTemplate) throws AnkaMgmtException {
+        String id = communicator.startVm(templateId, tag, vmNameTemplate, startUpScript, groupId, priority, name, externalId);
         invalidateCache();
         return id;
     }

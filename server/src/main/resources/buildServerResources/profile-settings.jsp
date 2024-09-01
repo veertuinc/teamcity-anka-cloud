@@ -152,12 +152,12 @@
     </td>
 </tr>
 
-<c:set var="paramImageName" value="<%=AnkaConstants.IMAGE_NAME%>"/>
+<c:set var="paramtemplateName" value="<%=AnkaConstants.TEMPLATE_NAME%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageName}">Template Name</label></th>
+    <th><label for="${paramtemplateName}">Template Name</label></th>
     <td>
         <div>
-            <props:textProperty className="disabled" name="${paramImageName}" id="imageNameInput" disabled="true" />
+            <props:textProperty className="disabled" name="${paramtemplateName}" id="templateNameInput" disabled="true" />
         </div>
         <span class="error option-error option-error_${paramImageId}" id="error_${paramImageId}"></span>
     </td>
@@ -171,14 +171,26 @@
     </td>
 </tr>
 
-<c:set var="paramImageTag" value="<%=AnkaConstants.IMAGE_TAG%>"/>
+<c:set var="paramtemplateTag" value="<%=AnkaConstants.TEMPLATE_TAG%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageTag}">Template Tag</label></th>
+    <th><label for="${paramtemplateTag}">Template Tag</label></th>
     <td>
         <div>
-            <props:textProperty className="disabled" name="${paramImageTag}" id="imageTagInput" disabled="true" />
+            <props:textProperty className="disabled" name="${paramtemplateTag}" id="templateTagInput" disabled="true" />
         </div>
-        <span class="error option-error option-error_${paramImageTag}" id="error_${paramImageTag}"></span>
+        <span class="error option-error option-error_${paramtemplateTag}" id="error_${paramtemplateTag}"></span>
+    </td>
+</tr>
+
+<c:set var="paramVmNameTemplate" value="<%=AnkaConstants.VM_NAME_TEMPLATE%>"/>
+<tr class="dependentOnControllerConnection hidden">
+    <th><label for="${paramVmNameTemplate}">VM Name Template</label></th>
+    <td>
+        <div>
+            <props:textProperty name="${paramVmNameTemplate}" id="vmNameTemplateInput" className="longField" />
+        </div>
+        <span>This is used to set the eventual VM name. By default, the VM and Agent is mgmtManaged-\$ts (ts is convereted to a timestamp). See <a href="https://docs.veertu.com/anka/anka-build-cloud/working-with-controller-and-api/#start-vm-instances" target="_blank">the API documentation and the Start VM's <i>name_template</i> parameter</a> for more information about other variables you can use. <b>Note: Agent names cannot be longer than 80 characters or they will not function properly.</b></span>
+        <span class="error option-error option-error_${paramVmNameTemplate}" id="error_${paramVmNameTemplate}"></span>
     </td>
 </tr>
 
@@ -364,7 +376,7 @@
                     tagSelect.append($j('<option value="">Latest</option>'));
                     for (var k = 0; k < tags.length; k++) {
                         var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
-                        if (tags[k] ===  $j("#imageTagInput").val()) {
+                        if (tags[k] ===  $j("#templateTagInput").val()) {
                             tag.prop("selected", true);
                         }
                         tagSelect.append(tag);
@@ -412,9 +424,9 @@
         var imageId = $j("#imageSelect option:selected").val();
         var tag = $j("#tagSelect").val();
         if (imageId.length > 0) {
-            $j("#imageNameInput").val($j("#imageSelect option:selected").text());
+            $j("#templateNameInput").val($j("#imageSelect option:selected").text());
             $j("#imageIdInput").val(imageId);
-            $j("#imageTagInput").val(tag);
+            $j("#templateTagInput").val(tag);
         }
     }
 
