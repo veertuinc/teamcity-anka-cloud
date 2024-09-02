@@ -1,5 +1,17 @@
 package com.veertu;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.jdom.Element;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.web.servlet.ModelAndView;
+
 import com.veertu.ankaMgmtSdk.AnkaVmTemplate;
 import com.veertu.ankaMgmtSdk.AuthType;
 import com.veertu.ankaMgmtSdk.NodeGroup;
@@ -7,26 +19,16 @@ import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
 import com.veertu.common.AnkaConstants;
+
 import jetbrains.buildServer.BuildProject;
 import jetbrains.buildServer.controllers.BaseFormXmlController;
 import jetbrains.buildServer.controllers.BasePropertiesBean;
 import jetbrains.buildServer.serverSide.SBuildServer;
-import jetbrains.buildServer.serverSide.agentPools.AgentPoolManager;
 import jetbrains.buildServer.serverSide.agentPools.AgentPool;
-
+import jetbrains.buildServer.serverSide.agentPools.AgentPoolManager;
 import jetbrains.buildServer.serverSide.agentPools.AgentPoolUtil;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
-import org.jdom.Element;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -74,8 +76,6 @@ public class AnkaEditProfileController extends BaseFormXmlController {
         }
         try {
             AnkaCloudConnector connector;
-
-
             String authMethod = request.getParameter(PROP_PREFIX+ AnkaConstants.AUTH_METHOD);
             String clientCert = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_STRING);
             String clientCertKey = request.getParameter(PROP_PREFIX + AnkaConstants.CERT_KEY_STRING);
@@ -110,8 +110,11 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             } else if (toGet.equals("images")) {
                 xmlResponse.addContent(templatesToJson(connector.listTemplates()));
             } else if (toGet.equals("groups")) {
-                List<NodeGroup> nodeGroups = connector.getNodeGroups();
-                xmlResponse.addContent(groupsToJson(nodeGroups));
+                // avoid making the call if it's a basic license
+                if (connector.isEnterpriseLicense()) {
+                    List<NodeGroup> nodeGroups = connector.getNodeGroups();
+                    xmlResponse.addContent(groupsToJson(nodeGroups));
+                }
             }
         } catch (AnkaUnAuthenticatedRequestException e) {
             response.setStatus(401);

@@ -283,4 +283,8 @@ public class AnkaCloudConnector {
     public List<NodeGroup> getNodeGroups() throws AnkaMgmtException {
         return ankaAPI.getNodeGroups();
     }
+
+    public boolean isEnterpriseLicense() throws AnkaMgmtException {
+        return ankaAPI.isEnterpriseLicense();
+    }
 }

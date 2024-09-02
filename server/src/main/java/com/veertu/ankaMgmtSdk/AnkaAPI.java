@@ -80,6 +80,10 @@ public class AnkaAPI {
         return communicator.getNodeGroups();
     }
 
+    public boolean isEnterpriseLicense() throws AnkaMgmtException {
+        return communicator.isEnterpriseLicense();
+    }
+
     public void revertLatestTag(String templateID) throws AnkaMgmtException {
         communicator.revertRegistryVM(templateID);
     }

@@ -44,14 +44,6 @@
     </td>
 </tr>
 
-<tr>
-    <th></th>
-    <td>
-        <button id="testConnectionBtn">Test Connection</button>
-        <span>Test results visible in Console Log</span>
-    </td>
-</tr>
-
 <c:set var="paramAuthMethod" value="<%=AnkaConstants.AUTH_METHOD%>" />
 <tr class="auth-config hidden">
     <th><label for="${paramAuthMethod}">Authentication Method: </label></th>
@@ -124,7 +116,6 @@
     </td>
 </tr>
 
-
 <tr class="dependentOnControllerConnection hidden">
     <th><label for="imageSelect">Template Name: <l:star/></label></th>
     <td>
@@ -143,11 +134,11 @@
     </td>
 </tr>
 
-<tr class="dependentOnControllerConnection hidden">
+<tr id="nodeGroupTr" class="dependentOnControllerConnection hidden">
     <th><label for="groupSelect">Node Group (optional): </label></th>
-    <td>
+    <td id="nodeGroupTd">
         <select id="groupSelect" class="longField">
-                  <option value="">Select Node Group</option>
+                <option value="">Select Node Group</option>
         </select>
     </td>
 </tr>
@@ -201,7 +192,7 @@
         <div>
             <props:textProperty className="disabled" name="${paramGroupId}" id="groupIdInput" disabled="true" />
         </div>
-        <span class="error option-error option-error_${paramGroupId}" id="error_${paramGroupId}"></span>
+        <span class="groupError error option-error option-error_${paramGroupId}" id="error_${paramGroupId}"></span>
     </td>
 </tr>
 
@@ -394,7 +385,7 @@
             {
                 parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                 onFailure: function (response) {
-                    console.log(response);
+                    console.log('getGroups onFailure', response);
                     if (response.code === 401) {
                         showAuth();
                     }
@@ -403,16 +394,23 @@
                 onSuccess: function (response) {
                     var xmlDoc = $j(response.responseXML);
                     var wrapper = xmlDoc.find( "response" );
-                    var groups = JSON.parse(wrapper.text()).reverse();
-                    var groupSelect = $j("#groupSelect");
-                    groupSelect.empty();
-                    groupSelect.append($j('<option value="">None</option>'));
-                    for (var k = 0; k < groups.length; k++) {
-                        var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
-                        if (groups[k].id ===  $j("#groupIdInput").val()) {
-                        group.prop("selected", true);
+                    try {
+                        var groups = JSON.parse(wrapper.text()).reverse();
+                        $j("#groupSelect").removeClass("hidden");
+                        $j("#nodeGroupTd span").remove();
+                        var groupSelect = $j("#groupSelect");
+                        groupSelect.empty();
+                        groupSelect.append($j('<option value="">None</option>'));
+                        for (var k = 0; k < groups.length; k++) {
+                            var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
+                            if (groups[k].id ===  $j("#groupIdInput").val()) {
+                                group.prop("selected", true);
+                            }
+                            groupSelect.append(group);
                         }
-                        groupSelect.append(group);
+                    } catch (e) {
+                        $j("#groupSelect").addClass("hidden");
+                        $j("#nodeGroupTd").append($j('<span style="color: yellow;">Requires Enterprise License.</span>'));
                     }
                 }
             }
@@ -477,12 +475,6 @@
         getImages();
         getGroups();
     }
-
-    $j("#testConnectionBtn").on("click", function(e) {
-        e.preventDefault();
-        getImages();
-        getGroups();
-    });
 
     $j(".disabled").on("data-attribute-change", function() {
         $j(".disabled").prop("disabled", true);

@@ -123,7 +123,7 @@ public class AnkaMgmtCommunicator {
 
     public void setConnectionKeepAliveSeconds(int connectionKeepAliveSeconds) {
         this.connectionKeepAliveSeconds = connectionKeepAliveSeconds;
-    }
+    } 
 
     public List<AnkaVmTemplate> listTemplates() throws AnkaMgmtException {
         List<AnkaVmTemplate> templates = new ArrayList<AnkaVmTemplate>();
@@ -469,6 +469,23 @@ public class AnkaMgmtCommunicator {
 
     }
 
+    public Boolean isEnterpriseLicense() throws AnkaMgmtException {
+        String url = "/api/v1/status";
+        try {
+            JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
+            String logicalResult = jsonResponse.getString("status");
+            if (logicalResult.equals("OK")) {
+                JSONObject json = jsonResponse.getJSONObject("body");
+                if (!json.getString("license").equals("basic")) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public List<AnkaNode> getNodes() throws AnkaMgmtException {
         List<AnkaNode> nodes = new ArrayList<>();
         String url = "/api/v1/node";
@@ -570,24 +587,22 @@ public class AnkaMgmtCommunicator {
                         throw e;
                     }
                     int responseCode = response.getStatusLine().getStatusCode();
+                    if (responseCode >= 400) {
+                        throw new ClientException(request.getMethod() + " " + request.getURI().toString() + " " + "Bad Request");
+                    }
                     if (responseCode == 401) {
                         throw new AnkaUnAuthenticatedRequestException("Authentication Required");
                     }
                     if (responseCode == 403) {
                         throw new AnkaUnauthorizedRequestException("Not authorized to perform this request");
                     }
-                    if (responseCode >= 400) {
-                        throw new ClientException(request.getMethod() + request.getURI().toString() + "Bad Request");
-                    }
-
                     if (responseCode != 200) {
                         LOG.info(String.format("url: %s response: %s", url, response.toString()));
                         return null;
                     }
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {
-                        BufferedReader rd = new BufferedReader(
-                                new InputStreamReader(entity.getContent()));
+                        BufferedReader rd = new BufferedReader(new InputStreamReader(entity.getContent()));
                         StringBuffer result = new StringBuffer();
                         String line = "";
                         while ((line = rd.readLine()) != null) {
@@ -602,7 +617,6 @@ public class AnkaMgmtCommunicator {
                     throw e; // keep on retrying
                 } catch (HttpHostConnectException | ConnectTimeoutException | ClientException | SSLException | NoRouteToHostException e) {
                     LOG.error(String.format("Got client exception: %s", e.getMessage()));
-
                     // don't retry on client exception, timeouts or host exceptions
                     throw e;
                 } catch (UnsupportedEncodingException e) {
