@@ -1,16 +1,24 @@
 package com.veertu;
 
-import com.intellij.openapi.diagnostic.Logger;
-import jetbrains.buildServer.log.Loggers;
-import com.veertu.common.AnkaConstants;
-import jetbrains.buildServer.clouds.*;
-import jetbrains.buildServer.serverSide.AgentDescription;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.common.AnkaConstants;
+
+import jetbrains.buildServer.clouds.CloudClientEx;
+import jetbrains.buildServer.clouds.CloudErrorInfo;
+import jetbrains.buildServer.clouds.CloudException;
+import jetbrains.buildServer.clouds.CloudImage;
+import jetbrains.buildServer.clouds.CloudInstance;
+import jetbrains.buildServer.clouds.CloudInstanceUserData;
+import jetbrains.buildServer.clouds.QuotaException;
+import jetbrains.buildServer.log.Loggers;
+import jetbrains.buildServer.serverSide.AgentDescription;
 
 /**
  * Created by Asaf Gur.
@@ -41,7 +49,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        LOG.info(String.format("Starting new instance for  image %s(%s) on AnkaCloudClientEx %s",
+        LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx %s",
                 cloudImage.getName(), cloudImage.getId(), this.toString()));
 
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
@@ -113,11 +121,11 @@ public class AnkaCloudClientEx implements CloudClientEx {
         return null;
     }
 
-    @Override
-    public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
-        Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-        return imageInstances.size() < this.maxInstances;
-    }
+    // @Override
+    // public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
+    //     Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
+    //     return imageInstances.size() < this.maxInstances;
+    // }
 
     @Nullable
     @Override

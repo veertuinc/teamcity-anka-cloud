@@ -400,7 +400,7 @@
                         $j("#nodeGroupTd span").remove();
                         var groupSelect = $j("#groupSelect");
                         groupSelect.empty();
-                        groupSelect.append($j('<option value="">None</option>'));
+                        groupSelect.append($j('<option value="">(none; target all nodes)</option>'));
                         for (var k = 0; k < groups.length; k++) {
                             var group = $j('<option value="' + groups[k].id + '">' + groups[k].name + '</option>');
                             if (groups[k].id ===  $j("#groupIdInput").val()) {
