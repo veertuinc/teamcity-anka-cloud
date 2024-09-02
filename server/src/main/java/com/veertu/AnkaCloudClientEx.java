@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.common.AnkaConstants;
 
+import jetbrains.buildServer.clouds.CanStartNewInstanceResult;
 import jetbrains.buildServer.clouds.CloudClientEx;
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudException;
@@ -121,11 +122,12 @@ public class AnkaCloudClientEx implements CloudClientEx {
         return null;
     }
 
-    // @Override
-    // public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
-    //     Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-    //     return imageInstances.size() < this.maxInstances;
-    // }
+    @Override
+    public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull CloudImage cloudImage) {
+        Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
+        boolean canStart = imageInstances.size() < this.maxInstances;
+        return canStart ? CanStartNewInstanceResult.yes() : CanStartNewInstanceResult.no("Max instances limit reached");
+    }
 
     @Nullable
     @Override
