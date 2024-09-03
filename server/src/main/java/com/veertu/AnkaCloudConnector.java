@@ -19,7 +19,6 @@ import com.veertu.common.AnkaConstants;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.log.Loggers;
 
-
 /**
  * Created by Asaf Gur.
  */
@@ -48,14 +47,23 @@ public class AnkaCloudConnector {
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     // Only to be used by EditProfileController to retrieve info on cloud profile configuration
-    public AnkaCloudConnector(String mgmtURL, boolean skipTLSVerification, String rootCA, AuthType authType,
-                              String clientCert, String clientCertKey, String oidcClientId, String oidcClientSecret) {
+    public AnkaCloudConnector(
+        String mgmtURL, 
+        boolean skipTLSVerification, 
+        AuthType authType,
+        String clientCert, 
+        String clientCertKey, 
+        String oidcClientId, 
+        String oidcClientSecret,
+        String rootCA, 
+        String serverUrl
+    ) {
         this.mgmtURL = mgmtURL;
         this.profileId = "";
         this.agentPoolId = 0;
         this.priority = 0;
         this.agentPath = "";
-        this.serverUrl = "";
+        this.serverUrl = serverUrl;
 
         switch (authType) {
             case OPENID_CONNECT:
@@ -70,9 +78,16 @@ public class AnkaCloudConnector {
     }
 
     public AnkaCloudConnector(
-        String mgmtURL, String sshUser, String sshPassword, int sshForwardingPort, 
-        String agentPath, String serverUrl,
-        Integer agentPoolId, String profileId, int priority, String rootCA
+        String mgmtURL, 
+        String sshUser, 
+        String sshPassword, 
+        int sshForwardingPort, 
+        String agentPath, 
+        Integer agentPoolId, 
+        String profileId, 
+        int priority, 
+        String rootCA,
+        String serverUrl
     ) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
@@ -87,10 +102,20 @@ public class AnkaCloudConnector {
     }
 
     public AnkaCloudConnector(
-        String mgmtURL, boolean skipTLSVerification, 
-        String sshUser, String sshPassword, int sshForwardingPort, String agentPath,
-        String serverUrl, Integer agentPoolId, String profileId, int priority,
-        String cert, String key, AuthType authType, String rootCA
+        String mgmtURL, 
+        boolean skipTLSVerification, 
+        String sshUser, 
+        String sshPassword, 
+        int sshForwardingPort, 
+        String agentPath,
+        Integer agentPoolId, 
+        String profileId, 
+        int priority,
+        String cert, 
+        String key, 
+        AuthType authType,
+        String rootCA,
+        String serverUrl
     ) {
         this.mgmtURL = mgmtURL;
         this.sshUser = sshUser;
@@ -112,8 +137,15 @@ public class AnkaCloudConnector {
             LOG.info(String.format("starting new instance with template %s, tag %s, group %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId()));
         }
         String vmId = this.ankaAPI.startVM(
-            cloudImage.getId(), cloudImage.getTag(), null, cloudImage.getGroupId(),
-            priority, null, null, cloudImage.getvmNameTemplate());
+            cloudImage.getId(), 
+            cloudImage.getTag(), 
+            null, 
+            cloudImage.getGroupId(),
+            priority, 
+            null,
+            null,
+            cloudImage.getvmNameTemplate()
+        );
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage));
         return new AnkaCloudInstance(vmId, cloudImage);
     }
@@ -121,27 +153,31 @@ public class AnkaCloudConnector {
     private void waitForBootAndSetVmProperties(String vmId, AnkaCloudImage cloudImage) {
         try {
             HashMap<String, String > properties = new HashMap<>();
-
-            LOG.info(String.format("properties: %s", properties));
-
             AnkaVmInstance vm = waitForBoot(vmId);
 
             String vmName = vm.getName();
-            if (vmName == null)
-                vmName = String.format("%s_%s", cloudImage.getId(), vm.getId());
+            // if (vmName == null)
+            //     vmName = String.format("%s_%s", cloudImage.getId(), vm.getId());
 
             LOG.info(String.format("VM %s (%s) has booted, starting SSH session...", vmName, vmId));
 
+            properties.put(AnkaConstants.ENV_AGENT_NAME_KEY, vmName);
+            properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vmId);
+            properties.put(AnkaConstants.ENV_TEMPLATE_ID_KEY, cloudImage.getId());
+            properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
+            properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
                 properties.put(AnkaConstants.ENV_SERVER_URL_KEY, this.serverUrl);
             }
-            properties.put(AnkaConstants.ENV_AGENT_NAME_KEY, vmName);
-            properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vmId);
-            properties.put(AnkaConstants.ENV_IMAGE_ID_KEY, cloudImage.getId());
-            properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
-            properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
 
-            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(vm, sshUser, sshPassword, agentPath, sshForwardingPort, this.serverUrl);
+            AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(
+                vm, 
+                sshUser, 
+                sshPassword, 
+                agentPath, 
+                sshForwardingPort, 
+                this.serverUrl
+            );
             try {
                 propertiesSetter.setProperties(properties);
             } catch (AnkaUnreachableInstanceException e) {
@@ -154,7 +190,6 @@ public class AnkaCloudConnector {
     }
 
     public void terminateInstance(CloudInstance cloudInstance) {
-
         AnkaCloudInstance instance = (AnkaCloudInstance)cloudInstance;
         try {
             AnkaVmInstance vm = instance.getVm();

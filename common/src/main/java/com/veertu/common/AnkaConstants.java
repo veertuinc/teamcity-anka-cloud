@@ -35,10 +35,10 @@ public interface AnkaConstants {
 
     // Agent Configuration constants
     String ENV_INSTANCE_ID_KEY = "env.ANKA_INSTANCE_ID";
-    String ENV_IMAGE_ID_KEY = "env.IMAGE_ID";
+    String ENV_TEMPLATE_ID_KEY = "env.ANKA_TEMPLATE_ID";
     String ENV_SERVER_URL_KEY = "serverUrl";
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";
-    String ENV_ANKA_CLOUD_VALUE = "ANKA";
+    String ENV_ANKA_CLOUD_VALUE = "ANKA_BUILD_CLOUD";
     String ENV_PROFILE_ID = "env.ANKA_PROFILE_ID";
     String ENV_AGENT_NAME_KEY = "name";
 }

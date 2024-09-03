@@ -1,19 +1,21 @@
 package com.veertu;
 
+import java.util.Date;
+import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.AnkaVmInstance;
-import jetbrains.buildServer.log.Loggers;
 import com.veertu.common.AnkaConstants;
+
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.InstanceStatus;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.AgentDescription;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Date;
-import java.util.Map;
 
 
 /**

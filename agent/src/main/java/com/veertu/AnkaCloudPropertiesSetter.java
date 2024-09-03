@@ -1,18 +1,20 @@
+// This logic runs on the agent. LOGs are sent to the buildAgent/logs/*
 package com.veertu;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.openapi.diagnostic.Logger;
+
 import jetbrains.buildServer.agent.AgentLifeCycleAdapter;
 import jetbrains.buildServer.agent.AgentLifeCycleListener;
 import jetbrains.buildServer.agent.BuildAgent;
 import jetbrains.buildServer.agent.BuildAgentConfigurationEx;
-import jetbrains.buildServer.clouds.CloudConstants;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.util.EventDispatcher;
-import org.jetbrains.annotations.NotNull;
-import com.veertu.common.AnkaConstants;
 
 public class AnkaCloudPropertiesSetter extends AgentLifeCycleAdapter {
 
@@ -44,18 +46,20 @@ public class AnkaCloudPropertiesSetter extends AgentLifeCycleAdapter {
         return null;
     }
 
+    // @Override
+    // public void agentStarted(@NotNull BuildAgent agent) {
+    //     LOG.info("agentStarted");
+    // }
+
     @Override
     public void afterAgentConfigurationLoaded(@NotNull BuildAgent agent) {
         final Map<String, String> env = agentConfiguration.getBuildParameters().getEnvironmentVariables();
-
         LOG.info("ankaAgent: config");
-
         /*String val = execCmd("launchctl getenv " + AnkaConstants.ENV_ANKA_CLOUD_KEY);
         if (val != null && val.length() > 0) {
             agentConfiguration.addConfigurationParameter(AnkaConstants.ENV_ANKA_CLOUD_KEY, val);
             LOG.info("ankaAgent: Detected cloud VM");
         }
-
         val = execCmd("launchctl getenv " + AnkaConstants.ENV_AGENT_NAME_KEY);
         if (val != null && val.length() > 0) {
             agentConfiguration.setName(val);

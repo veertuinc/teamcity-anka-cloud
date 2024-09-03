@@ -82,6 +82,8 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             String oidcClientId = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_ID);
             String oidcClientSecret = request.getParameter(PROP_PREFIX + AnkaConstants.OIDC_CLIENT_SECRET);
             String skipTLSVerificationString = request.getParameter(PROP_PREFIX + AnkaConstants.SKIP_TLS_VERIFICATION);
+            String serverUrl = request.getParameter(PROP_PREFIX + AnkaConstants.OPTIONAL_SERVER_URL);
+
             boolean skipTLSVerification = false;
             if (skipTLSVerificationString != null && skipTLSVerificationString.equals("true")) {
                 skipTLSVerification = true;
@@ -98,16 +100,25 @@ public class AnkaEditProfileController extends BaseFormXmlController {
                 authType = AuthType.OPENID_CONNECT;
             }
 
-            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, rootCA, authType, clientCert, clientCertKey,
-                    oidcClientId, oidcClientSecret);
+            connector = new AnkaCloudConnector(
+                mgmtURL, 
+                skipTLSVerification, 
+                authType, 
+                clientCert, 
+                clientCertKey,
+                oidcClientId, 
+                oidcClientSecret,
+                rootCA,
+                serverUrl
+            );
 
-            String imageId = request.getParameter("imageId");
+            String templateId = request.getParameter("templateId");
             String toGet = request.getParameter("get");
 
-            if (imageId != null && toGet.equals("tags")) {
-                List<String> tags = connector.listTemplateTags(imageId);
+            if (templateId != null && toGet.equals("tags")) {
+                List<String> tags = connector.listTemplateTags(templateId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
-            } else if (toGet.equals("images")) {
+            } else if (toGet.equals("templates")) {
                 xmlResponse.addContent(templatesToJson(connector.listTemplates()));
             } else if (toGet.equals("groups")) {
                 // avoid making the call if it's a basic license

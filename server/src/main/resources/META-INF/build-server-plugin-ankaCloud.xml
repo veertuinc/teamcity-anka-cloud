@@ -3,7 +3,5 @@
 <beans default-autowire="constructor">
     <bean class="com.veertu.AnkaCloudClientFactory" />
     <bean class="com.veertu.InstanceUpdater" />
-
-
     <bean class="com.veertu.AnkaEditProfileController" />
 </beans>

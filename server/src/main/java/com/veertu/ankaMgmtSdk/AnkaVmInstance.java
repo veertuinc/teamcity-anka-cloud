@@ -2,8 +2,6 @@ package com.veertu.ankaMgmtSdk;
 
 import org.json.JSONObject;
 
-import java.util.Date;
-
 /**
  * Created by asafgur on 17/05/2017.
  */

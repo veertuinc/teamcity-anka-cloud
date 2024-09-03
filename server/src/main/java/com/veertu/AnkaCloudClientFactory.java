@@ -23,7 +23,6 @@ import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 
-
 /**
  * Created by Asaf Gur.
  */
@@ -57,15 +56,21 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
 
     @NotNull
     @Override
-    public CloudClientEx createNewClient(@NotNull CloudState cloudState, @NotNull CloudClientParameters cloudClientParameters) {
+    public CloudClientEx createNewClient(
+        @NotNull CloudState cloudState, 
+        @NotNull CloudClientParameters cloudClientParameters
+    ) {
         String mgmtURL = cloudClientParameters.getParameter(AnkaConstants.CONTROLLER_URL_NAME);
         String sshUser = cloudClientParameters.getParameter(AnkaConstants.SSH_USER);
         String sshPassword = cloudClientParameters.getParameter(AnkaConstants.SSH_PASSWORD);
-        String imageId = cloudClientParameters.getParameter(AnkaConstants.IMAGE_ID);
+        String templateId = cloudClientParameters.getParameter(AnkaConstants.IMAGE_ID);
         String templateName = cloudClientParameters.getParameter(AnkaConstants.TEMPLATE_NAME);
         String templateTag = cloudClientParameters.getParameter(AnkaConstants.TEMPLATE_TAG);
         String agentPath = cloudClientParameters.getParameter(AnkaConstants.AGENT_PATH);
         String serverUrl = cloudClientParameters.getParameter(AnkaConstants.OPTIONAL_SERVER_URL);
+        if (serverUrl == null || serverUrl.isEmpty()) {
+            serverUrl = serverSettings.getRootUrl();
+        }
         String groupId = cloudClientParameters.getParameter(AnkaConstants.GROUP_ID);
         String vmNameTemplate = cloudClientParameters.getParameter(AnkaConstants.VM_NAME_TEMPLATE);
         if (groupId != null && groupId.isEmpty()) {
@@ -122,48 +127,83 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         AnkaCloudConnector connector;
 
         String authMethod = cloudClientParameters.getParameter(AnkaConstants.AUTH_METHOD);
-
+        String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
+        String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
         if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHOD_CERT)) {
-            String cert = cloudClientParameters.getParameter(AnkaConstants.CERT_STRING);
-            String key = cloudClientParameters.getParameter(AnkaConstants.CERT_KEY_STRING);
             if (cert != null && !cert.isEmpty() && key != null && !key.isEmpty()) {
-                connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification, 
-                    sshUser,sshPassword, sshForwardingPort, 
-                    agentPath, serverUrl, agentPoolId, profileId, priority,
-                        cert, key, AuthType.CERTIFICATE, rootCA);
+                connector = new AnkaCloudConnector(
+                    mgmtURL, 
+                    skipTLSVerification, 
+                    sshUser,
+                    sshPassword, 
+                    sshForwardingPort, 
+                    agentPath, 
+                    agentPoolId, 
+                    profileId, 
+                    priority,
+                    cert, 
+                    key, 
+                    AuthType.CERTIFICATE, 
+                    rootCA,
+                    serverUrl
+                );
             } else {
-                connector = new AnkaCloudConnector(mgmtURL, 
-                        sshUser, sshPassword, sshForwardingPort, 
-                        agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
+                connector = new AnkaCloudConnector(
+                    mgmtURL, 
+                    sshUser, 
+                    sshPassword, 
+                    sshForwardingPort, 
+                    agentPath, 
+                    agentPoolId, 
+                    profileId, 
+                    priority, 
+                    rootCA,
+                    serverUrl
+                );
             }
 
 
         } else if (authMethod != null && authMethod.equals(AnkaConstants.AUTH_METHID_OIDC)) {
             String client = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_ID);
             String secret = cloudClientParameters.getParameter(AnkaConstants.OIDC_CLIENT_SECRET);
-            connector = new AnkaCloudConnector(mgmtURL, skipTLSVerification,
-                    sshUser, sshPassword, sshForwardingPort, 
-                    agentPath, serverUrl, agentPoolId, profileId, priority,
-                    client, secret, AuthType.OPENID_CONNECT, rootCA);
+            connector = new AnkaCloudConnector(
+                mgmtURL, 
+                skipTLSVerification,
+                AuthType.OPENID_CONNECT,
+                cert,
+                key,
+                client,
+                secret,
+                rootCA,
+                serverUrl
+            );
         } else {
-            connector = new AnkaCloudConnector(mgmtURL, 
-                sshUser, sshPassword, sshForwardingPort, 
-                agentPath, serverUrl, agentPoolId, profileId, priority, rootCA);
+            connector = new AnkaCloudConnector(
+                mgmtURL, 
+                sshUser, 
+                sshPassword, 
+                sshForwardingPort, 
+                agentPath, 
+                agentPoolId, 
+                profileId, 
+                priority, 
+                rootCA,
+                serverUrl
+            );
         }
 
-        AnkaCloudImage newImage = new AnkaCloudImage(connector, imageId, templateName, templateTag, groupId, vmNameTemplate);
-        ArrayList<AnkaCloudImage> images = new ArrayList<>();
-        images.add(newImage);
+        AnkaCloudImage newTemplate = new AnkaCloudImage(connector, templateId, templateName, templateTag, groupId, vmNameTemplate);
+        ArrayList<AnkaCloudImage> templates = new ArrayList<>();
+        templates.add(newTemplate);
         if (templateTag != null && templateTag.length() > 0) {
-            LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s) tag %s",
-                    mgmtURL, templateName, imageId, templateTag));
+            LOG.info(String.format("Creating AnkaCloudClientEx for server %s, template %s(%s) tag %s",
+                mgmtURL, templateName, templateId, templateTag));
         } else {
-            LOG.info(String.format("Creating AnkaCloudClientEx for server %s , image %s(%s), and latest tag",
-                    mgmtURL, templateName, imageId));
+            LOG.info(String.format("Creating AnkaCloudClientEx for server %s, template %s(%s), and latest tag",
+                mgmtURL, templateName, templateId));
         }
 
-        return new AnkaCloudClientEx(connector, updater, images, maxInstances);
-
+        return new AnkaCloudClientEx(connector, updater, templates, maxInstances);
     }
 
     @NotNull

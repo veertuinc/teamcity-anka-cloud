@@ -51,7 +51,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
         LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx %s",
-                cloudImage.getName(), cloudImage.getId(), this.toString()));
+            cloudImage.getName(), cloudImage.getId(), this.toString()));
 
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
         return image.startNewInstance(userData, updater);
@@ -66,13 +66,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
         LOG.info(String.format("Terminating instance %s(%s) on AnkaCloudClientEx %s",
-                                    cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
+            cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
         this.connector.terminateInstance(cloudInstance);
-
     }
 
     @Override
     public void dispose() {
+        LOG.info(String.format("Disposing AnkaCloudClientEx %s", this.toString()));
         updater.unRegisterClient(this);
     }
 
@@ -94,13 +94,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
         LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
-        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
-        if (instanceId == null || imageId == null) {
+        String templateId = availableParameters.get(AnkaConstants.ENV_TEMPLATE_ID_KEY);
+        if (instanceId == null || templateId == null) {
             LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;
         }
-        LOG.info(String.format("findInstanceByAgent -> image id: %s , instance_id", imageId, instanceId));
-        CloudImage image = findImageById(imageId);
+        LOG.info(String.format("findInstanceByAgent -> template_id: %s , instance_id: %s", templateId, instanceId));
+        CloudImage image = findImageById(templateId);
         if (image != null) {
             LOG.info(String.format("Found instance %s for %s", instanceId, agentDescription.toString()));
             return image.findInstanceById(instanceId);
@@ -134,9 +134,9 @@ public class AnkaCloudClientEx implements CloudClientEx {
     public String generateAgentName(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
-        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
-        if (instanceId != null && imageId != null) {
-            CloudImage image = findImageById(imageId);
+        String templateId = availableParameters.get(AnkaConstants.ENV_TEMPLATE_ID_KEY);
+        if (instanceId != null && templateId != null) {
+            CloudImage image = findImageById(templateId);
             if (image == null) {
                 return null;
             }

@@ -101,7 +101,7 @@
         <div>
             <props:textProperty className="longField oidcs" name="${oidcClientId}" id="oidcClientId" />
         </div>
-        <span class="error option-error option-error_${paramImageId}" id="error_${oidcClientId}"></span>
+        <span class="error option-error option-error_${paramOidcClientId}" id="error_${paramOidcClientId}"></span>
     </td>
 </tr>
 
@@ -112,14 +112,14 @@
         <div>
             <props:textProperty className="longField oidcs" name="${oidcClientSecret}" id="oidcClientSecret" />
         </div>
-        <span class="error option-error option-error_${paramImageId}" id="error_${oidcClientSecret}"></span>
+        <span class="error option-error option-error_${paramOidcClientSecret}" id="error_${paramOidcClientSecret}"></span>
     </td>
 </tr>
 
 <tr class="dependentOnControllerConnection hidden">
-    <th><label for="imageSelect">Template Name: <l:star/></label></th>
+    <th><label for="templateSelect">Template Name: <l:star/></label></th>
     <td>
-        <select id="imageSelect" class="longField">
+        <select id="templateSelect" class="longField">
                   <option value="">Please select Template</option>
         </select>
     </td>
@@ -150,15 +150,15 @@
         <div>
             <props:textProperty className="disabled" name="${paramtemplateName}" id="templateNameInput" disabled="true" />
         </div>
-        <span class="error option-error option-error_${paramImageId}" id="error_${paramImageId}"></span>
+        <span class="error option-error option-error_${paramTemplateName}" id="error_${paramTemplateName}"></span>
     </td>
 </tr>
 
-<c:set var="paramImageId" value="<%=AnkaConstants.IMAGE_ID%>"/>
+<c:set var="paramTemplateId" value="<%=AnkaConstants.IMAGE_ID%>"/>
 <tr class="hidden">
-    <th><label for="${paramImageId}">Image Id</label></th>
+    <th><label for="${paramTemplateId}">Template Id</label></th>
     <td>
-        <props:textProperty name="${paramImageId}" id="imageIdInput" disabled="true" />
+        <props:textProperty name="${paramTemplateId}" id="templateIdInput" disabled="true" />
     </td>
 </tr>
 
@@ -306,11 +306,11 @@
         $j(".auth-config-cert").removeClass("hidden");
     }
 
-    function getImages() {
+    function getTemplates() {
         if (!BS) BS = {};
         // inspired by vmware plugin
         BS.ajaxRequest(
-            "<c:url value="${pluginResourcePath}"/>"+"?get=images",
+            "<c:url value="${pluginResourcePath}"/>"+"?get=templates",
             {
                 parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                 onFailure: function (response) {
@@ -326,15 +326,15 @@
                     var xmlDoc = $j(response.responseXML);
                     var wrapper = xmlDoc.find( "response" );
                     templates = JSON.parse(wrapper.text());
-                    var imageSelect = $j("#imageSelect");
-                    imageSelect.empty();
+                    var templateSelect = $j("#templateSelect");
+                    templateSelect.empty();
                     for (var k = 0; k < templates.length; k++) {
                         var template = templates[k];
                         var newTemplate = $j('<option value="' + template.id + '">' + template.name + '</option>');
-                        if (template.id === $j("#imageIdInput").val()) {
+                        if (template.id === $j("#templateIdInput").val()) {
                             newTemplate.prop("selected", true);
                         }
-                        imageSelect.append(newTemplate);
+                        templateSelect.append(newTemplate);
                     }
                     getTags();
                     $j(".dependentOnControllerConnection").removeClass("hidden");
@@ -348,7 +348,7 @@
         if (!BS) BS = {};
         // inspired by vmware plugin
         BS.ajaxRequest(
-            "<c:url value="${pluginResourcePath}"/>"+"?get=tags&imageId=" + $j("#imageSelect option:selected").val(),
+            "<c:url value="${pluginResourcePath}"/>"+"?get=tags&templateId=" + $j("#templateSelect option:selected").val(),
             {
                 parameters: BS.Clouds.Admin.CreateProfileForm.serializeParameters(),
                 onFailure: function (response) {
@@ -419,11 +419,11 @@
 
 
     function updateInputs() {
-        var imageId = $j("#imageSelect option:selected").val();
+        var imageId = $j("#templateSelect option:selected").val();
         var tag = $j("#tagSelect").val();
         if (imageId.length > 0) {
-            $j("#templateNameInput").val($j("#imageSelect option:selected").text());
-            $j("#imageIdInput").val(imageId);
+            $j("#templateNameInput").val($j("#templateSelect option:selected").text());
+            $j("#templateIdInput").val(imageId);
             $j("#templateTagInput").val(tag);
         }
     }
@@ -433,7 +433,7 @@
     contUrl.on("change", function() {
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(function() {
-            getImages();
+            getTemplates();
             getGroups();
         }, 300); // Adjust the debounce delay as needed
     });
@@ -443,20 +443,20 @@
     certs.on("change", function() {
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(function() {
-            getImages();
+            getTemplates();
             getGroups();
         }, 300); // Adjust the debounce delay as needed
     });
     oidcs.on("change", function() {
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(function() {
-            getImages();
+            getTemplates();
             getGroups();
         }, 300); // Adjust the debounce delay as needed
     });
 
-    var imageSelect = $j("#imageSelect");
-    imageSelect.on("change", function() {
+    var templateSelect = $j("#templateSelect");
+    templateSelect.on("change", function() {
         getTags();
         updateInputs();
     });
@@ -472,7 +472,7 @@
     });
 
     if (contUrl.val().length > 0) {
-        getImages();
+        getTemplates();
         getGroups();
     }
 

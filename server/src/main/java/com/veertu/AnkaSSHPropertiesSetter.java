@@ -70,7 +70,7 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
                 LOG.info(String.format("ssh command: %s", command));
                 LOG.info(String.format("ssh command output: %s", output));
             }
-
+            
             // launch
             this.sendCommand(this.loadScriptPath + " unload");
             this.sendCommand(this.loadScriptPath + " load");
