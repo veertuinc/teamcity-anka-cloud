@@ -52,10 +52,8 @@ public class AnkaCloudClientEx implements CloudClientEx {
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
         LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx %s",
             cloudImage.getName(), cloudImage.getId(), this.toString()));
-
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
         return image.startNewInstance(userData, updater);
-//        return this.connector.startNewInstance(cloudImage, userData);
     }
 
     @Override

@@ -58,9 +58,10 @@ public class AnkaSSHPropertiesSetter implements AnkaPropertiesSetter{
             LOG.info(String.format("ssh command: %s", installAgentCommand));
             LOG.info(String.format("ssh command output: %s", installAgentOutput));
 
-            // clear the buildAgent.properties so existing example lines don't screw up registration
-            // String clearbuildAgentPropertiesCommand = "cat /dev/null > " + this.propertiesFilePath;
-            // this.sendCommand(clearbuildAgentPropertiesCommand);
+            String ensureNewlineCommand = String.format("echo \"\" >> %s", this.propertiesFilePath);
+            String ensureNewlineOutput = this.sendCommand(ensureNewlineCommand);
+            LOG.info(String.format("ssh command: %s", ensureNewlineCommand));
+            LOG.info(String.format("ssh command output: %s", ensureNewlineOutput));
 
             // add everything we need to the buildAgent.properties
             String commandFmt = "echo \"%s=%s\" >> " + this.propertiesFilePath;

@@ -17,6 +17,7 @@ import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 import com.veertu.common.AnkaConstants;
 
 import jetbrains.buildServer.clouds.CloudInstance;
+import jetbrains.buildServer.clouds.CloudInstanceUserData;
 import jetbrains.buildServer.log.Loggers;
 
 /**
@@ -130,7 +131,7 @@ public class AnkaCloudConnector {
     }
 
 
-    public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater) throws AnkaMgmtException {
+    public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
         if (cloudImage.getTag() == null) {
             LOG.info(String.format("starting new instance with template %s, latest tag, group %s", cloudImage.getId(), cloudImage.getGroupId()));
         } else {
@@ -146,11 +147,11 @@ public class AnkaCloudConnector {
             null,
             cloudImage.getvmNameTemplate()
         );
-        updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage));
+        updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage, userData));
         return new AnkaCloudInstance(vmId, cloudImage);
     }
 
-    private void waitForBootAndSetVmProperties(String vmId, AnkaCloudImage cloudImage) {
+    private void waitForBootAndSetVmProperties(String vmId, AnkaCloudImage cloudImage, CloudInstanceUserData userData) {
         try {
             HashMap<String, String > properties = new HashMap<>();
             AnkaVmInstance vm = waitForBoot(vmId);
@@ -169,13 +170,15 @@ public class AnkaCloudConnector {
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
                 properties.put(AnkaConstants.ENV_SERVER_URL_KEY, this.serverUrl);
             }
+            // new requirement that allows auto-authorization to happen
+            properties.put("teamcity.agent.startingInstanceId", userData.getCustomAgentConfigurationParameters().get("teamcity.agent.startingInstanceId"));
 
             AnkaSSHPropertiesSetter propertiesSetter = new AnkaSSHPropertiesSetter(
                 vm, 
-                sshUser, 
-                sshPassword, 
-                agentPath, 
-                sshForwardingPort, 
+                sshUser,
+                sshPassword,
+                agentPath,
+                sshForwardingPort,
                 this.serverUrl
             );
             try {

@@ -106,7 +106,7 @@ public class AnkaCloudImage implements CloudImage {
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
-            AnkaCloudInstance instance = this.connector.startNewInstance(this, updater);
+            AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
             return instance;
         } catch (AnkaMgmtException e) {

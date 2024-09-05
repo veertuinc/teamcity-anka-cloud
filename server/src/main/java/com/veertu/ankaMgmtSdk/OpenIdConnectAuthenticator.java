@@ -1,7 +1,17 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
-import com.veertu.ankaMgmtSdk.exceptions.ClientException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -20,17 +30,8 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.net.ssl.SSLContext;
-import javax.xml.bind.DatatypeConverter;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 
 public class OpenIdConnectAuthenticator {
 
@@ -184,7 +185,7 @@ public class OpenIdConnectAuthenticator {
 
     private NameValuePair makeAuthorization() {
         String authorizationPair = String.format("%s:%s", clientId, clientSecret);
-        String encoded = DatatypeConverter.printBase64Binary(authorizationPair.getBytes());
+        String encoded = java.util.Base64.getEncoder().encodeToString(authorizationPair.getBytes());
         return new BasicNameValuePair("Authorization", String.format("Basic %s", encoded));
     }
 
