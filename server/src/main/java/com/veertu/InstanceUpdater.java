@@ -40,7 +40,6 @@ public class InstanceUpdater {
                 ankaImage.populateInstances();
             }
         }
-
     }
 
     public void executeTaskInBackground(Runnable r) {

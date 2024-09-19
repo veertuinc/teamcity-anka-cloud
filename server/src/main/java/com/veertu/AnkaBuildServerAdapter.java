@@ -6,64 +6,106 @@ import com.intellij.openapi.diagnostic.Logger;
 
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.BuildServerAdapter;
+import jetbrains.buildServer.serverSide.SBuild;
+import jetbrains.buildServer.serverSide.SBuildAgent;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.serverSide.SRunningBuild;
 
 public class AnkaBuildServerAdapter extends BuildServerAdapter {
 
-    // public enum TeamCityEvent {
-    //     BUILD_FAILED, BUILD_INTERRUPTED, BUILD_STARTED, BUILD_SUCCESSFUL, SERVER_STARTUP, SERVER_SHUTDOWN
-    // }
-
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
 	private final SBuildServer server;
-    // private final HashMap<TeamCityEvent, String> eventMap;
-
+    private AnkaCloudClientEx client;
+    // private BuildAgentManagerEx buildAgentManager;
 
 	public AnkaBuildServerAdapter(@NotNull SBuildServer sBuildServer) {
 		server = sBuildServer;
-		// this.eventMap = new HashMap<>();
-		// this.eventMap.put(TeamCityEvent.BUILD_STARTED, "INFO");
-		// this.eventMap.put(TeamCityEvent.BUILD_SUCCESSFUL, "SUCCESS");
-		// this.eventMap.put(TeamCityEvent.BUILD_FAILED, "ERROR");
-		// this.eventMap.put(TeamCityEvent.BUILD_INTERRUPTED, "WARNING");
-		// this.eventMap.put(TeamCityEvent.SERVER_STARTUP, "WARNING");
-		// this.eventMap.put(TeamCityEvent.SERVER_SHUTDOWN, "WARNING");
-		LOG.debug("HERE ==========================1");
 	}
 
+    public SBuildAgent getAgentByBuildId(long buildId) {
+        SBuild build = server.findBuildInstanceById(buildId);
+        if (build != null) {
+            return build.getAgent();
+        } else {
+            LOG.warn("Build not found for ID: " + buildId);
+            return null;
+        }
+    }
+
 	public void register() {
-		LOG.debug("HERE ===========================2");
 		server.addListener(this);
-		LOG.debug("HERE ===========================3");
+		LOG.info("AnkaBuildServerAdapter.register()");
 	}
-	
+
+    @Override
+    public void agentRegistered(SBuildAgent agent, long currentlyRunningBuildId) {
+        LOG.info("Agent registered =========: " + agent.toString());
+        super.agentRegistered(agent, currentlyRunningBuildId);
+    }
+
+    @Override
+    public void agentUnregistered(SBuildAgent agent) {
+        LOG.info("Agent unregistered =========: " + agent.toString());
+        super.agentUnregistered(agent);
+    }
+    
 	@Override
 	public void changesLoaded(SRunningBuild build) {
-		LOG.debug("HERE ===========================4");
+		if (build.getBuildType() != null) {
+			LOG.info(String.format("BUILD STARTED ===========================> %s", build.getBuildType().getName()));
+		} else {
+			LOG.info("BUILD STARTED ===========================> unknown build type");
+		}
+        client.unregisterAgent(build.getAgent().getId());
+        // buildAgentManager.unregisterAgent(build.getAgent().getId(), "Cloud instance has gone");
+        // SBuildAgent agent = getAgentByBuildId(build.getBuildId());
+        // CloudInstance instance = this.client.findInstanceByAgent(agent);
+        // if (instance != null) {
+        //     this.client.terminateInstance(instance);
+        //     LOG.info("BUILD STARTED ===========================> Instance terminated: " + instance.getInstanceId());
+        // } else {
+        //     LOG.warn("BUILD STARTED ===========================> Instance not found to terminate for agent: " + agent.toString());
+        // }
 		super.changesLoaded(build);
 	}
 	
 	@Override
 	public void buildFinished(SRunningBuild build) {
-		LOG.debug("HERE ===========================5");
+        if (build.getBuildType() != null) {
+			LOG.info(String.format("BUILD FINISHED ===========================> %s", build.getBuildType().getName()));
+		} else {
+			LOG.info("BUILD FINISHED ===========================> unknown build type");
+		}
 		super.buildFinished(build);
 	}
 	
 	@Override
 	public void buildInterrupted(SRunningBuild build) {
-		LOG.debug("HERE ===========================6");
+        LOG.info("BUILD INTERRUPTED ===========================> " + build.toString());
+        if (build.getBuildType() != null) {
+			LOG.info(String.format("BUILD INTERRUPTED ===========================> %s", build.getBuildType().getName()));
+		} else {
+			LOG.info("BUILD INTERRUPTED ===========================> unknown build type");
+		}
+        // SBuildAgent agent = getAgentByBuildId(build.getBuildId());
+        // CloudInstance instance = this.client.findInstanceByAgent(agent);
+        // if (instance != null) {
+        //     this.client.terminateInstance(instance);
+        //     LOG.info("BUILD INTERRUPTED ===========================> Instance terminated: " + instance.getInstanceId());
+        // } else {
+        //     LOG.warn("BUILD INTERRUPTED ===========================> Instance not found to terminate for agent: " + agent.toString());
+        // }
 		super.buildInterrupted(build);
 	}
 	
 	@Override
 	public void serverStartup() {
-		LOG.debug("Server startup");
+		LOG.info("Server startup");
 	}
 
 	@Override
 	public void serverShutdown() {
-		LOG.debug("Server shutdown");
+		LOG.info("Server shutdown");
 	}
 }

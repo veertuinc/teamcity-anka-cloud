@@ -22,6 +22,7 @@ import jetbrains.buildServer.serverSide.AgentDescription;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.ServerSettings;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
+import jetbrains.buildServer.serverSide.BuildAgentManagerEx;
 
 /**
  * Created by Asaf Gur.
@@ -30,7 +31,6 @@ import jetbrains.buildServer.web.openapi.PluginDescriptor;
 public class AnkaCloudClientFactory implements CloudClientFactory {
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
-
 
     @NotNull
     private final CloudRegistrar cloudRegistrar;
@@ -41,15 +41,21 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
     @NotNull
     private final InstanceUpdater updater;
 
+    @NotNull
+    private final BuildAgentManagerEx buildAgentManager;
 
-    public AnkaCloudClientFactory(@NotNull final CloudRegistrar cloudRegistrar,
-                                  @NotNull final PluginDescriptor pluginDescriptor,
-                                  @NotNull final ServerSettings serverSettings,
-                                  @NotNull final InstanceUpdater updater) {
+    public AnkaCloudClientFactory(
+        @NotNull final CloudRegistrar cloudRegistrar,
+        @NotNull final PluginDescriptor pluginDescriptor,
+        @NotNull final ServerSettings serverSettings,
+        @NotNull final InstanceUpdater updater,
+        @NotNull final BuildAgentManagerEx buildAgentManager
+    ) {
         this.cloudRegistrar = cloudRegistrar;
         cloudProfileSettings = pluginDescriptor.getPluginResourcesPath(AnkaConstants.PROFILE_SETTING_HTML);
         this.serverSettings = serverSettings;
         this.updater = updater;
+        this.buildAgentManager = buildAgentManager;
         LOG.info("Registering Anka Cloud plugin in cloud registrar");
         cloudRegistrar.registerCloudFactory(this);
     }
@@ -203,7 +209,7 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
                 mgmtURL, templateName, templateId));
         }
 
-        return new AnkaCloudClientEx(connector, updater, templates, maxInstances);
+        return new AnkaCloudClientEx(connector, updater, templates, maxInstances, buildAgentManager);
     }
 
     @NotNull

@@ -12,6 +12,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ConnectionPoolTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
+import java.util.concurrent.ExecutionException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -28,6 +29,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -42,6 +44,7 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import com.intellij.openapi.diagnostic.Logger;
 import jetbrains.buildServer.log.Loggers;
@@ -56,9 +59,11 @@ public class AnkaMgmtCommunicator {
 
     protected static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
     protected URL mgmtUrl;
     protected final int timeout = 30000;
-    protected final int maxRetries = 10;
+    protected final int maxRetries = 7;
     protected boolean skipTLSVerification;
     protected String rootCA;
     protected transient RoundRobin roundRobin;
@@ -530,22 +535,17 @@ public class AnkaMgmtCommunicator {
 
     protected JSONObject doRequest(RequestMethod method, String path, JSONObject requestBody, int reqTimeout) throws IOException, AnkaMgmtException {
         int retry = 0;
+        int backoffTime = 1000; // Initial backoff time in milliseconds
+        int maxBackoffTime = 32000; // Maximum backoff time in milliseconds
         CloseableHttpResponse response = null;
         HttpRequestBase request;
 
         while (true){
             try {
                 retry++;
-
                 CloseableHttpClient httpClient = getHttpClient();
                 try {
-                    String host = "";
-                    if (roundRobin != null) {
-                        host = roundRobin.next();
-                    } else {
-                        host = mgmtUrl.toString();
-                    }
-
+                    String host = (roundRobin != null) ? roundRobin.next() : mgmtUrl.toString();
                     String url = host + path;
                     switch (method) {
                         case POST:
@@ -633,17 +633,20 @@ public class AnkaMgmtCommunicator {
                 return null;
             } catch (HttpHostConnectException | ConnectTimeoutException | ClientException | SSLException | NoRouteToHostException e) {
                 // don't retry on client exception
-                LOG.error(String.format("Got exception: %s %s", e.getClass().getName(), e.getMessage()));
-
+                LOG.error(String.format("[retry %d] Got exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
                 throw new AnkaMgmtException(e);
             } catch (Exception e) {
-                LOG.error(String.format("Got exception: %s %s", e.getClass().getName(), e.getMessage()));
-
-                if (retry < maxRetries) {
-                    continue;
+                LOG.error(String.format("[retry %d] Got generic exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
+                if (retry >= maxRetries) {
+                    throw new AnkaMgmtException(e);
                 }
-
-                throw new AnkaMgmtException(e);
+                try {
+                    scheduler.schedule(() -> {}, Math.min(backoffTime, maxBackoffTime), TimeUnit.MILLISECONDS).get();
+                    backoffTime *= 2; // Exponential backoff
+                } catch (InterruptedException | ExecutionException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new AnkaMgmtException(ie);
+                }
             }
         }
 

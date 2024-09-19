@@ -27,9 +27,7 @@ import jetbrains.buildServer.log.Loggers;
 /// AnkaCloudConnector is a facade connecting TC cloud profile to anka cloud
 /// Each profile should have one AnkaCloudConnector
 ///
-
 public class AnkaCloudConnector {
-
     private final String mgmtURL;
     private final String agentPath;
     private final String serverUrl;
@@ -41,9 +39,9 @@ public class AnkaCloudConnector {
     private final int priority;
     private final AnkaAPI ankaAPI;
     private final int waitUnit = 4000;
-    private final int maxRunningTimeout = waitUnit * 20;
+    private final int maxRunningTimeout = waitUnit * 30;
     private final int maxSchedulingTimeout = 1000 * 60 * 60; // 1 hour
-    private final int maxIpTimeout = waitUnit * 20;
+    private final int maxIpTimeout = waitUnit * 30;
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
@@ -130,7 +128,6 @@ public class AnkaCloudConnector {
         this.ankaAPI = new AnkaAPI(mgmtURL, skipTLSVerification, cert, key, authType, rootCA);
     }
 
-
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
         if (cloudImage.getTag() == null) {
             LOG.info(String.format("starting new instance with template %s, latest tag, group %s", cloudImage.getId(), cloudImage.getGroupId()));
@@ -209,7 +206,6 @@ public class AnkaCloudConnector {
         image.populateInstances();
     }
 
-
     public Collection<AnkaCloudInstance> getImageInstances(AnkaCloudImage image) {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         List<AnkaVmInstance> ankaInstances = this.ankaAPI.showInstances();
@@ -222,7 +218,6 @@ public class AnkaCloudConnector {
         }
         return instances;
     }
-
 
     public boolean isRunning() {
         try {

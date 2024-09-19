@@ -20,7 +20,7 @@ import jetbrains.buildServer.clouds.CloudInstanceUserData;
 import jetbrains.buildServer.clouds.QuotaException;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.AgentDescription;
-
+import jetbrains.buildServer.serverSide.BuildAgentManagerEx;
 /**
  * Created by Asaf Gur.
  */
@@ -32,13 +32,20 @@ public class AnkaCloudClientEx implements CloudClientEx {
     private final AnkaCloudConnector connector;
     private InstanceUpdater updater;
     private final int maxInstances;
+    private final BuildAgentManagerEx buildAgentManager;
     private final ConcurrentHashMap<String, AnkaCloudImage> imagesMap;
 
-
-    public AnkaCloudClientEx(AnkaCloudConnector connector, InstanceUpdater updater, Collection<AnkaCloudImage> images, int maxInstances) {
+    public AnkaCloudClientEx(
+        AnkaCloudConnector connector,
+        InstanceUpdater updater,
+        Collection<AnkaCloudImage> images,
+        int maxInstances,
+        BuildAgentManagerEx buildAgentManager
+    ) {
         this.connector = connector;
         this.updater = updater;
         this.maxInstances = maxInstances;
+        this.buildAgentManager = buildAgentManager;
         this.imagesMap = new ConcurrentHashMap<>();
         for (AnkaCloudImage image: images) {
             imagesMap.put(image.getId(), image);
@@ -54,6 +61,11 @@ public class AnkaCloudClientEx implements CloudClientEx {
             cloudImage.getName(), cloudImage.getId(), this.toString()));
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
         return image.startNewInstance(userData, updater);
+    }
+
+    public void unregisterAgent(int agentId) {
+        LOG.info(String.format(" ========== Unregistering agent %s from AnkaCloudClientEx %s", agentId, this.toString()));
+        buildAgentManager.unregisterAgent(agentId, "Cloud instance has gone");
     }
 
     @Override
