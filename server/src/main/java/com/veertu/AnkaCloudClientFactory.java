@@ -198,7 +198,20 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
             );
         }
 
-        AnkaCloudImage newTemplate = new AnkaCloudImage(connector, templateId, templateName, templateTag, groupId, vmNameTemplate);
+        // this is needed for different profiles to not collide
+        // AnkaCloudImage > populateInstances needs this for uniqueness
+        String externalId = profileId;
+        LOG.info(String.format("ExternalId: %s", externalId));
+
+        AnkaCloudImage newTemplate = new AnkaCloudImage(
+            connector, 
+            templateId, 
+            templateName, 
+            templateTag, 
+            groupId, 
+            vmNameTemplate,
+            externalId
+        );
         ArrayList<AnkaCloudImage> templates = new ArrayList<>();
         templates.add(newTemplate);
         if (templateTag != null && templateTag.length() > 0) {

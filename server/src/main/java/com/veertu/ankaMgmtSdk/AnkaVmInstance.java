@@ -11,6 +11,7 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
     private final String templateId;
     private AnkaVmInfo vmInfo;
     private String message;
+    private String externalId;
 
     public AnkaVmInstance(String id, JSONObject jsonObject) {
         this.id = id;
@@ -22,6 +23,9 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
         }
         if (jsonObject.has("message")) {
             this.message = jsonObject.getString("message");
+        }
+        if (jsonObject.has("external_id")) {
+            this.externalId = jsonObject.getString("external_id");
         }
     }
 
@@ -39,6 +43,8 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
     }
 
     public String getTemplateId() { return templateId; }
+
+    public String getExternalId() { return externalId; }
 
     public String getSessionState() {
         return sessionState;

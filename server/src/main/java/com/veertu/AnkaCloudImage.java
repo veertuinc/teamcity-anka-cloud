@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
 
@@ -13,7 +14,7 @@ import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
-
+import jetbrains.buildServer.log.Loggers;
 
 /**
  * Created by Asaf Gur.
@@ -26,11 +27,22 @@ public class AnkaCloudImage implements CloudImage {
     private final String tag;
     private final String groupId;
     private final String vmNameTemplate;
+    private String externalId;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
 
-    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag, String groupId, String vmNameTemplate) {
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+
+    public AnkaCloudImage(
+        AnkaCloudConnector connector, 
+        String id, 
+        String name, 
+        String tag, 
+        String groupId, 
+        String vmNameTemplate,
+        String externalId
+    ) {
         this.connector = connector;
         this.id = id;
         this.name = name;
@@ -46,10 +58,16 @@ public class AnkaCloudImage implements CloudImage {
         } else {
             this.vmNameTemplate = "$ts";
         }
+        this.externalId = externalId;
     }
 
     public AnkaVmInstance showInstance(String vmId) {
         return connector.showInstance(vmId);
+    }
+
+    @NotNull
+    public String getExternalId() {
+        return externalId;
     }
 
     @NotNull
@@ -75,6 +93,10 @@ public class AnkaCloudImage implements CloudImage {
 
     public String getvmNameTemplate() {
         return vmNameTemplate;
+    }
+
+    public void setExternalId(String profileId) {
+        this.externalId = profileId;
     }
 
     @NotNull
@@ -106,6 +128,8 @@ public class AnkaCloudImage implements CloudImage {
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
+            LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudImage, externalId: %s",
+                this.id, this.name, userData.getProfileId()));
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
             return instance;

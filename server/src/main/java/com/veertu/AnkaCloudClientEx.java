@@ -58,14 +58,14 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx %s",
-            cloudImage.getName(), cloudImage.getId(), this.toString()));
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
+        image.setExternalId(userData.getProfileId());
+        LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx, externalId: %s",
+            cloudImage.getName(), cloudImage.getId(), image.getExternalId()));
         return image.startNewInstance(userData, updater);
     }
 
     public void unregisterAgent(int agentId) {
-        LOG.info(String.format(" ========== Unregistering agent %s from AnkaCloudClientEx %s", agentId, this.toString()));
         buildAgentManager.unregisterAgent(agentId, "Cloud instance has gone");
     }
 

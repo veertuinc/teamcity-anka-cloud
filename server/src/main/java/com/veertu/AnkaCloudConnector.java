@@ -130,9 +130,9 @@ public class AnkaCloudConnector {
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
         if (cloudImage.getTag() == null) {
-            LOG.info(String.format("starting new instance with template %s, latest tag, group %s", cloudImage.getId(), cloudImage.getGroupId()));
+            LOG.info(String.format("starting new instance with template %s, latest tag, group %s, externalId %s", cloudImage.getId(), cloudImage.getGroupId(), cloudImage.getExternalId()));
         } else {
-            LOG.info(String.format("starting new instance with template %s, tag %s, group %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId()));
+            LOG.info(String.format("starting new instance with template %s, tag %s, group %s, externalId %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId(), cloudImage.getExternalId()));
         }
         String vmId = this.ankaAPI.startVM(
             cloudImage.getId(), 
@@ -141,7 +141,7 @@ public class AnkaCloudConnector {
             cloudImage.getGroupId(),
             priority, 
             null,
-            null,
+            userData.getProfileId(),
             cloudImage.getvmNameTemplate()
         );
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage, userData));
@@ -167,6 +167,7 @@ public class AnkaCloudConnector {
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
                 properties.put(AnkaConstants.ENV_SERVER_URL_KEY, this.serverUrl);
             }
+
             // new requirement that allows auto-authorization to happen
             properties.put("teamcity.agent.startingInstanceId", userData.getCustomAgentConfigurationParameters().get("teamcity.agent.startingInstanceId"));
 
@@ -209,9 +210,8 @@ public class AnkaCloudConnector {
     public Collection<AnkaCloudInstance> getImageInstances(AnkaCloudImage image) {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         List<AnkaVmInstance> ankaInstances = this.ankaAPI.showInstances();
-
         for (AnkaVmInstance vm: ankaInstances) {
-            if (vm.getTemplateId().equals(image.getId())) {
+            if (vm.getExternalId().equals(image.getExternalId())) {
                 AnkaCloudInstance instance = new AnkaCloudInstance(vm.getId(), image);
                 instances.add(instance);
             }

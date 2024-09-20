@@ -203,8 +203,16 @@ public class AnkaMgmtCommunicator {
     }
 
 
-    public String startVm(String templateId, String tag, String vmNameTemplate, String startUpScript, String groupId, int priority,
-                          String name, String externalId) throws AnkaMgmtException {
+    public String startVm(
+        String templateId, 
+        String tag, 
+        String vmNameTemplate, 
+        String startUpScript, 
+        String groupId, 
+        int priority,
+        String name, 
+        String externalId
+    ) throws AnkaMgmtException {
         String url = "/api/v1/vm";
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
@@ -246,7 +254,16 @@ public class AnkaMgmtCommunicator {
             String message = jsonResponse.getString("message");
             if (message.equals("No such tag "+ tag)) {
                 LOG.warn("Tag " + tag + " not found. starting vm with latest tag");
-                return startVm(templateId, null, vmNameTemplate, startUpScript, groupId, priority, name, externalId);
+                return startVm(
+                    templateId, 
+                    null, 
+                    vmNameTemplate, 
+                    startUpScript, 
+                    groupId, 
+                    priority, 
+                    name, 
+                    externalId
+                );
             }
         }
 

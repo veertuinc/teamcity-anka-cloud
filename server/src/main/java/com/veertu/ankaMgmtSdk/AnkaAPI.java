@@ -107,8 +107,26 @@ public class AnkaAPI {
     //     return id;
     // }
 
-    public String startVM(String templateId, String tag, String startUpScript, String groupId, int priority, String name, String externalId, String vmNameTemplate) throws AnkaMgmtException {
-        String id = communicator.startVm(templateId, tag, vmNameTemplate, startUpScript, groupId, priority, name, externalId);
+    public String startVM(
+        String templateId, 
+        String tag, 
+        String startUpScript, 
+        String groupId, 
+        int priority, 
+        String name, 
+        String externalId, 
+        String vmNameTemplate
+    ) throws AnkaMgmtException {
+        String id = communicator.startVm(
+            templateId, 
+            tag, 
+            vmNameTemplate, 
+            startUpScript, 
+            groupId, 
+            priority, 
+            name, 
+            externalId
+        );
         invalidateCache();
         return id;
     }
