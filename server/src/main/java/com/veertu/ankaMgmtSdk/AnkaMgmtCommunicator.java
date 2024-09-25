@@ -601,6 +601,9 @@ public class AnkaMgmtCommunicator {
                 retry++;
                 CloseableHttpClient httpClient = getHttpClient();
                 try {
+                    if (mgmtUrl == null) {
+                        throw new AnkaMgmtException("controller URL is empty");
+                    }
                     String host = (roundRobin != null) ? roundRobin.next() : mgmtUrl.toString();
                     String url = host + path;
                     switch (method) {
@@ -635,7 +638,6 @@ public class AnkaMgmtCommunicator {
                         if (requestBody != null) {
                             LOG.info("request: " + request.toString());
                             LOG.info("requestBody: " + requestBody);
-                            LOG.info("response: " + response.toString());
                         }
                         long elapsedTime = System.currentTimeMillis() - startTime;
                         if (roundRobin != null) {
@@ -698,6 +700,9 @@ public class AnkaMgmtCommunicator {
                 throw new AnkaMgmtException(e);
             } catch (Exception e) {
                 LOG.error(String.format("[retry %d] Got generic exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
+                if (e.getMessage().contains("controller URL is empty")) {
+                    throw new AnkaMgmtException(e.getMessage());
+                }
                 if (retry >= maxRetries) {
                     throw new AnkaMgmtException(e);
                 }

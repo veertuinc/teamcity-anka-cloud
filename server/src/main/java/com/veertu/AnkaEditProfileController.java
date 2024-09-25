@@ -31,6 +31,8 @@ import jetbrains.buildServer.serverSide.agentPools.AgentPoolManager;
 import jetbrains.buildServer.serverSide.agentPools.AgentPoolUtil;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
+import com.intellij.openapi.diagnostic.Logger;
+import jetbrains.buildServer.log.Loggers;
 
 
 /**
@@ -42,6 +44,8 @@ public class AnkaEditProfileController extends BaseFormXmlController {
     private final PluginDescriptor pluginDescriptor;
     private final AgentPoolManager agentPoolManager;
     private final String PROP_PREFIX = "prop:";
+
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     public AnkaEditProfileController(@NotNull final SBuildServer server,
                                      @NotNull final PluginDescriptor pluginDescriptor,
@@ -103,12 +107,18 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             }
 
             try {
-                String sanitizedServerUrl = serverUrl.replaceAll("[\r\n]", "");
-                URL validatedUrl = new URL(sanitizedServerUrl);
-                String sanitizedMgmtUrl = mgmtURL.replaceAll("[\r\n]", "");
-                URL validatedMgmtUrl = new URL(sanitizedMgmtUrl);
+                if (serverUrl != null && !serverUrl.isEmpty()) {
+                    String sanitizedServerUrl = serverUrl.replaceAll("[\r\n]", "");
+                    URL validatedServerUrl = new URL(sanitizedServerUrl);
+                    serverUrl = validatedServerUrl.toString();
+                }
+                if (!mgmtURL.isEmpty()) {
+                    String sanitizedMgmtUrl = mgmtURL.replaceAll("[\r\n]", "");
+                    URL validatedMgmtUrl = new URL(sanitizedMgmtUrl);
+                    mgmtURL = validatedMgmtUrl.toString();
+                }
                 connector = new AnkaCloudConnector(
-                    validatedMgmtUrl.toString(), 
+                    mgmtURL, 
                     skipTLSVerification, 
                     authType, 
                     clientCert, 
@@ -116,11 +126,13 @@ public class AnkaEditProfileController extends BaseFormXmlController {
                     oidcClientId, 
                     oidcClientSecret,
                     rootCA,
-                    validatedUrl.toString()
+                    serverUrl
                 );
             } catch (MalformedURLException e) {
                 // Handle the error appropriately, e.g., log it and/or return an error response
-                throw new IllegalArgumentException("Invalid server URL", e);
+                LOG.error("Invalid server URL", e.getMessage());
+                response.setStatus(400);
+                return;
             }
 
             String templateId = request.getParameter("templateId");
