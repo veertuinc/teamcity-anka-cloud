@@ -9,6 +9,8 @@ public interface AnkaConstants {
     String IMAGE_ID = "image_id";
     String TEMPLATE_NAME = "TEMPLATE_NAME";
     String TEMPLATE_TAG = "TEMPLATE_TAG";
+    String VCPU_COUNT = "VCPU_COUNT";
+    String RAM_SIZE = "RAM_SIZE";
     String VM_NAME_TEMPLATE = "VM_NAME_TEMPLATE";
     String GROUP_ID = "group_id";
     String CONTROLLER_URL_NAME = "clouds.anka.url";

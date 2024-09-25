@@ -89,6 +89,7 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public boolean isInitialized() {
+        // LOG.info(String.format("Checking if AnkaCloudClientEx %s is initialized", this.toString()));
         return this.connector.isRunning();
     }
 

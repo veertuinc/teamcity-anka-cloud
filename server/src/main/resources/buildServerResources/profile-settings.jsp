@@ -143,6 +143,28 @@
     </td>
 </tr>
 
+<c:set var="paramvCpuTemplate" value="<%=AnkaConstants.VCPU_COUNT%>"/>
+<tr id="vCpuTr" class="dependentOnControllerConnection hidden">
+    <th><label for="groupSelect">vCPU Override (optional): </label></th>
+    <td id="vCpuTd">
+        <div>
+            <props:textProperty name="${paramvCpuTemplate}" id="vCpuInput" className="longField" />
+        </div>
+        <span>This is used to set the vCPU count for the VM. If blank, the vCPU count will be the number of vCPUs set on the template. (only works when the template VM is stopped)</span>
+    </td>
+</tr>
+
+<c:set var="paramRamTemplate" value="<%=AnkaConstants.RAM_SIZE%>"/>
+<tr id="ramTr" class="dependentOnControllerConnection hidden">
+    <th><label for="groupSelect">RAM Override (optional): </label></th>
+    <td id="ramTd">
+        <div>
+            <props:textProperty name="${paramRamTemplate}" id="ramInput" className="longField" />
+        </div>
+        <span>This is used to set the RAM MB (1GB = 1024MB) for the VM. If blank, the RAM size will be the amount of RAM set on the template. (only works when the template VM is stopped)</span>
+    </td>
+</tr>
+
 <c:set var="paramtemplateName" value="<%=AnkaConstants.TEMPLATE_NAME%>"/>
 <tr class="hidden">
     <th><label for="${paramtemplateName}">Template Name</label></th>
@@ -364,7 +386,9 @@
                     var tags = JSON.parse(wrapper.text()).reverse();
                     var tagSelect = $j("#tagSelect");
                     tagSelect.empty();
-                    tagSelect.append($j('<option value="">Latest</option>'));
+                    if (tags[0] !== "No tags found in registry") {
+                        tagSelect.append($j('<option value="">Latest</option>'));
+                    }
                     for (var k = 0; k < tags.length; k++) {
                         var tag = $j('<option value="' + tags[k] + '">' + tags[k] + '</option>');
                         if (tags[k] ===  $j("#templateTagInput").val()) {

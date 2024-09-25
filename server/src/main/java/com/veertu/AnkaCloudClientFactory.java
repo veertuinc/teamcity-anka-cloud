@@ -203,6 +203,30 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         String externalId = profileId;
         LOG.info(String.format("ExternalId: %s", externalId));
 
+        // vCPU and RAM
+        String vCpuCount = cloudClientParameters.getParameter(AnkaConstants.VCPU_COUNT);
+        String ramSize = cloudClientParameters.getParameter(AnkaConstants.RAM_SIZE);
+        Integer ramSizeInt = null;
+        try {
+            ramSizeInt = (ramSize != null && !ramSize.isEmpty()) ? Integer.valueOf(ramSize) : null;
+        } catch (NumberFormatException | NullPointerException e) {
+            LOG.error(String.format("Invalid RAM size (integers only)"));
+        }
+        Integer vCpuCountInt = null;
+        try {
+            vCpuCountInt = (vCpuCount != null && !vCpuCount.isEmpty()) ? Integer.valueOf(vCpuCount) : null;
+        } catch (NumberFormatException | NullPointerException e) {
+            LOG.error(String.format("Invalid vCPU count (integers only)"));
+        }
+        if (ramSizeInt != null && ramSizeInt == 0) {
+            ramSizeInt = null;
+            LOG.error(String.format("Invalid RAM size (0 is not allowed)"));
+        }
+        if (vCpuCountInt != null && vCpuCountInt == 0) {
+            vCpuCountInt = null;
+            LOG.error(String.format("Invalid vCPU count (0 is not allowed)"));
+        }
+
         AnkaCloudImage newTemplate = new AnkaCloudImage(
             connector, 
             templateId, 
@@ -210,7 +234,9 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
             templateTag, 
             groupId, 
             vmNameTemplate,
-            externalId
+            externalId,
+            vCpuCountInt,
+            ramSizeInt
         );
         ArrayList<AnkaCloudImage> templates = new ArrayList<>();
         templates.add(newTemplate);

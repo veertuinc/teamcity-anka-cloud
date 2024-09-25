@@ -28,6 +28,8 @@ public class AnkaCloudImage implements CloudImage {
     private final String groupId;
     private final String vmNameTemplate;
     private String externalId;
+    private Integer vCpuCount;
+    private Integer ramSize;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
@@ -41,7 +43,9 @@ public class AnkaCloudImage implements CloudImage {
         String tag, 
         String groupId, 
         String vmNameTemplate,
-        String externalId
+        String externalId,
+        Integer vCpuCount,
+        Integer ramSize
     ) {
         this.connector = connector;
         this.id = id;
@@ -59,6 +63,12 @@ public class AnkaCloudImage implements CloudImage {
             this.vmNameTemplate = "$ts";
         }
         this.externalId = externalId;
+        if (vCpuCount != null) {
+            this.vCpuCount = vCpuCount;
+        }
+        if (ramSize != null) {
+            this.ramSize = ramSize;
+        }
     }
 
     public AnkaVmInstance showInstance(String vmId) {
@@ -68,6 +78,14 @@ public class AnkaCloudImage implements CloudImage {
     @NotNull
     public String getExternalId() {
         return externalId;
+    }
+
+    public Integer getVCpuCount() {
+        return vCpuCount;
+    }
+
+    public Integer getRamSize() {
+        return ramSize;
     }
 
     @NotNull

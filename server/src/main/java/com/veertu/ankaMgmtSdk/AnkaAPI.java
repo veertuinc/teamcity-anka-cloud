@@ -115,7 +115,9 @@ public class AnkaAPI {
         int priority, 
         String name, 
         String externalId, 
-        String vmNameTemplate
+        String vmNameTemplate,
+        Integer vCpuCount,
+        Integer ramSize
     ) throws AnkaMgmtException {
         String id = communicator.startVm(
             templateId, 
@@ -125,7 +127,9 @@ public class AnkaAPI {
             groupId, 
             priority, 
             name, 
-            externalId
+            externalId,
+            vCpuCount,
+            ramSize
         );
         invalidateCache();
         return id;

@@ -130,7 +130,7 @@ public class AnkaCloudConnector {
 
     public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
         if (cloudImage.getTag() == null) {
-            LOG.info(String.format("starting new instance with template %s, latest tag, group %s, externalId %s", cloudImage.getId(), cloudImage.getGroupId(), cloudImage.getExternalId()));
+            LOG.info(String.format("starting new instance with template %s, latest tag, group %s, externalId %s,", cloudImage.getId(), cloudImage.getGroupId(), cloudImage.getExternalId()));
         } else {
             LOG.info(String.format("starting new instance with template %s, tag %s, group %s, externalId %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId(), cloudImage.getExternalId()));
         }
@@ -142,7 +142,9 @@ public class AnkaCloudConnector {
             priority, 
             null,
             userData.getProfileId(),
-            cloudImage.getvmNameTemplate()
+            cloudImage.getvmNameTemplate(),
+            cloudImage.getVCpuCount(),
+            cloudImage.getRamSize()
         );
         updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage, userData));
         return new AnkaCloudInstance(vmId, cloudImage);
@@ -258,7 +260,7 @@ public class AnkaCloudConnector {
 
         // Validate no unexpected state
         if (!vm.isStarted() && !vm.isScheduling() && !vm.isPulling()) {
-            LOG.info(String.format("vm %s in unexpected state %s, terminating", vmId, vm.getSessionState()));
+            LOG.info(String.format("vm %s in unexpected state %s, message: %s", vmId, vm.getSessionState(), vm.getMessage()));
             ankaAPI.terminateInstance(vmId);
             throw new IOException("could not start vm");
         }
