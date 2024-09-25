@@ -1,5 +1,7 @@
 package com.veertu;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -100,17 +102,26 @@ public class AnkaEditProfileController extends BaseFormXmlController {
                 authType = AuthType.OPENID_CONNECT;
             }
 
-            connector = new AnkaCloudConnector(
-                mgmtURL, 
-                skipTLSVerification, 
-                authType, 
-                clientCert, 
-                clientCertKey,
-                oidcClientId, 
-                oidcClientSecret,
-                rootCA,
-                serverUrl
-            );
+            try {
+                String sanitizedServerUrl = serverUrl.replaceAll("[\r\n]", "");
+                URL validatedUrl = new URL(sanitizedServerUrl);
+                String sanitizedMgmtUrl = mgmtURL.replaceAll("[\r\n]", "");
+                URL validatedMgmtUrl = new URL(sanitizedMgmtUrl);
+                connector = new AnkaCloudConnector(
+                    validatedMgmtUrl.toString(), 
+                    skipTLSVerification, 
+                    authType, 
+                    clientCert, 
+                    clientCertKey,
+                    oidcClientId, 
+                    oidcClientSecret,
+                    rootCA,
+                    validatedUrl.toString()
+                );
+            } catch (MalformedURLException e) {
+                // Handle the error appropriately, e.g., log it and/or return an error response
+                throw new IllegalArgumentException("Invalid server URL", e);
+            }
 
             String templateId = request.getParameter("templateId");
             String toGet = request.getParameter("get");

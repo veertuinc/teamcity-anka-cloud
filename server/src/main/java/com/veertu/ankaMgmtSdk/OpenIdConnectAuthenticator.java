@@ -3,6 +3,8 @@ package com.veertu.ankaMgmtSdk;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -60,7 +62,16 @@ public class OpenIdConnectAuthenticator {
     private final String grantTypeClientCredentials = "client_credentials";
     private final String grantTypeRefreshToken = "refresh_token";
 
-
+    private boolean isValidUrl(String url) {
+        try {
+            URI uri = new URI(url);
+            // Add more validation logic if needed, e.g., check allowed domains
+            return uri.getScheme().equals("https") || uri.getScheme().equals("http");
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+    
     public OpenIdConnectAuthenticator(String mgmtUrl, String clientId, String clientSecret) {
         this.mgmtUrl = mgmtUrl;
         this.clientId = clientId;
@@ -191,8 +202,13 @@ public class OpenIdConnectAuthenticator {
 
     public String doPostRequest(String url, Iterable<NameValuePair> params, Iterable<NameValuePair> headers) throws AnkaMgmtException, ClientException {
 
+        if (!isValidUrl(url)) {
+            throw new ClientException("Invalid URL: " + url);
+        }
+
         RequestBuilder builder = RequestBuilder.post();
-        builder.setUri(url);
+        String sanitizedUrl = url.replaceAll("[\r\n]", "");
+        builder.setUri(sanitizedUrl);
         for (NameValuePair pair: headers) {
             builder.setHeader(pair.getName(), pair.getValue());
         }
@@ -207,7 +223,11 @@ public class OpenIdConnectAuthenticator {
     }
 
     protected String doGetRequest(String url) throws AnkaMgmtException, ClientException {
-        HttpRequestBase request = new HttpGet(url);
+        if (!isValidUrl(url)) {
+            throw new ClientException("Invalid URL: " + url);
+        }
+        String sanitizedUrl = url.replaceAll("[\r\n]", "");
+        HttpRequestBase request = new HttpGet(sanitizedUrl);
         return doRequest(request);
     }
 

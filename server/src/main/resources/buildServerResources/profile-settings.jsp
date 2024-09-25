@@ -143,25 +143,27 @@
     </td>
 </tr>
 
-<c:set var="paramvCpuTemplate" value="<%=AnkaConstants.VCPU_COUNT%>"/>
+<c:set var="paramvCpu" value="<%=AnkaConstants.VCPU_COUNT%>"/>
 <tr id="vCpuTr" class="dependentOnControllerConnection hidden">
-    <th><label for="groupSelect">vCPU Override (optional): </label></th>
+    <th><label for="vCpuInput">vCPU Override (optional): </label></th>
     <td id="vCpuTd">
         <div>
-            <props:textProperty name="${paramvCpuTemplate}" id="vCpuInput" className="longField" />
+            <props:textProperty name="${paramvCpu}" id="vCpuInput" className="longField" />
         </div>
         <span>This is used to set the vCPU count for the VM. If blank, the vCPU count will be the number of vCPUs set on the template. (only works when the template VM is stopped)</span>
+        <span class="error option-error option-error_${paramvCpu}" id="error_${paramvCpu}"></span>
     </td>
 </tr>
 
-<c:set var="paramRamTemplate" value="<%=AnkaConstants.RAM_SIZE%>"/>
+<c:set var="paramRam" value="<%=AnkaConstants.RAM_SIZE%>"/>
 <tr id="ramTr" class="dependentOnControllerConnection hidden">
-    <th><label for="groupSelect">RAM Override (optional): </label></th>
+    <th><label for="ramInput">RAM Override (optional): </label></th>
     <td id="ramTd">
         <div>
-            <props:textProperty name="${paramRamTemplate}" id="ramInput" className="longField" />
+            <props:textProperty name="${paramRam}" id="ramInput" className="longField" />
         </div>
         <span>This is used to set the RAM MB (1GB = 1024MB) for the VM. If blank, the RAM size will be the amount of RAM set on the template. (only works when the template VM is stopped)</span>
+        <span class="error option-error option-error_${paramRam}" id="error_${paramRam}"></span>
     </td>
 </tr>
 
@@ -493,6 +495,28 @@
         var groupSelectValue = $j("#groupSelect").val();
         var groupIdInput = $j("#groupIdInput");
         groupIdInput.val(groupSelectValue);
+    });
+
+    var vCpuInput = $j("#vCpuInput");
+    vCpuInput.on("change", function() {
+        var vCpuValue = vCpuInput.val();
+        if (isNaN(vCpuValue) || vCpuValue.indexOf('.') !== -1 || vCpuValue < 0) {
+            vCpuInput.val('');
+            $j("#error_${paramvCpu}").text('Please enter a valid integer for vCPU count.');
+        } else {
+            $j("#error_${paramvCpu}").text('');
+        }
+    });
+
+    var ramInput = $j("#ramInput");
+    ramInput.on("change", function() {
+        var ramValue = ramInput.val();
+        if (isNaN(ramValue) || ramValue.indexOf('.') !== -1 || ramValue < 0) {
+            ramInput.val('');
+            $j("#error_${paramRam}").text('Please enter a valid integer for RAM size.');
+        } else {
+            $j("#error_${paramRam}").text('');
+        }
     });
 
     if (contUrl.val().length > 0) {

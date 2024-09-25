@@ -35,6 +35,7 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
         return new AnkaVmInstance(instance_id, vm);
     }
 
+    @Override
     public String getName() {
         if (this.vmInfo != null) {
             return vmInfo.getName();

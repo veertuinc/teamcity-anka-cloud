@@ -1,10 +1,12 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
-import com.veertu.ankaMgmtSdk.exceptions.ClientException;
+import java.util.List;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpRequestBase;
-import java.util.List;
+
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 
 public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
 
@@ -20,9 +22,14 @@ public class AnkaMgmtOpenIdCommunicator extends AnkaMgmtCommunicator {
         authenticator = new OpenIdConnectAuthenticator(mgmtURLS.get(0), client, key);
     }
 
+    private String sanitizeHeaderValue(String value) {
+        return value.replaceAll("[\\r\\n]", "");
+    }
+
     @Override
     protected void addHeaders(HttpRequestBase request) throws AnkaMgmtException, ClientException {
         NameValuePair authHeader = this.authenticator.getAuthorization();
-        request.setHeader(authHeader.getName(), authHeader.getValue());
+        String sanitizedHeaderValue = sanitizeHeaderValue(authHeader.getValue());
+        request.setHeader(authHeader.getName(), sanitizedHeaderValue);
     }
 }
