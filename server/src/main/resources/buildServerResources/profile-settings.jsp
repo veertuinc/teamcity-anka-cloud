@@ -340,6 +340,7 @@
                 onFailure: function (response) {
                     $j(".controllerURLError").text('');
                     $j(".controllerURLError").append('Error: Controller communication cannot be established.');
+                    $j(".submitButton").prop("disabled", true);
                     console.log(response);
                     if (response.status === 401) {
                         showAuth();
@@ -362,6 +363,7 @@
                     }
                     getTags();
                     $j(".dependentOnControllerConnection").removeClass("hidden");
+                    $j(".submitButton").prop("disabled", false);
                     $j(".controllerURLError").text('');
                 }
             }
@@ -436,7 +438,7 @@
                         }
                     } catch (e) {
                         $j("#groupSelect").addClass("hidden");
-                        $j("#nodeGroupTd").append($j('<span style="color: yellow;">Requires Enterprise License.</span>'));
+                        $j("#nodeGroupTd").append($j('<span style="color: gray;">Requires Enterprise License.</span>'));
                     }
                 }
             }
@@ -503,8 +505,10 @@
         if (isNaN(vCpuValue) || vCpuValue.indexOf('.') !== -1 || vCpuValue < 0) {
             vCpuInput.val('');
             $j("#error_${paramvCpu}").text('Please enter a valid integer for vCPU count.');
+            $j(".submitButton").prop("disabled", true);
         } else {
             $j("#error_${paramvCpu}").text('');
+            $j(".submitButton").prop("disabled", false);
         }
     });
 
@@ -514,8 +518,10 @@
         if (isNaN(ramValue) || ramValue.indexOf('.') !== -1 || ramValue < 0) {
             ramInput.val('');
             $j("#error_${paramRam}").text('Please enter a valid integer for RAM size.');
+            $j(".submitButton").prop("disabled", true);
         } else {
             $j("#error_${paramRam}").text('');
+            $j(".submitButton").prop("disabled", false);
         }
     });
 

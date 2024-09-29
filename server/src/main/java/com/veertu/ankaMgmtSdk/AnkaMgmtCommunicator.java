@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.NoRouteToHostException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -643,7 +644,7 @@ public class AnkaMgmtCommunicator {
                         if (roundRobin != null) {
                             roundRobin.update(host, (int) elapsedTime, false);
                         }
-                    } catch (HttpHostConnectException | ConnectTimeoutException e) {
+                    } catch (SocketException e) {
                         if (roundRobin != null) {
                             roundRobin.update(host, 0, true);
                         }
@@ -694,13 +695,14 @@ public class AnkaMgmtCommunicator {
                     }
                 }
                 return null;
-            } catch (HttpHostConnectException | ConnectTimeoutException | ClientException | SSLException | NoRouteToHostException e) {
+            } catch (ConnectTimeoutException | ClientException | SSLException | SocketException e) {
                 // don't retry on client exception
-                LOG.error(String.format("[retry %d] Got exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
+                LOG.error(String.format("Got exception (not retrying): %s %s", e.getClass().getName(), e.getMessage()));
                 throw new AnkaMgmtException(e);
             } catch (Exception e) {
+                LOG.error(e.toString());
                 LOG.error(String.format("[retry %d] Got generic exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
-                if (e.getMessage().contains("controller URL is empty")) {
+                if (e.getMessage().contains("controller URL is empty") || e.getMessage().contains("Network is unreachable")) {
                     throw new AnkaMgmtException(e.getMessage());
                 }
                 if (retry >= maxRetries) {
