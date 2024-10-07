@@ -5,5 +5,4 @@
     <bean class="com.veertu.InstanceUpdater" />
     <bean class="com.veertu.AnkaEditProfileController" />
     <bean id="AnkaBuildServerAdapter" class="com.veertu.AnkaBuildServerAdapter" init-method="register"/>
-    <bean id="AgentParametersProvider" class="com.veertu.AgentParametersProvider" />
 </beans>
