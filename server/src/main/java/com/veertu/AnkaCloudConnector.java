@@ -211,11 +211,16 @@ public class AnkaCloudConnector {
             vm = ankaAPI.showInstance(vmId);
             if (vm.isStarted() && vm.getVmInfo() != null)
                 break;
-
             Thread.sleep(waitUnit);
             timeWaited += waitUnit;
             LOG.info(String.format("waiting for vm %s %d to boot", vmId, timeWaited));
-            if (timeWaited > maxRunningTimeout) {
+            if (vm.isPulling()) {
+                LOG.info(String.format("vm %s is pulling", vmId));
+                if (timeWaited > 21600000) { // wait for 6 hours to pull, then timeout
+                    ankaAPI.terminateInstance(vmId);
+                    throw new IOException("could not start vm");
+                }
+            } else if (timeWaited > maxRunningTimeout) {
                 ankaAPI.terminateInstance(vmId);
                 throw new IOException("could not start vm");
             }
