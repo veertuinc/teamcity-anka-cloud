@@ -199,8 +199,8 @@ public class AnkaCloudConnector {
         }
 
         // Validate no unexpected state
-        if (!vm.isStarted() && !vm.isScheduling()) {
-            LOG.info(String.format("vm %s in unexpected state %s, terminating", vmId, vm.getSessionState()));
+        if (!vm.isStarted() && !vm.isScheduling() && !vm.isPulling()) {
+            LOG.info(String.format("vm %s in unexpected state %s, message: %s", vmId, vm.getSessionState(), vm.getMessage()));
             ankaAPI.terminateInstance(vmId);
             throw new IOException("could not start vm");
         }

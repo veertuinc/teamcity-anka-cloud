@@ -7,7 +7,7 @@
     </formats>
     <files>
         <file>
-            <source>../ankaCloud-agent/teamcity-plugin.xml</source>
+            <source>target/teamcity-plugin.xml</source>
             <outputDirectory>/</outputDirectory>
         </file>
     </files>
@@ -15,8 +15,8 @@
         <moduleSet>
             <useAllReactorProjects>true</useAllReactorProjects>
             <includes>
-                <include>com.veertu:anka-build-tc-agent</include>
-                <include>com.veertu:anka-build-tc-common</include>
+                <include>com.veertu:agent</include>
+                <include>com.veertu:common</include>
             </includes>
             <binaries>
                 <outputDirectory>lib</outputDirectory>
