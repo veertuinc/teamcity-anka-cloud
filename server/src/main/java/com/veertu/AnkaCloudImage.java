@@ -1,17 +1,20 @@
 package com.veertu;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.intellij.openapi.diagnostic.Logger;
 import com.veertu.ankaMgmtSdk.AnkaVmInstance;
 import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+
 import jetbrains.buildServer.clouds.CloudErrorInfo;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-
+import jetbrains.buildServer.log.Loggers;
 
 /**
  * Created by Asaf Gur.
@@ -23,11 +26,27 @@ public class AnkaCloudImage implements CloudImage {
     private final String name;
     private final String tag;
     private final String groupId;
+    private final String vmNameTemplate;
+    private String externalId;
+    private Integer vCpuCount;
+    private Integer ramSize;
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
 
-    public AnkaCloudImage(AnkaCloudConnector connector, String id, String name, String tag, String groupId) {
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
+
+    public AnkaCloudImage(
+        AnkaCloudConnector connector, 
+        String id, 
+        String name, 
+        String tag, 
+        String groupId, 
+        String vmNameTemplate,
+        String externalId,
+        Integer vCpuCount,
+        Integer ramSize
+    ) {
         this.connector = connector;
         this.id = id;
         this.name = name;
@@ -38,10 +57,35 @@ public class AnkaCloudImage implements CloudImage {
             this.tag = null;
         }
         this.instances = new ConcurrentHashMap<>();
+        if (vmNameTemplate != null && vmNameTemplate.length() > 0) {
+            this.vmNameTemplate = vmNameTemplate;
+        } else {
+            this.vmNameTemplate = "$ts";
+        }
+        this.externalId = externalId;
+        if (vCpuCount != null) {
+            this.vCpuCount = vCpuCount;
+        }
+        if (ramSize != null) {
+            this.ramSize = ramSize;
+        }
     }
 
     public AnkaVmInstance showInstance(String vmId) {
         return connector.showInstance(vmId);
+    }
+
+    @NotNull
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public Integer getVCpuCount() {
+        return vCpuCount;
+    }
+
+    public Integer getRamSize() {
+        return ramSize;
     }
 
     @NotNull
@@ -65,6 +109,13 @@ public class AnkaCloudImage implements CloudImage {
         return groupId;
     }
 
+    public String getvmNameTemplate() {
+        return vmNameTemplate;
+    }
+
+    public void setExternalId(String profileId) {
+        this.externalId = profileId;
+    }
 
     @NotNull
     @Override
@@ -95,7 +146,9 @@ public class AnkaCloudImage implements CloudImage {
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
-            AnkaCloudInstance instance = this.connector.startNewInstance(this, updater);
+            LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudImage, externalId: %s",
+                this.id, this.name, userData.getProfileId()));
+            AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
             return instance;
         } catch (AnkaMgmtException e) {

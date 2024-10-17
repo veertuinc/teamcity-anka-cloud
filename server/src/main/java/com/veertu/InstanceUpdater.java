@@ -1,12 +1,11 @@
 package com.veertu;
 
-import jetbrains.buildServer.clouds.CloudImage;
-import jetbrains.buildServer.serverSide.executors.ExecutorServices;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import jetbrains.buildServer.clouds.CloudImage;
+import jetbrains.buildServer.serverSide.executors.ExecutorServices;
 
 /**
  * Created by Asaf Gur.
@@ -27,7 +26,6 @@ public class InstanceUpdater {
 
     public void registerClient(AnkaCloudClientEx client) {
         this.clients.add(client);
-
     }
 
     public void unRegisterClient(AnkaCloudClientEx client) {
@@ -42,7 +40,6 @@ public class InstanceUpdater {
                 ankaImage.populateInstances();
             }
         }
-
     }
 
     public void executeTaskInBackground(Runnable r) {

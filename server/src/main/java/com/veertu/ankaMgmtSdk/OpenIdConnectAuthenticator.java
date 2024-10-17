@@ -1,7 +1,19 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
-import com.veertu.ankaMgmtSdk.exceptions.ClientException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -20,17 +32,8 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.net.ssl.SSLContext;
-import javax.xml.bind.DatatypeConverter;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.ClientException;
 
 public class OpenIdConnectAuthenticator {
 
@@ -59,7 +62,16 @@ public class OpenIdConnectAuthenticator {
     private final String grantTypeClientCredentials = "client_credentials";
     private final String grantTypeRefreshToken = "refresh_token";
 
-
+    private boolean isValidUrl(String url) {
+        try {
+            URI uri = new URI(url);
+            // Add more validation logic if needed, e.g., check allowed domains
+            return uri.getScheme().equals("https") || uri.getScheme().equals("http");
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+    
     public OpenIdConnectAuthenticator(String mgmtUrl, String clientId, String clientSecret) {
         this.mgmtUrl = mgmtUrl;
         this.clientId = clientId;
@@ -184,14 +196,19 @@ public class OpenIdConnectAuthenticator {
 
     private NameValuePair makeAuthorization() {
         String authorizationPair = String.format("%s:%s", clientId, clientSecret);
-        String encoded = DatatypeConverter.printBase64Binary(authorizationPair.getBytes());
+        String encoded = java.util.Base64.getEncoder().encodeToString(authorizationPair.getBytes());
         return new BasicNameValuePair("Authorization", String.format("Basic %s", encoded));
     }
 
     public String doPostRequest(String url, Iterable<NameValuePair> params, Iterable<NameValuePair> headers) throws AnkaMgmtException, ClientException {
 
+        if (!isValidUrl(url)) {
+            throw new ClientException("Invalid URL: " + url);
+        }
+
         RequestBuilder builder = RequestBuilder.post();
-        builder.setUri(url);
+        String sanitizedUrl = url.replaceAll("[\r\n]", "");
+        builder.setUri(sanitizedUrl);
         for (NameValuePair pair: headers) {
             builder.setHeader(pair.getName(), pair.getValue());
         }
@@ -206,7 +223,11 @@ public class OpenIdConnectAuthenticator {
     }
 
     protected String doGetRequest(String url) throws AnkaMgmtException, ClientException {
-        HttpRequestBase request = new HttpGet(url);
+        if (!isValidUrl(url)) {
+            throw new ClientException("Invalid URL: " + url);
+        }
+        String sanitizedUrl = url.replaceAll("[\r\n]", "");
+        HttpRequestBase request = new HttpGet(sanitizedUrl);
         return doRequest(request);
     }
 

@@ -1,12 +1,43 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.veertu.ankaMgmtSdk.exceptions.*;
-import com.veertu.utils.RoundRobin;
-import com.veertu.utils.MetadataKeys;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.net.NoRouteToHostException;
+import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -15,6 +46,7 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -29,24 +61,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import java.io.*;
-import java.net.NoRouteToHostException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import com.intellij.openapi.diagnostic.Logger;
-import jetbrains.buildServer.log.Loggers;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnAuthenticatedRequestException;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaUnauthorizedRequestException;
+import com.veertu.ankaMgmtSdk.exceptions.ClientException;
+import com.veertu.ankaMgmtSdk.exceptions.SaveImageRequestIdMissingException;
+import com.veertu.utils.MetadataKeys;
+import com.veertu.utils.RoundRobin;
 
-import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHostnameVerifier;
+import jetbrains.buildServer.log.Loggers;
 
 
 /**
@@ -56,9 +80,11 @@ public class AnkaMgmtCommunicator {
 
     protected static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
     protected URL mgmtUrl;
     protected final int timeout = 30000;
-    protected final int maxRetries = 10;
+    protected final int maxRetries = 7;
     protected boolean skipTLSVerification;
     protected String rootCA;
     protected transient RoundRobin roundRobin;
@@ -123,10 +149,10 @@ public class AnkaMgmtCommunicator {
 
     public void setConnectionKeepAliveSeconds(int connectionKeepAliveSeconds) {
         this.connectionKeepAliveSeconds = connectionKeepAliveSeconds;
-    }
+    } 
 
     public List<AnkaVmTemplate> listTemplates() throws AnkaMgmtException {
-        List<AnkaVmTemplate> templates = new ArrayList<AnkaVmTemplate>();
+        List<AnkaVmTemplate> templates = new ArrayList<>();
         String url = "/api/v1/registry/vm";
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
@@ -141,6 +167,10 @@ public class AnkaMgmtCommunicator {
                     templates.add(vm);
                 }
             }
+            if (templates.isEmpty()) {
+                LOG.warn(String.format("No templates found in registry"));
+                templates.add(new AnkaVmTemplate("name", "No templates found in registry"));
+            }
         } catch (IOException e) {
             return templates;
         }
@@ -149,7 +179,12 @@ public class AnkaMgmtCommunicator {
 
 
     public List<String> getTemplateTags(String templateId) throws AnkaMgmtException {
-        List<String> tags = new ArrayList<String>();
+        List<String> tags = new ArrayList<>();
+        if (templateId.equals("name")) {
+            tags.clear();
+            tags.add("No tags found in registry");
+            return tags;
+        }
         String url = String.format("/api/v1/registry/vm?id=%s", templateId);
         try {
             JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
@@ -198,15 +233,25 @@ public class AnkaMgmtCommunicator {
     }
 
 
-    public String startVm(String templateId, String tag, String nameTemplate, String startUpScript, String groupId, int priority,
-                          String name, String externalId) throws AnkaMgmtException {
+    public String startVm(
+        String templateId, 
+        String tag, 
+        String vmNameTemplate, 
+        String startUpScript, 
+        String groupId, 
+        int priority,
+        String name, 
+        String externalId,
+        Integer vCpuCount,
+        Integer ramSize
+    ) throws AnkaMgmtException {
         String url = "/api/v1/vm";
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("vmid", templateId);
         if (tag != null)
             jsonObject.put("tag", tag);
-        if (nameTemplate != null)
-            jsonObject.put("name_template", nameTemplate);
+        if (vmNameTemplate != null)
+            jsonObject.put("name_template", vmNameTemplate);
         if (startUpScript != null) {
             String b64Script = Base64.encodeBase64String(startUpScript.getBytes());
             jsonObject.put("startup_script", b64Script);
@@ -222,6 +267,12 @@ public class AnkaMgmtCommunicator {
         }
         if (externalId != null) {
             jsonObject.put("external_id", externalId);
+        }
+        if (vCpuCount != null) {
+            jsonObject.put("vcpu", vCpuCount);
+        }
+        if (ramSize != null) {
+            jsonObject.put("vram", ramSize);
         }
         JSONObject jsonResponse = null;
         try {
@@ -241,7 +292,18 @@ public class AnkaMgmtCommunicator {
             String message = jsonResponse.getString("message");
             if (message.equals("No such tag "+ tag)) {
                 LOG.warn("Tag " + tag + " not found. starting vm with latest tag");
-                return startVm(templateId, null, nameTemplate, startUpScript, groupId, priority, name, externalId);
+                return startVm(
+                    templateId, 
+                    null, 
+                    vmNameTemplate, 
+                    startUpScript, 
+                    groupId, 
+                    priority, 
+                    name, 
+                    externalId,
+                    vCpuCount,
+                    ramSize
+                );
             }
         }
 
@@ -469,6 +531,23 @@ public class AnkaMgmtCommunicator {
 
     }
 
+    public Boolean isEnterpriseLicense() throws AnkaMgmtException {
+        String url = "/api/v1/status";
+        try {
+            JSONObject jsonResponse = this.doRequest(RequestMethod.GET, url);
+            String logicalResult = jsonResponse.getString("status");
+            if (logicalResult.equals("OK")) {
+                JSONObject json = jsonResponse.getJSONObject("body");
+                if (!json.getString("license").equals("basic")) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public List<AnkaNode> getNodes() throws AnkaMgmtException {
         List<AnkaNode> nodes = new ArrayList<>();
         String url = "/api/v1/node";
@@ -513,22 +592,20 @@ public class AnkaMgmtCommunicator {
 
     protected JSONObject doRequest(RequestMethod method, String path, JSONObject requestBody, int reqTimeout) throws IOException, AnkaMgmtException {
         int retry = 0;
+        int backoffTime = 1000; // Initial backoff time in milliseconds
+        int maxBackoffTime = 32000; // Maximum backoff time in milliseconds
         CloseableHttpResponse response = null;
         HttpRequestBase request;
 
         while (true){
             try {
                 retry++;
-
                 CloseableHttpClient httpClient = getHttpClient();
                 try {
-                    String host = "";
-                    if (roundRobin != null) {
-                        host = roundRobin.next();
-                    } else {
-                        host = mgmtUrl.toString();
+                    if (mgmtUrl == null) {
+                        throw new AnkaMgmtException("controller URL is empty");
                     }
-
+                    String host = (roundRobin != null) ? roundRobin.next() : mgmtUrl.toString();
                     String url = host + path;
                     switch (method) {
                         case POST:
@@ -559,35 +636,37 @@ public class AnkaMgmtCommunicator {
                     try {
                         long startTime = System.currentTimeMillis();
                         response = httpClient.execute(request);
+                        if (requestBody != null) {
+                            LOG.info("request: " + request.toString());
+                            LOG.info("requestBody: " + requestBody);
+                        }
                         long elapsedTime = System.currentTimeMillis() - startTime;
                         if (roundRobin != null) {
                             roundRobin.update(host, (int) elapsedTime, false);
                         }
-                    } catch (HttpHostConnectException | ConnectTimeoutException e) {
+                    } catch (SocketException e) {
                         if (roundRobin != null) {
                             roundRobin.update(host, 0, true);
                         }
                         throw e;
                     }
                     int responseCode = response.getStatusLine().getStatusCode();
+                    if (responseCode >= 400) {
+                        throw new ClientException(request.getMethod() + " " + request.getURI().toString() + " " + "Bad Request");
+                    }
                     if (responseCode == 401) {
                         throw new AnkaUnAuthenticatedRequestException("Authentication Required");
                     }
                     if (responseCode == 403) {
                         throw new AnkaUnauthorizedRequestException("Not authorized to perform this request");
                     }
-                    if (responseCode >= 400) {
-                        throw new ClientException(request.getMethod() + request.getURI().toString() + "Bad Request");
-                    }
-
                     if (responseCode != 200) {
                         LOG.info(String.format("url: %s response: %s", url, response.toString()));
                         return null;
                     }
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {
-                        BufferedReader rd = new BufferedReader(
-                                new InputStreamReader(entity.getContent()));
+                        BufferedReader rd = new BufferedReader(new InputStreamReader(entity.getContent()));
                         StringBuffer result = new StringBuffer();
                         String line = "";
                         while ((line = rd.readLine()) != null) {
@@ -602,7 +681,6 @@ public class AnkaMgmtCommunicator {
                     throw e; // keep on retrying
                 } catch (HttpHostConnectException | ConnectTimeoutException | ClientException | SSLException | NoRouteToHostException e) {
                     LOG.error(String.format("Got client exception: %s", e.getMessage()));
-
                     // don't retry on client exception, timeouts or host exceptions
                     throw e;
                 } catch (UnsupportedEncodingException e) {
@@ -617,19 +695,26 @@ public class AnkaMgmtCommunicator {
                     }
                 }
                 return null;
-            } catch (HttpHostConnectException | ConnectTimeoutException | ClientException | SSLException | NoRouteToHostException e) {
+            } catch (ConnectTimeoutException | ClientException | SSLException | SocketException e) {
                 // don't retry on client exception
-                LOG.error(String.format("Got exception: %s %s", e.getClass().getName(), e.getMessage()));
-
+                LOG.error(String.format("Got exception (not retrying): %s %s", e.getClass().getName(), e.getMessage()));
                 throw new AnkaMgmtException(e);
             } catch (Exception e) {
-                LOG.error(String.format("Got exception: %s %s", e.getClass().getName(), e.getMessage()));
-
-                if (retry < maxRetries) {
-                    continue;
+                LOG.error(e.toString());
+                LOG.error(String.format("[retry %d] Got generic exception: %s %s", retry, e.getClass().getName(), e.getMessage()));
+                if (e.getMessage().contains("controller URL is empty") || e.getMessage().contains("Network is unreachable")) {
+                    throw new AnkaMgmtException(e.getMessage());
                 }
-
-                throw new AnkaMgmtException(e);
+                if (retry >= maxRetries) {
+                    throw new AnkaMgmtException(e);
+                }
+                try {
+                    scheduler.schedule(() -> {}, Math.min(backoffTime, maxBackoffTime), TimeUnit.MILLISECONDS).get();
+                    backoffTime *= 2; // Exponential backoff
+                } catch (InterruptedException | ExecutionException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new AnkaMgmtException(ie);
+                }
             }
         }
 

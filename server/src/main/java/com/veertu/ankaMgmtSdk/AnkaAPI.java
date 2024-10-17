@@ -1,14 +1,16 @@
 package com.veertu.ankaMgmtSdk;
 
-import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONObject;
+
 import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.ankaMgmtSdk.exceptions.AnkaMgmtException;
+
 import jetbrains.buildServer.log.Loggers;
 
 /**
@@ -78,6 +80,10 @@ public class AnkaAPI {
         return communicator.getNodeGroups();
     }
 
+    public boolean isEnterpriseLicense() throws AnkaMgmtException {
+        return communicator.isEnterpriseLicense();
+    }
+
     public void revertLatestTag(String templateID) throws AnkaMgmtException {
         communicator.revertRegistryVM(templateID);
     }
@@ -95,14 +101,36 @@ public class AnkaAPI {
         return communicator.status();
     }
 
-    public String startVM(String templateId, String tag, String nameTemplate, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
-        String id = communicator.startVm(templateId, tag, nameTemplate, startUpScript, groupId, priority, name, externalId);
-        invalidateCache();
-        return id;
-    }
+    // public String startVM(String templateId, String tag, String vmNameTemplate, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
+    //     String id = communicator.startVm(templateId, tag, vmNameTemplate, startUpScript, groupId, priority, name, externalId);
+    //     invalidateCache();
+    //     return id;
+    // }
 
-    public String startVM(String templateId, String tag, String startUpScript, String groupId, int priority, String name, String externalId) throws AnkaMgmtException {
-        String id = communicator.startVm(templateId, tag, "$template_name-$node_name-$ts", startUpScript, groupId, priority, name, externalId);
+    public String startVM(
+        String templateId, 
+        String tag, 
+        String startUpScript, 
+        String groupId, 
+        int priority, 
+        String name, 
+        String externalId, 
+        String vmNameTemplate,
+        Integer vCpuCount,
+        Integer ramSize
+    ) throws AnkaMgmtException {
+        String id = communicator.startVm(
+            templateId, 
+            tag, 
+            vmNameTemplate, 
+            startUpScript, 
+            groupId, 
+            priority, 
+            name, 
+            externalId,
+            vCpuCount,
+            ramSize
+        );
         invalidateCache();
         return id;
     }

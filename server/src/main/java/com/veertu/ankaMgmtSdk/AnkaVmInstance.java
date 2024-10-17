@@ -2,8 +2,6 @@ package com.veertu.ankaMgmtSdk;
 
 import org.json.JSONObject;
 
-import java.util.Date;
-
 /**
  * Created by asafgur on 17/05/2017.
  */
@@ -13,6 +11,7 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
     private final String templateId;
     private AnkaVmInfo vmInfo;
     private String message;
+    private String externalId;
 
     public AnkaVmInstance(String id, JSONObject jsonObject) {
         this.id = id;
@@ -25,6 +24,9 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
         if (jsonObject.has("message")) {
             this.message = jsonObject.getString("message");
         }
+        if (jsonObject.has("external_id")) {
+            this.externalId = jsonObject.getString("external_id");
+        }
     }
 
     public static AnkaVmInstance makeAnkaVmSessionFromJson(JSONObject jsonObject) {
@@ -33,6 +35,7 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
         return new AnkaVmInstance(instance_id, vm);
     }
 
+    @Override
     public String getName() {
         if (this.vmInfo != null) {
             return vmInfo.getName();
@@ -41,6 +44,8 @@ public class AnkaVmInstance extends AnkaVMRepresentation {
     }
 
     public String getTemplateId() { return templateId; }
+
+    public String getExternalId() { return externalId; }
 
     public String getSessionState() {
         return sessionState;

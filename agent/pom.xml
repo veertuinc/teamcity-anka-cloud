@@ -9,7 +9,6 @@
   <artifactId>agent</artifactId>
   <packaging>jar</packaging>
   <dependencies>
-
     <dependency>
       <groupId>com.veertu</groupId>
       <artifactId>common</artifactId>
@@ -46,6 +45,5 @@
       <version>2017.2</version>
       <scope>provided</scope>
     </dependency>
-
   </dependencies>
 </project>

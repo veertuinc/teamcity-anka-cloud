@@ -7,14 +7,18 @@ public interface AnkaConstants {
     String PROFILE_SETTINGS_JSP = "profile-settings.jsp";
     String INSTANCE_ID = "instance_id";
     String IMAGE_ID = "image_id";
-    String IMAGE_NAME = "image_name";
-    String IMAGE_TAG = "image_tag";
+    String TEMPLATE_NAME = "TEMPLATE_NAME";
+    String TEMPLATE_TAG = "TEMPLATE_TAG";
+    String VCPU_COUNT = "VCPU_COUNT";
+    String RAM_SIZE = "RAM_SIZE";
+    String VM_NAME_TEMPLATE = "VM_NAME_TEMPLATE";
     String GROUP_ID = "group_id";
     String CONTROLLER_URL_NAME = "clouds.anka.url";
     String CLOUD_CODE = "anka";
     String CLOUD_DISPLAY_NAME = "Anka Build Cloud";
     String SSH_USER = "ssh_user";
     String SSH_PASSWORD = "ssh_password";
+    String SSH_FORWARDING_PORT = "sshForwardingPort";
     String AGENT_PATH = "agent_path";
     String OPTIONAL_SERVER_URL = "profileServerUrl";
     String SKIP_TLS_VERIFICATION = "skipTLSVerification";
@@ -33,10 +37,10 @@ public interface AnkaConstants {
 
     // Agent Configuration constants
     String ENV_INSTANCE_ID_KEY = "env.ANKA_INSTANCE_ID";
-    String ENV_IMAGE_ID_KEY = "env.IMAGE_ID";
+    String ENV_TEMPLATE_ID_KEY = "env.ANKA_TEMPLATE_ID";
     String ENV_SERVER_URL_KEY = "serverUrl";
     String ENV_ANKA_CLOUD_KEY = "env.ANKA_CLOUD";
-    String ENV_ANKA_CLOUD_VALUE = "ANKA";
+    String ENV_ANKA_CLOUD_VALUE = "ANKA_BUILD_CLOUD";
     String ENV_PROFILE_ID = "env.ANKA_PROFILE_ID";
     String ENV_AGENT_NAME_KEY = "name";
 }

@@ -1,13 +1,5 @@
 package com.veertu.ankaMgmtSdk;
 
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.KeyStore;
@@ -17,11 +9,19 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+
 public class ClientCertAuthenticator {
 
     private final String clientCert;
     private final String clientCertKey;
-    private final String pemPassword = "somePassword";
+    private final String pemPassword;
     private final String keyAlias = "key-alias";
     private final String certAlias = "cert-alias";
     private transient KeyStore keyStore;
@@ -29,6 +29,7 @@ public class ClientCertAuthenticator {
     public ClientCertAuthenticator(String clientCert, String clientCertKey) {
         this.clientCert = clientCert;
         this.clientCertKey = clientCertKey;
+        this.pemPassword = null;
     }
 
     public KeyStore makeTrustStore() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException {

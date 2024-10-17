@@ -1,10 +1,15 @@
 package com.veertu.utils;
 
-import jetbrains.buildServer.serverSide.InvalidProperty;
-import jetbrains.buildServer.serverSide.PropertiesProcessor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.veertu.common.AnkaConstants;
 
-import java.util.*;
+import jetbrains.buildServer.serverSide.InvalidProperty;
+import jetbrains.buildServer.serverSide.PropertiesProcessor;
 
 public class AnkaCloudPropertiesProcesser implements PropertiesProcessor {
 
@@ -12,8 +17,13 @@ public class AnkaCloudPropertiesProcesser implements PropertiesProcessor {
     public Collection<InvalidProperty> process(Map<String, String> properties) {
         ArrayList<InvalidProperty> invalidProperties = new ArrayList<>();
 
-        List<String> notEmpties = Arrays.asList(AnkaConstants.CONTROLLER_URL_NAME, AnkaConstants.AGENT_PATH, AnkaConstants.IMAGE_ID
-        , AnkaConstants.SSH_USER, AnkaConstants.SSH_PASSWORD);
+        List<String> notEmpties = Arrays.asList(
+            AnkaConstants.CONTROLLER_URL_NAME, 
+            AnkaConstants.AGENT_PATH, 
+            AnkaConstants.IMAGE_ID, 
+            AnkaConstants.SSH_USER, 
+            AnkaConstants.SSH_PASSWORD
+        );
         for (String key: notEmpties) {
             String value = properties.get(key);
             if (isNullOrEmpty(value)) {

@@ -7,7 +7,7 @@
     </formats>
     <files>
         <file>
-            <source>target/teamcity-plugin.xml</source>
+            <source>../agent/teamcity-plugin.xml</source>
             <outputDirectory>/</outputDirectory>
         </file>
     </files>

@@ -1,16 +1,27 @@
 package com.veertu;
 
-import com.intellij.openapi.diagnostic.Logger;
-import jetbrains.buildServer.log.Loggers;
-import com.veertu.common.AnkaConstants;
-import jetbrains.buildServer.clouds.*;
-import jetbrains.buildServer.serverSide.AgentDescription;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.intellij.openapi.diagnostic.Logger;
+import com.veertu.common.AnkaConstants;
+
+import jetbrains.buildServer.clouds.CanStartNewInstanceResult;
+import jetbrains.buildServer.clouds.CloudClientEx;
+import jetbrains.buildServer.clouds.CloudErrorInfo;
+import jetbrains.buildServer.clouds.CloudException;
+import jetbrains.buildServer.clouds.CloudImage;
+import jetbrains.buildServer.clouds.CloudInstance;
+import jetbrains.buildServer.clouds.CloudInstanceUserData;
+import jetbrains.buildServer.clouds.QuotaException;
+import jetbrains.buildServer.log.Loggers;
+import jetbrains.buildServer.serverSide.AgentDescription;
+import jetbrains.buildServer.serverSide.BuildAgentManagerEx;
 
 /**
  * Created by Asaf Gur.
@@ -23,30 +34,43 @@ public class AnkaCloudClientEx implements CloudClientEx {
     private final AnkaCloudConnector connector;
     private InstanceUpdater updater;
     private final int maxInstances;
+    private final BuildAgentManagerEx buildAgentManager;
     private final ConcurrentHashMap<String, AnkaCloudImage> imagesMap;
+    private final AtomicBoolean isControllerRunning = new AtomicBoolean(false);
+    private final AtomicBoolean controllerStatusCheckThread = new AtomicBoolean(true);
 
-
-    public AnkaCloudClientEx(AnkaCloudConnector connector, InstanceUpdater updater, Collection<AnkaCloudImage> images, int maxInstances) {
+    public AnkaCloudClientEx(
+        AnkaCloudConnector connector,
+        InstanceUpdater updater,
+        Collection<AnkaCloudImage> images,
+        int maxInstances,
+        BuildAgentManagerEx buildAgentManager
+    ) {
         this.connector = connector;
         this.updater = updater;
         this.maxInstances = maxInstances;
+        this.buildAgentManager = buildAgentManager;
         this.imagesMap = new ConcurrentHashMap<>();
         for (AnkaCloudImage image: images) {
             imagesMap.put(image.getId(), image);
         }
         LOG.info(String.format("Registering AnkaCloudClientEx %s to updater", this.toString()));
         updater.registerClient(this);
+        controllerStatusThread();
     }
 
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        LOG.info(String.format("Starting new instance for  image %s(%s) on AnkaCloudClientEx %s",
-                cloudImage.getName(), cloudImage.getId(), this.toString()));
-
         AnkaCloudImage image = (AnkaCloudImage)cloudImage;
+        image.setExternalId(userData.getProfileId());
+        LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx, externalId: %s",
+            cloudImage.getName(), cloudImage.getId(), image.getExternalId()));
         return image.startNewInstance(userData, updater);
-//        return this.connector.startNewInstance(cloudImage, userData);
+    }
+
+    public void unregisterAgent(int agentId) {
+        buildAgentManager.unregisterAgent(agentId, "Cloud instance has gone");
     }
 
     @Override
@@ -57,19 +81,45 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public void terminateInstance(@NotNull CloudInstance cloudInstance) {
         LOG.info(String.format("Terminating instance %s(%s) on AnkaCloudClientEx %s",
-                                    cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
+            cloudInstance.getName(), cloudInstance.getInstanceId(), this.toString()));
         this.connector.terminateInstance(cloudInstance);
-
     }
 
     @Override
     public void dispose() {
+        LOG.info(String.format("Disposing AnkaCloudClientEx %s", this.toString()));
         updater.unRegisterClient(this);
+        controllerStatusCheckThread.set(false);
+    }
+
+    private void controllerStatusThread() {
+        final int sleepTime = 1000;
+        final int checkInterval = 5000; // 5 seconds
+        final long[] lastCheckTime = {0};
+        Thread initializationThread = new Thread(() -> {
+            while (controllerStatusCheckThread.get()) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastCheckTime[0] >= checkInterval) {
+                    isControllerRunning.set(connector.isRunning());
+                    lastCheckTime[0] = currentTime;
+                }
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOG.error(String.format("Initialization thread interrupted"));
+                    break;
+                }
+            }
+        });
+        initializationThread.setDaemon(true);
+        initializationThread.start();
     }
 
     @Override
     public boolean isInitialized() {
-        return this.connector.isRunning();
+        // this runs hundreds of times a minute. Do not include API calls here.
+        return isControllerRunning.get();
     }
 
     @Nullable
@@ -85,13 +135,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
         LOG.info(String.format("Searching instance for %s", agentDescription.toString()));
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
-        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
-        if (instanceId == null || imageId == null) {
+        String templateId = availableParameters.get(AnkaConstants.ENV_TEMPLATE_ID_KEY);
+        if (instanceId == null || templateId == null) {
             LOG.info(String.format("No instance for %s", agentDescription.toString()));
             return null;
         }
-        LOG.info(String.format("findInstanceByAgent -> image id: %s , instance_id", imageId, instanceId));
-        CloudImage image = findImageById(imageId);
+        LOG.info(String.format("findInstanceByAgent -> template_id: %s , instance_id: %s", templateId, instanceId));
+        CloudImage image = findImageById(templateId);
         if (image != null) {
             LOG.info(String.format("Found instance %s for %s", instanceId, agentDescription.toString()));
             return image.findInstanceById(instanceId);
@@ -114,9 +164,10 @@ public class AnkaCloudClientEx implements CloudClientEx {
     }
 
     @Override
-    public boolean canStartNewInstance(@NotNull CloudImage cloudImage) {
+    public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull CloudImage cloudImage) {
         Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-        return imageInstances.size() < this.maxInstances;
+        boolean canStart = imageInstances.size() < this.maxInstances;
+        return canStart ? CanStartNewInstanceResult.yes() : CanStartNewInstanceResult.no("Max instances limit reached");
     }
 
     @Nullable
@@ -124,9 +175,9 @@ public class AnkaCloudClientEx implements CloudClientEx {
     public String generateAgentName(@NotNull AgentDescription agentDescription) {
         Map<String, String> availableParameters = agentDescription.getAvailableParameters();
         String instanceId = availableParameters.get(AnkaConstants.ENV_INSTANCE_ID_KEY);
-        String imageId = availableParameters.get(AnkaConstants.ENV_IMAGE_ID_KEY);
-        if (instanceId != null && imageId != null) {
-            CloudImage image = findImageById(imageId);
+        String templateId = availableParameters.get(AnkaConstants.ENV_TEMPLATE_ID_KEY);
+        if (instanceId != null && templateId != null) {
+            CloudImage image = findImageById(templateId);
             if (image == null) {
                 return null;
             }
