@@ -241,6 +241,7 @@ public class AnkaCloudConnector {
     private AnkaVmInstance waitForBoot(String vmId) throws InterruptedException, IOException, AnkaMgmtException {
         LOG.info(String.format("waiting for vm %s to boot", vmId));
         int timeWaited = 0;
+        int pullTimeWaited = 0;
         AnkaVmInstance vm;
 
         // Scheduling
@@ -267,17 +268,29 @@ public class AnkaCloudConnector {
 
         // Pulling and VM Boot
         timeWaited = 0;
+        pullTimeWaited = 0;
         while (true) {
             vm = ankaAPI.showInstance(vmId);
             if (vm.isStarted() && vm.getVmInfo() != null)
                 break;
 
             Thread.sleep(waitUnit);
-            timeWaited += waitUnit;
-            LOG.info(String.format("waiting for vm %s %d to boot", vmId, timeWaited));
-            if (timeWaited > maxRunningTimeout) {
-                ankaAPI.terminateInstance(vmId);
-                throw new IOException("could not start vm");
+            if (vm.isPulling()) {
+                pullTimeWaited += waitUnit;
+                LOG.info(String.format("vm %s is pulling", vmId));
+                if (pullTimeWaited > 21600000) { // wait for 6 hours to pull, then timeout
+                    LOG.error(String.format("vm %s timed out trying to pull", vmId));
+                    ankaAPI.terminateInstance(vmId);
+                    throw new IOException("could not start vm");
+                }
+            } else {
+                timeWaited += waitUnit;
+                LOG.info(String.format("vm %s is booting", vmId));
+                if (timeWaited > maxRunningTimeout) {
+                    LOG.error(String.format("vm %s timed out trying to start", vmId));
+                    ankaAPI.terminateInstance(vmId);
+                    throw new IOException("could not start vm");
+                }
             }
         }
 
