@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>anka-build-tc</artifactId>
     <groupId>com.veertu</groupId>
-    <version>1.7</version>
+    <artifactId>anka-build-cloud-teamcity-plugin</artifactId>
+    <version>1.9.0</version>
   </parent>
   <artifactId>build</artifactId>
   <packaging>pom</packaging>
@@ -17,18 +17,18 @@
   <dependencies>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>anka-build-tc-agent</artifactId>
-           <version>1.7</version>
+           <artifactId>agent</artifactId>
+           <version>1.9.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>anka-build-tc-common</artifactId>
-           <version>1.7</version>
+           <artifactId>common</artifactId>
+           <version>1.9.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
-           <artifactId>anka-build-tc-server</artifactId>
-           <version>1.7</version>
+           <artifactId>server</artifactId>
+           <version>1.9.0</version>
       </dependency>
   </dependencies>
   <build>
@@ -36,7 +36,7 @@
         <plugin>
             <groupId>com.google.code.maven-replacer-plugin</groupId>
             <artifactId>replacer</artifactId>
-            <version>1.5.2</version>
+            <version>1.5.3</version>
             <executions>                
                 <execution>
                     <phase>process-sources</phase>
@@ -66,7 +66,7 @@
         </plugin>
         <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.4</version>
+            <version>3.7.1</version>
             <executions>
               <execution>
                 <id>make-agent-assembly</id>
@@ -75,7 +75,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>anka-build-tc-agent</finalName>
+                  <finalName>agent</finalName>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>
                     <descriptor>plugin-agent-assembly.xml</descriptor>
@@ -89,7 +89,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>anka-build-tc</finalName>
+                  <finalName>anka-build-cloud-teamcity-plugin-${project.version}</finalName>
                   <outputDirectory>${project.parent.build.directory}</outputDirectory>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>
