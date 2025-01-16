@@ -299,7 +299,6 @@
     <th><label for="${paramAgentPoolId}">Agent pool:</label></th>
         <td>
             <props:selectProperty name="${paramAgentPoolId}" className="longField">
-              <props:option value=""><c:out value="<Please select agent pool>"/></props:option>
                   <c:forEach var="ap" items="${agentPools}">
                     <props:option value="${ap.agentPoolId}"><c:out value="${ap.name}"/></props:option>
                   </c:forEach>
