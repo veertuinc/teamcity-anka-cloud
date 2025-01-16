@@ -13,7 +13,7 @@ pipeline {
     agent { dockerfile {
         filename 'Dockerfile'
         dir 'shared/docker/orchestrator'
-        label 'cloud_container_host'
+        label 'master'
         reuseNode true
         args "--name ${env.JOB_NAME.replace('%2F', '_').replace('/', '_')}-${env.BUILD_NUMBER}"
     } }
