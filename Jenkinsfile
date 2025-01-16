@@ -1,5 +1,13 @@
 
-properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '1')), disableConcurrentBuilds(), disableResume(), copyArtifactPermission('*'), durabilityHint('PERFORMANCE_OPTIMIZED')])
+properties([
+    buildDiscarder(
+        logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '1')), 
+        disableConcurrentBuilds(), 
+        disableResume(), 
+        copyArtifactPermission('*'), 
+        durabilityHint('PERFORMANCE_OPTIMIZED')
+    ]
+)
 
 pipeline {
     agent { dockerfile {
@@ -12,7 +20,7 @@ pipeline {
     stages {
         stage('Build Plugin') { steps {
             sh '''
-                export PATH="/apache-maven-4.0.0-beta-3/bin:$PATH"
+                export PATH="/apache-maven-4.0.0-rc-2/bin:$PATH"
                 mvn package
                 ls -laht target/
             '''
