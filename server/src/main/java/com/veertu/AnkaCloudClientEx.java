@@ -51,8 +51,8 @@ public class AnkaCloudClientEx implements CloudClientEx {
         this.maxInstances = maxInstances;
         this.buildAgentManager = buildAgentManager;
         this.imagesMap = new ConcurrentHashMap<>();
-        for (AnkaCloudImage image: images) {
-            imagesMap.put(image.getId(), image);
+        for (AnkaCloudImage ankaCloudImage: images) {
+            imagesMap.put(ankaCloudImage.getTemplateId(), ankaCloudImage);
         }
         LOG.info(String.format("Registering AnkaCloudClientEx %s to updater", this.toString()));
         updater.registerClient(this);
@@ -62,11 +62,12 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
-        AnkaCloudImage image = (AnkaCloudImage)cloudImage;
-        image.setExternalId(userData.getProfileId());
+        AnkaCloudImage ankaCloudImage = (AnkaCloudImage)cloudImage;
+        LOG.info(String.format("==== %s ====", ankaCloudImage.getString()));
+        ankaCloudImage.setExternalId(userData.getProfileId());
         LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx, externalId: %s",
-            cloudImage.getName(), cloudImage.getId(), image.getExternalId()));
-        return image.startNewInstance(userData, updater);
+            cloudImage.getName(), cloudImage.getId(), ankaCloudImage.getExternalId()));
+        return ankaCloudImage.startNewInstance(userData, updater);
     }
 
     public void unregisterAgent(int agentId) {

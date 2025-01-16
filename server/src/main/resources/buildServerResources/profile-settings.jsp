@@ -60,7 +60,7 @@
 <c:set var="rootCertKey" value="<%=AnkaConstants.ROOT_CA%>"/>
 <c:set var="rootCert" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.ROOT_CA%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${rootCert}">mTLS Root CA Certificate: <l:star/></label></th>
+    <th><label for="${rootCert}">mTLS Root CA Certificate: </label></th>
     <td>
         <div>
             <props:textarea textAreaName="${rootCert}" value="${empty value ? propertiesBean.properties[rootCertKey] : value}" linkTitle="root certificate" cols="50" rows="10" name="${rootCert}"   expanded="false"/>
@@ -72,7 +72,7 @@
 <c:set var="clientCertStringKey" value="<%=AnkaConstants.CERT_STRING%>"/>
 <c:set var="clientCertString" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_STRING%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${clientCertString}">mTLS Client Certificate: <l:star/></label></th>
+    <th><label for="${clientCertString}">mTLS Client Certificate: </label></th>
     <td>
         <div>
             <props:textarea textAreaName="${clientCertString}" value="${empty value ? propertiesBean.properties[clientCertStringKey] : value}" linkTitle="certificate" cols="50" rows="10" name="${clientCertString}" className="certs"  expanded="false"/>
@@ -84,7 +84,7 @@
 <c:set var="clientCertKeyKey" value="<%=AnkaConstants.CERT_KEY_STRING%>"/>
 <c:set var="clientCertKey" value="<%=AnkaConstants.PROP_PREFIX + AnkaConstants.CERT_KEY_STRING%>"/>
 <tr class="auth-config-cert ">
-    <th><label for="${clientCertKey}">mTLS Client Certificate Private key: <l:star/></label></th>
+    <th><label for="${clientCertKey}">mTLS Client Certificate Private key: </label></th>
     <td>
         <div>
             <props:textarea textAreaName="${clientCertKey}" value="${empty value ? propertiesBean.properties[clientCertKeyKey] : value}" linkTitle="key" cols="50" rows="10" name="${clientCertKey}" className="certs" expanded="false" />

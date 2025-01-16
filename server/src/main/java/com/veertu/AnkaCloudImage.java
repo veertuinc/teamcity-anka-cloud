@@ -22,9 +22,9 @@ import jetbrains.buildServer.log.Loggers;
 
 public class AnkaCloudImage implements CloudImage {
 
-    private final String id;
-    private final String name;
-    private final String tag;
+    private final String templateId;
+    private final String templateName;
+    private final String templateTag;
     private final String groupId;
     private final String vmNameTemplate;
     private String externalId;
@@ -38,9 +38,9 @@ public class AnkaCloudImage implements CloudImage {
 
     public AnkaCloudImage(
         AnkaCloudConnector connector, 
-        String id, 
-        String name, 
-        String tag, 
+        String templateId, 
+        String templateName, 
+        String templateTag, 
         String groupId, 
         String vmNameTemplate,
         String externalId,
@@ -48,13 +48,13 @@ public class AnkaCloudImage implements CloudImage {
         Integer ramSize
     ) {
         this.connector = connector;
-        this.id = id;
-        this.name = name;
+        this.templateId = templateId;
+        this.templateName = templateName;
         this.groupId = groupId;
-        if (tag != null && tag.length() > 0) {
-            this.tag = tag;
+        if (templateTag != null && templateTag.length() > 0) {
+            this.templateTag = templateTag;
         } else {
-            this.tag = null;
+            this.templateTag = null;
         }
         this.instances = new ConcurrentHashMap<>();
         if (vmNameTemplate != null && vmNameTemplate.length() > 0) {
@@ -75,6 +75,11 @@ public class AnkaCloudImage implements CloudImage {
         return connector.showInstance(vmId);
     }
 
+    public String getString() {
+        return String.format("AnkaCloudImage{templateId=%s, templateName=%s, templateTag=%s, groupId=%s, vmNameTemplate=%s, externalId=%s, vCpuCount=%d, ramSize=%d}",
+            templateId, templateName, templateTag, groupId, vmNameTemplate, externalId, vCpuCount, ramSize);
+    }
+
     @NotNull
     public String getExternalId() {
         return externalId;
@@ -91,25 +96,30 @@ public class AnkaCloudImage implements CloudImage {
     @NotNull
     @Override
     public String getId() {
-        return this.id;
+        return getTemplateId();
+    }
+    public String getTemplateId() {
+        return this.templateId;
     }
 
     @NotNull
     @Override
     public String getName() {
-        return this.name;
+        return gettemplateName();
+    }
+    public String gettemplateName() {
+        return this.templateName;
     }
 
-
-    public String getTag() {
-        return tag;
+    public String getTemplateTag() {
+        return this.templateTag;
     }
 
     public String getGroupId() {
         return groupId;
     }
 
-    public String getvmNameTemplate() {
+    public String getVmNameTemplate() {
         return vmNameTemplate;
     }
 
@@ -147,7 +157,7 @@ public class AnkaCloudImage implements CloudImage {
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
         try {
             LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudImage, externalId: %s",
-                this.id, this.name, userData.getProfileId()));
+                this.templateId, this.templateName, userData.getProfileId()));
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
             return instance;

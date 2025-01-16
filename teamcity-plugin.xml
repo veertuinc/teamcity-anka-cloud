@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
   <info>
-    <name>ankaCloud</name>
+    <name>anka-build-cloud-teamcity-plugin</name>
     <display-name>Anka Build Cloud</display-name>
     <version>1.9.0</version>
     <description>Connects TeamCity with the Anka Build Cloud</description>

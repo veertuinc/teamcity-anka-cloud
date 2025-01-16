@@ -128,29 +128,29 @@ public class AnkaCloudConnector {
         this.ankaAPI = new AnkaAPI(mgmtURL, skipTLSVerification, cert, key, authType, rootCA);
     }
 
-    public AnkaCloudInstance startNewInstance(AnkaCloudImage cloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
-        if (cloudImage.getTag() == null) {
-            LOG.info(String.format("starting new instance with template %s, latest tag, group %s, externalId %s,", cloudImage.getId(), cloudImage.getGroupId(), cloudImage.getExternalId()));
+    public AnkaCloudInstance startNewInstance(AnkaCloudImage ankaCloudImage, InstanceUpdater updater, CloudInstanceUserData userData) throws AnkaMgmtException {
+        if (ankaCloudImage.getTemplateTag() == null) {
+            LOG.info(String.format("starting new instance with template %s, latest tag, group %s, externalId %s,", ankaCloudImage.getTemplateId(), ankaCloudImage.getGroupId(), ankaCloudImage.getExternalId()));
         } else {
-            LOG.info(String.format("starting new instance with template %s, tag %s, group %s, externalId %s", cloudImage.getId(), cloudImage.getTag(), cloudImage.getGroupId(), cloudImage.getExternalId()));
+            LOG.info(String.format("starting new instance with template %s, tag %s, group %s, externalId %s", ankaCloudImage.getTemplateId(), ankaCloudImage.getTemplateTag(), ankaCloudImage.getGroupId(), ankaCloudImage.getExternalId()));
         }
         String vmId = this.ankaAPI.startVM(
-            cloudImage.getId(), 
-            cloudImage.getTag(), 
+            ankaCloudImage.getTemplateId(), 
+            ankaCloudImage.getTemplateTag(), 
             null, 
-            cloudImage.getGroupId(),
+            ankaCloudImage.getGroupId(),
             priority, 
             null,
             userData.getProfileId(),
-            cloudImage.getvmNameTemplate(),
-            cloudImage.getVCpuCount(),
-            cloudImage.getRamSize()
+            ankaCloudImage.getVmNameTemplate(),
+            ankaCloudImage.getVCpuCount(),
+            ankaCloudImage.getRamSize()
         );
-        updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, cloudImage, userData));
-        return new AnkaCloudInstance(vmId, cloudImage);
+        updater.executeTaskInBackground(() -> this.waitForBootAndSetVmProperties(vmId, ankaCloudImage, userData));
+        return new AnkaCloudInstance(vmId, ankaCloudImage);
     }
 
-    private void waitForBootAndSetVmProperties(String vmId, AnkaCloudImage cloudImage, CloudInstanceUserData userData) {
+    private void waitForBootAndSetVmProperties(String vmId, AnkaCloudImage ankaCloudImage, CloudInstanceUserData userData) {
         try {
             HashMap<String, String > properties = new HashMap<>();
             AnkaVmInstance vm = waitForBoot(vmId);
@@ -163,7 +163,7 @@ public class AnkaCloudConnector {
 
             properties.put(AnkaConstants.ENV_AGENT_NAME_KEY, vmName);
             properties.put(AnkaConstants.ENV_INSTANCE_ID_KEY, vmId);
-            properties.put(AnkaConstants.ENV_TEMPLATE_ID_KEY, cloudImage.getId());
+            properties.put(AnkaConstants.ENV_TEMPLATE_ID_KEY, ankaCloudImage.getTemplateId());
             properties.put(AnkaConstants.ENV_PROFILE_ID, profileId);
             properties.put(AnkaConstants.ENV_ANKA_CLOUD_KEY, AnkaConstants.ENV_ANKA_CLOUD_VALUE);
             if (this.serverUrl != null && this.serverUrl.length() > 0) {
@@ -241,7 +241,7 @@ public class AnkaCloudConnector {
     private AnkaVmInstance waitForBoot(String vmId) throws InterruptedException, IOException, AnkaMgmtException {
         LOG.info(String.format("waiting for vm %s to boot", vmId));
         int timeWaited = 0;
-        int pullTimeWaited = 0;
+        int pullTimeWaited;
         AnkaVmInstance vm;
 
         // Scheduling
@@ -250,7 +250,7 @@ public class AnkaCloudConnector {
             if (!vm.isScheduling())
                 break;
 
-            LOG.info(String.format("waiting for vm %s %d to start", vmId, timeWaited));
+            LOG.info(String.format("vm %s is scheduling (timeout %d/%d)", vmId, timeWaited, maxSchedulingTimeout));
             Thread.sleep(waitUnit);
             timeWaited += waitUnit;
             if (timeWaited > maxSchedulingTimeout) {
@@ -258,6 +258,8 @@ public class AnkaCloudConnector {
                 throw new IOException("VM too long in scheduling state");
             }
         }
+
+        LOG.info(String.format("isStarted: %s, isScheduling: %s, isPulling: %s", vm.isStarted(), vm.isScheduling(), vm.isPulling()));
 
         // Validate no unexpected state
         if (!vm.isStarted() && !vm.isScheduling() && !vm.isPulling()) {

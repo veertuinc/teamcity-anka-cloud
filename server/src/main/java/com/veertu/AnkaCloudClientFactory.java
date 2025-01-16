@@ -66,6 +66,9 @@ public class AnkaCloudClientFactory implements CloudClientFactory {
         @NotNull CloudState cloudState, 
         @NotNull CloudClientParameters cloudClientParameters
     ) {
+
+        LOG.info(String.format("cloudClientParameters: %s", cloudClientParameters.getParameters().toString()));
+
         String mgmtURL = cloudClientParameters.getParameter(AnkaConstants.CONTROLLER_URL_NAME);
         String sshUser = cloudClientParameters.getParameter(AnkaConstants.SSH_USER);
         String sshPassword = cloudClientParameters.getParameter(AnkaConstants.SSH_PASSWORD);
