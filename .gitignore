@@ -4,3 +4,4 @@ target*
 servers*
 .idea*
 anka.teamcity
+.dccache
