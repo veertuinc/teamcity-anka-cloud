@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
   <info>
-    <name>ankaCloud</name>
+    <name>anka-build-cloud-teamcity-plugin</name>
     <display-name>Anka Build Cloud</display-name>
-    <version>1.8.0</version>
-    <description>Connects TeamCity with Anka Build Cloud</description>
+    <version>1.9.0</version>
+    <description>Connects TeamCity with the Anka Build Cloud</description>
     <download-url>Plugin download URL</download-url>
     <email>support@veertu.com</email>
     <vendor>
@@ -15,5 +15,5 @@
       veertu
     </vendor>
   </info>
-  <deployment use-separate-classloader="true" />
+  <deployment use-separate-classloader="true" allow-runtime-reload="true" />
 </teamcity-plugin>

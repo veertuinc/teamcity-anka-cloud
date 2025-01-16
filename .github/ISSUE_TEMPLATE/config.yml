@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support and Info Slack
+    url: https://veertuchat.slack.com/
+    about: THE place for questions for community and maintainers alike
