@@ -196,6 +196,13 @@ public class AnkaCloudConnector {
         AnkaCloudInstance instance = (AnkaCloudInstance)cloudInstance;
         try {
             AnkaVmInstance vm = instance.getVm();
+            if (vm == null) {
+                // VM already terminated externally (e.g. from controller UI)
+                LOG.info(String.format("VM instance %s not found - may have already been terminated", instance.getInstanceId()));
+                AnkaCloudImage image = (AnkaCloudImage) instance.getImage();
+                image.populateInstances();
+                return;
+            }
             String vmName = vm.getName();
             if (vmName == null)
                 vmName = String.format("%s_%s", cloudInstance.getImageId(), vm.getId());

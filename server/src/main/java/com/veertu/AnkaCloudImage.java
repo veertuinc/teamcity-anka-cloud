@@ -148,10 +148,14 @@ public class AnkaCloudImage implements CloudImage {
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
-//        if (this.errorMsg != null) {
-//            return new CloudErrorInfo(this.errorMsg);
-//        }
+        if (this.errorMsg != null) {
+            return new CloudErrorInfo(this.errorMsg);
+        }
         return null;
+    }
+
+    public void clearError() {
+        this.errorMsg = null;
     }
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
@@ -160,9 +164,11 @@ public class AnkaCloudImage implements CloudImage {
                 this.templateId, this.templateName, userData.getProfileId()));
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
+            this.errorMsg = null; // Clear any previous error on success
             return instance;
         } catch (AnkaMgmtException e) {
             this.errorMsg = e.getMessage();
+            LOG.error("Failed to start instance for image " + this.templateId, e);
             return null;
         }
     }

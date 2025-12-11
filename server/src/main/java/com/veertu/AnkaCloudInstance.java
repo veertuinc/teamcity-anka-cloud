@@ -28,7 +28,7 @@ public class AnkaCloudInstance implements CloudInstance {
 
     private final String vmId;
     private final CloudImage image;
-    private Date createdTime;
+    private final Date createdTime;
 
     public AnkaCloudInstance(String vmId, CloudImage image) {
         this.vmId = vmId;
@@ -117,6 +117,14 @@ public class AnkaCloudInstance implements CloudInstance {
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
+        AnkaVmInstance vm = getVm();
+        if (vm != null && vm.isInError()) {
+            String message = vm.getMessage();
+            if (message != null && !message.isEmpty()) {
+                return new CloudErrorInfo(message);
+            }
+            return new CloudErrorInfo("VM is in error state");
+        }
         return null;
     }
 
