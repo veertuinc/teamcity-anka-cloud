@@ -18,6 +18,7 @@ import jetbrains.buildServer.clouds.CloudException;
 import jetbrains.buildServer.clouds.CloudImage;
 import jetbrains.buildServer.clouds.CloudInstance;
 import jetbrains.buildServer.clouds.CloudInstanceUserData;
+import jetbrains.buildServer.clouds.InstanceStatus;
 import jetbrains.buildServer.clouds.QuotaException;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.AgentDescription;
@@ -63,11 +64,13 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
         AnkaCloudImage ankaCloudImage = (AnkaCloudImage)cloudImage;
-        LOG.info(String.format("==== %s ====", ankaCloudImage.getString()));
+        LOG.info(String.format("[startNewInstance:ClientEx] ENTER - image=%s, externalId=%s, currentInstanceCount=%d",
+            cloudImage.getId(), userData.getProfileId(), cloudImage.getInstances().size()));
         ankaCloudImage.setExternalId(userData.getProfileId());
-        LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudClientEx, externalId: %s",
-            cloudImage.getName(), cloudImage.getId(), ankaCloudImage.getExternalId()));
-        return ankaCloudImage.startNewInstance(userData, updater);
+        CloudInstance result = ankaCloudImage.startNewInstance(userData, updater);
+        LOG.info(String.format("[startNewInstance:ClientEx] EXIT - image=%s, resultInstanceId=%s, newInstanceCount=%d",
+            cloudImage.getId(), result != null ? result.getInstanceId() : "null", cloudImage.getInstances().size()));
+        return result;
     }
 
     public void unregisterAgent(int agentId) {
@@ -167,7 +170,38 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull CloudImage cloudImage) {
         Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-        boolean canStart = imageInstances.size() < this.maxInstances;
+        int currentCount = imageInstances.size();
+        
+        // Log instance IDs and statuses for debugging
+        StringBuilder instanceIds = new StringBuilder();
+        int pendingCount = 0;
+        for (CloudInstance inst : imageInstances) {
+            if (instanceIds.length() > 0) instanceIds.append(", ");
+            InstanceStatus status = inst.getStatus();
+            instanceIds.append(inst.getInstanceId()).append("(").append(status).append(")");
+            
+            // Count instances that are still starting up (not yet available as agents)
+            // These states indicate the VM is still being provisioned
+            if (status == InstanceStatus.SCHEDULED_TO_START || 
+                status == InstanceStatus.STARTING ||
+                status == InstanceStatus.UNKNOWN) {
+                pendingCount++;
+            }
+        }
+        
+        // Don't start new instances if there are pending instances still starting up
+        // This prevents duplicate instances being created for the same build
+        if (pendingCount > 0) {
+            LOG.info(String.format("[canStartNewInstanceWithDetails] image=%s, currentInstances=%d, pendingInstances=%d, canStart=false (waiting for pending instances), instanceIds=[%s]",
+                cloudImage.getId(), currentCount, pendingCount, instanceIds.toString()));
+            return CanStartNewInstanceResult.no("Waiting for " + pendingCount + " instance(s) to finish starting");
+        }
+        
+        boolean canStart = currentCount < this.maxInstances;
+        
+        LOG.info(String.format("[canStartNewInstanceWithDetails] image=%s, currentInstances=%d, maxInstances=%d, canStart=%s, instanceIds=[%s]",
+            cloudImage.getId(), currentCount, this.maxInstances, canStart, instanceIds.toString()));
+        
         return canStart ? CanStartNewInstanceResult.yes() : CanStartNewInstanceResult.no("Max instances limit reached");
     }
 

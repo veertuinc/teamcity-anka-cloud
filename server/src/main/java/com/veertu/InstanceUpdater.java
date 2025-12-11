@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import com.intellij.openapi.diagnostic.Logger;
+
 import jetbrains.buildServer.clouds.CloudImage;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.executors.ExecutorServices;
 
 /**
@@ -12,6 +15,8 @@ import jetbrains.buildServer.serverSide.executors.ExecutorServices;
  */
 
 public class InstanceUpdater {
+
+    private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
     private final long delay;
     private final Collection<AnkaCloudClientEx> clients;
@@ -33,10 +38,12 @@ public class InstanceUpdater {
     }
 
     private void populateInstances() {
+        LOG.info("[InstanceUpdater:populateInstances] Scheduled update running");
         for (AnkaCloudClientEx client : clients) {
             Collection<? extends CloudImage> images = client.getImages();
             for (CloudImage image: images) {
                 AnkaCloudImage ankaImage = (AnkaCloudImage)image;
+                LOG.info(String.format("[InstanceUpdater:populateInstances] Updating image=%s", ankaImage.getTemplateId()));
                 ankaImage.populateInstances();
             }
         }
