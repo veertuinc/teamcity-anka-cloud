@@ -220,7 +220,7 @@ public class AnkaCloudConnector {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         List<AnkaVmInstance> ankaInstances = this.ankaAPI.showInstances();
         for (AnkaVmInstance vm: ankaInstances) {
-            if (vm.getExternalId().equals(image.getExternalId())) {
+            if (image.getExternalId().equals(vm.getExternalId())) {
                 AnkaCloudInstance instance = new AnkaCloudInstance(vm.getId(), image);
                 instances.add(instance);
             }
