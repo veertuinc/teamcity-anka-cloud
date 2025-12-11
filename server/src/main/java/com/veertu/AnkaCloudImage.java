@@ -172,30 +172,56 @@ public class AnkaCloudImage implements CloudImage {
         this.errorTimestamp = 0;
     }
 
-    public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
+    public synchronized AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
+        LOG.info(String.format("[startNewInstance:Image] ENTER - templateId=%s, externalId=%s, currentInstanceCount=%d, instanceIds=%s",
+            this.templateId, userData.getProfileId(), this.instances.size(), this.instances.keySet()));
         try {
-            LOG.info(String.format("Starting new instance for image %s(%s) on AnkaCloudImage, externalId: %s",
-                this.templateId, this.templateName, userData.getProfileId()));
+            LOG.info(String.format("[startNewInstance:Image] Calling connector.startNewInstance for templateId=%s", this.templateId));
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
+            LOG.info(String.format("[startNewInstance:Image] Connector returned instanceId=%s", instance.getInstanceId()));
+            
+            // Add instance to local map immediately to prevent duplicate starts
+            // while waiting for the controller to reflect the new instance
+            this.instances.put(instance.getInstanceId(), instance);
+            LOG.info(String.format("[startNewInstance:Image] Added to local map, instanceCount=%d, instanceIds=%s",
+                this.instances.size(), this.instances.keySet()));
+            
             populateInstances();
+            LOG.info(String.format("[startNewInstance:Image] After populateInstances, instanceCount=%d, instanceIds=%s",
+                this.instances.size(), this.instances.keySet()));
+            
             this.errorMsg = null; // Clear any previous error on success
+            LOG.info(String.format("[startNewInstance:Image] EXIT SUCCESS - templateId=%s, instanceId=%s", this.templateId, instance.getInstanceId()));
             return instance;
         } catch (AnkaMgmtException e) {
             this.errorMsg = e.getMessage();
             this.errorTimestamp = System.currentTimeMillis();
-            LOG.error("Failed to start instance for image " + this.templateId, e);
+            LOG.error(String.format("[startNewInstance:Image] EXIT ERROR - templateId=%s, error=%s", this.templateId, e.getMessage()), e);
             return null;
         }
     }
 
-    public void populateInstances() {
+    public synchronized void populateInstances() {
+        LOG.info(String.format("[populateInstances] ENTER - templateId=%s, beforeCount=%d, beforeIds=%s",
+            this.templateId, this.instances.size(), this.instances.keySet()));
+        
         Collection<AnkaCloudInstance> imageInstances = this.connector.getImageInstances(this);
-        synchronized (this.instances) {
-            this.instances.clear();
-            for (AnkaCloudInstance instance: imageInstances) {
-                this.instances.put(instance.getInstanceId(), instance);
-            }
+        
+        StringBuilder fetchedIds = new StringBuilder();
+        for (AnkaCloudInstance inst : imageInstances) {
+            if (fetchedIds.length() > 0) fetchedIds.append(", ");
+            fetchedIds.append(inst.getInstanceId());
         }
+        LOG.info(String.format("[populateInstances] Fetched from controller: count=%d, ids=[%s]",
+            imageInstances.size(), fetchedIds.toString()));
+        
+        this.instances.clear();
+        for (AnkaCloudInstance instance: imageInstances) {
+            this.instances.put(instance.getInstanceId(), instance);
+        }
+        
+        LOG.info(String.format("[populateInstances] EXIT - templateId=%s, afterCount=%d, afterIds=%s",
+            this.templateId, this.instances.size(), this.instances.keySet()));
     }
 
 

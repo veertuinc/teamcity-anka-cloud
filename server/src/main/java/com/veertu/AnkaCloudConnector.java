@@ -219,12 +219,23 @@ public class AnkaCloudConnector {
     public Collection<AnkaCloudInstance> getImageInstances(AnkaCloudImage image) {
         List<AnkaCloudInstance> instances = new ArrayList<>();
         List<AnkaVmInstance> ankaInstances = this.ankaAPI.showInstances();
+        String imageExternalId = image.getExternalId();
+        
+        LOG.info(String.format("[getImageInstances] Looking for instances with externalId=%s, totalVMsFromController=%d",
+            imageExternalId, ankaInstances.size()));
+        
         for (AnkaVmInstance vm: ankaInstances) {
-            if (image.getExternalId().equals(vm.getExternalId())) {
+            String vmExternalId = vm.getExternalId();
+            boolean matches = imageExternalId.equals(vmExternalId);
+            LOG.info(String.format("[getImageInstances] VM id=%s, vmExternalId=%s, imageExternalId=%s, matches=%s",
+                vm.getId(), vmExternalId, imageExternalId, matches));
+            if (matches) {
                 AnkaCloudInstance instance = new AnkaCloudInstance(vm.getId(), image);
                 instances.add(instance);
             }
         }
+        
+        LOG.info(String.format("[getImageInstances] Returning %d matching instances", instances.size()));
         return instances;
     }
 
