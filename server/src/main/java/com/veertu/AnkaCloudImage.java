@@ -33,6 +33,10 @@ public class AnkaCloudImage implements CloudImage {
     private final AnkaCloudConnector connector;
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
+    private long errorTimestamp;
+    
+    // Error display duration in milliseconds (30 seconds)
+    private static final long ERROR_DISPLAY_DURATION_MS = 30000;
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
@@ -148,10 +152,24 @@ public class AnkaCloudImage implements CloudImage {
     @Nullable
     @Override
     public CloudErrorInfo getErrorInfo() {
-//        if (this.errorMsg != null) {
-//            return new CloudErrorInfo(this.errorMsg);
-//        }
+        // Auto-expire error after display duration to allow retries
+        if (this.errorMsg != null) {
+            long elapsedMs = System.currentTimeMillis() - this.errorTimestamp;
+            if (elapsedMs < ERROR_DISPLAY_DURATION_MS) {
+                long remainingSeconds = (ERROR_DISPLAY_DURATION_MS - elapsedMs) / 1000;
+                String retryMessage = String.format("%s (retry available in %d seconds)", this.errorMsg, remainingSeconds);
+                return new CloudErrorInfo(retryMessage);
+            } else {
+                // Error has expired, clear it
+                this.errorMsg = null;
+            }
+        }
         return null;
+    }
+
+    public void clearError() {
+        this.errorMsg = null;
+        this.errorTimestamp = 0;
     }
 
     public AnkaCloudInstance startNewInstance(CloudInstanceUserData userData, InstanceUpdater updater) {
@@ -160,9 +178,12 @@ public class AnkaCloudImage implements CloudImage {
                 this.templateId, this.templateName, userData.getProfileId()));
             AnkaCloudInstance instance = this.connector.startNewInstance(this, updater, userData);
             populateInstances();
+            this.errorMsg = null; // Clear any previous error on success
             return instance;
         } catch (AnkaMgmtException e) {
             this.errorMsg = e.getMessage();
+            this.errorTimestamp = System.currentTimeMillis();
+            LOG.error("Failed to start instance for image " + this.templateId, e);
             return null;
         }
     }

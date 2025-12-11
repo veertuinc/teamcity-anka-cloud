@@ -105,8 +105,7 @@ public class AnkaMgmtCommunicator {
             mgmtUrl = b.build().toURL();
 
         } catch (IOException | URISyntaxException e) {
-
-            e.printStackTrace();
+            LOG.error("Failed to parse management URL: " + url, e);
         }
     }
 
@@ -224,7 +223,7 @@ public class AnkaMgmtCommunicator {
                 throw new AnkaMgmtException(jsonResponse.getString("message"));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to get node groups", e);
             throw new AnkaMgmtException(e);
         } catch (JSONException e) {
             return groups;
@@ -278,7 +277,7 @@ public class AnkaMgmtCommunicator {
         try {
             jsonResponse = this.doRequest(RequestMethod.POST, url, jsonObject);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to start VM with template: " + templateId, e);
             return null;
         }
         String logicalResult = jsonResponse.getString("status");
@@ -321,7 +320,7 @@ public class AnkaMgmtCommunicator {
             }
             return null;
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to show VM: " + sessionId, e);
             return null;
         }
     }
@@ -338,7 +337,7 @@ public class AnkaMgmtCommunicator {
             }
             return false;
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to terminate VM: " + sessionId, e);
             return false;
         }
     }
@@ -418,7 +417,7 @@ public class AnkaMgmtCommunicator {
         try {
             jsonResponse = this.doRequest(RequestMethod.POST, url, jsonObject);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to save image for instance: " + instanceId, e);
         }
         if (jsonResponse == null ) {
             throw new AnkaMgmtException("error sending save image request");
@@ -439,7 +438,7 @@ public class AnkaMgmtCommunicator {
         try {
             jsonResponse = this.doRequest(RequestMethod.GET, url);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to get save image status for request: " + reqId, e);
             throw new AnkaMgmtException("error sending save image status request");
         }
         if (jsonResponse == null )
@@ -457,7 +456,7 @@ public class AnkaMgmtCommunicator {
             String status = bd.getString("status");
             return status;
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOG.error("Failed to parse save image status response for request: " + reqId, e);
             throw new AnkaMgmtException(e.getMessage());
         }
     }
@@ -521,7 +520,7 @@ public class AnkaMgmtCommunicator {
         try {
             jsonResponse = this.doRequest(RequestMethod.PUT, url, jsonObject);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to update VM: " + id, e);
             throw new AnkaMgmtException(e);
         }
         String logicalResult = jsonResponse.getString("status");
@@ -543,7 +542,7 @@ public class AnkaMgmtCommunicator {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Failed to check enterprise license", e);
         }
         return false;
     }
@@ -634,12 +633,12 @@ public class AnkaMgmtCommunicator {
                     request.setConfig(makeRequestConfig(reqTimeout));
                     this.addHeaders(request);
                     try {
+                        LOG.debug(String.format("Request: %s %s", request.getMethod(), request.getURI()));
+                        if (requestBody != null) {
+                            LOG.debug("Request body: " + requestBody.toString());
+                        }
                         long startTime = System.currentTimeMillis();
                         response = httpClient.execute(request);
-                        if (requestBody != null) {
-                            LOG.info("request: " + request.toString());
-                            LOG.info("requestBody: " + requestBody);
-                        }
                         long elapsedTime = System.currentTimeMillis() - startTime;
                         if (roundRobin != null) {
                             roundRobin.update(host, (int) elapsedTime, false);
@@ -651,8 +650,26 @@ public class AnkaMgmtCommunicator {
                         throw e;
                     }
                     int responseCode = response.getStatusLine().getStatusCode();
+                    HttpEntity entity = response.getEntity();
+                    String responseBody = "";
+                    if (entity != null) {
+                        try (BufferedReader rd = new BufferedReader(new InputStreamReader(entity.getContent()))) {
+                            StringBuilder result = new StringBuilder();
+                            String line;
+                            while ((line = rd.readLine()) != null) {
+                                result.append(line);
+                            }
+                            responseBody = result.toString();
+                        }
+                    }
+                    LOG.debug(String.format("Response [%d]: %s", responseCode, responseBody));
                     if (responseCode >= 400) {
-                        throw new ClientException(request.getMethod() + " " + request.getURI().toString() + " " + "Bad Request");
+                        LOG.error(String.format("Request failed: %s %s", request.getMethod(), request.getURI()));
+                        if (requestBody != null) {
+                            LOG.error("Request body: " + requestBody.toString());
+                        }
+                        LOG.error(String.format("Response [%d]: %s", responseCode, responseBody));
+                        throw new ClientException(request.getMethod() + " " + request.getURI().toString() + " " + responseCode + ": " + responseBody);
                     }
                     if (responseCode == 401) {
                         throw new AnkaUnAuthenticatedRequestException("Authentication Required");
@@ -664,16 +681,8 @@ public class AnkaMgmtCommunicator {
                         LOG.info(String.format("url: %s response: %s", url, response.toString()));
                         return null;
                     }
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        BufferedReader rd = new BufferedReader(new InputStreamReader(entity.getContent()));
-                        StringBuffer result = new StringBuffer();
-                        String line = "";
-                        while ((line = rd.readLine()) != null) {
-                            result.append(line);
-                        }
-                        rd.close();
-                        JSONObject jsonResponse = new JSONObject(result.toString());
+                    if (!responseBody.isEmpty()) {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
                         return jsonResponse;
                     }
 
@@ -684,10 +693,10 @@ public class AnkaMgmtCommunicator {
                     // don't retry on client exception, timeouts or host exceptions
                     throw e;
                 } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    LOG.error("Unsupported encoding in request", e);
                     throw new RuntimeException(e);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.error("Unexpected error during request", e);
                     throw new AnkaMgmtException(e);
                 } finally {
                     if (response != null) {
