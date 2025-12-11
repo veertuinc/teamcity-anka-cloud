@@ -20,7 +20,7 @@ pipeline {
     stages {
         stage('Build Plugin') { steps {
             sh '''
-                export PATH="/apache-maven-4.0.0-beta-3/bin:$PATH"
+                export PATH="/apache-maven-4.0.0-rc-5/bin:$PATH"
                 mvn package
                 ls -laht target/
             '''
