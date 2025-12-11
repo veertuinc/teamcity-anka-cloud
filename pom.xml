@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.veertu</groupId>
     <artifactId>anka-build-cloud-teamcity-plugin</artifactId>
-    <version>1.9.0</version>
+    <version>1.10.0</version>
     <packaging>pom</packaging>
     <properties>
-        <teamcity-version>2024.07</teamcity-version>
+        <teamcity-version>2025.11</teamcity-version>
     </properties>
     <repositories>
         <repository>

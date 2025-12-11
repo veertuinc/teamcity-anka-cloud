@@ -4,14 +4,14 @@
   <parent>
     <groupId>com.veertu</groupId>
     <artifactId>anka-build-cloud-teamcity-plugin</artifactId>
-    <version>1.9.0</version>
+    <version>1.10.0</version>
   </parent>
   <artifactId>agent</artifactId>
   <packaging>jar</packaging>
   <dependencies>
     <dependency>
       <groupId>com.veertu</groupId>
-      <version>1.9.0</version>
+      <version>1.10.0</version>
       <artifactId>common</artifactId>
       <scope>compile</scope>
     </dependency>
@@ -30,19 +30,19 @@
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
       <artifactId>cloud-interface</artifactId>
-      <version>2017.2</version>
+      <version>2025.11</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
       <artifactId>cloud-shared</artifactId>
-      <version>2017.2</version>
+      <version>2025.11</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.teamcity.internal</groupId>
       <artifactId>agent</artifactId>
-      <version>2017.2</version>
+      <version>2025.11</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
