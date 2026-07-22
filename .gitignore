@@ -5,3 +5,5 @@ servers*
 .idea*
 anka.teamcity
 .dccache
+docs
+.cursor
