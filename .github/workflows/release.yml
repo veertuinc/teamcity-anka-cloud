@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version (MAJOR.MINOR.PATCH)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be MAJOR.MINOR.PATCH (got: $VERSION)" >&2
+            exit 1
+          fi
+
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure tag does not already exist
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists" >&2
+            exit 1
+          fi
+
+      - uses: ./.github/actions/setup-build
+
+      - name: Bump version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: ./scripts/bump-version.sh "$VERSION"
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pom.xml server/pom.xml agent/pom.xml common/pom.xml build/pom.xml teamcity-plugin.xml README.md
+          git commit -m "Release ${VERSION}"
+          git push origin HEAD:master
+
+      - name: Create tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Build plugin zip
+        run: mvn -B package
+
+      - name: Create GitHub Release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
+          if [[ ! -f "$ZIP" ]]; then
+            echo "Expected artifact missing: $ZIP" >&2
+            ls -la target/ || true
+            exit 1
+          fi
+          gh release create "v${VERSION}" "$ZIP" \
+            --title "v${VERSION}" \
+            --notes "Anka Build Cloud TeamCity plugin ${VERSION}."

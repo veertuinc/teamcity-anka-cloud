@@ -19,15 +19,15 @@ public class AnkaBuildServerAdapter extends BuildServerAdapter {
 
     private static final Logger LOG = Logger.getInstance(Loggers.CLOUD_CATEGORY_ROOT);
 
-	private final SBuildServer server;
+    private final SBuildServer server;
 
-	public AnkaBuildServerAdapter(@NotNull SBuildServer sBuildServer) {
-		server = sBuildServer;
-	}
+    public AnkaBuildServerAdapter(@NotNull SBuildServer sBuildServer) {
+        server = sBuildServer;
+    }
 
-	public void register() {
-		server.addListener(this);
-	}
+    public void register() {
+        server.addListener(this);
+    }
 
     @Override
     public void agentRegistered(SBuildAgent agent, long currentlyRunningBuildId) {
@@ -40,35 +40,35 @@ public class AnkaBuildServerAdapter extends BuildServerAdapter {
         // LOG.info("Agent unregistered =========: " + agent.toString());
         super.agentUnregistered(agent);
     }
-    
-	@Override
-	public void changesLoaded(SRunningBuild build) {
-		// if (build.getBuildType() != null) {
-		// 	LOG.info(String.format("BUILD STARTED ===========================> %s", build.getBuildType().getName()));
-		// } else {
-		// 	LOG.info("BUILD STARTED ===========================> unknown build type");
-		// }
-		super.changesLoaded(build);
-	}
-	
-	@Override
-	public void buildFinished(SRunningBuild build) {
+
+    @Override
+    public void changesLoaded(SRunningBuild build) {
         // if (build.getBuildType() != null) {
-		// 	LOG.info(String.format("BUILD FINISHED ===========================> %s", build.getBuildType().getName()));
-		// } else {
-		// 	LOG.info("BUILD FINISHED ===========================> unknown build type");
-		// }
-		super.buildFinished(build);
-	}
-	
-	@Override
-	public void buildInterrupted(SRunningBuild build) {
+        //     LOG.info(String.format("BUILD STARTED ===========================> %s", build.getBuildType().getName()));
+        // } else {
+        //     LOG.info("BUILD STARTED ===========================> unknown build type");
+        // }
+        super.changesLoaded(build);
+    }
+
+    @Override
+    public void buildFinished(SRunningBuild build) {
+        // if (build.getBuildType() != null) {
+        //     LOG.info(String.format("BUILD FINISHED ===========================> %s", build.getBuildType().getName()));
+        // } else {
+        //     LOG.info("BUILD FINISHED ===========================> unknown build type");
+        // }
+        super.buildFinished(build);
+    }
+
+    @Override
+    public void buildInterrupted(SRunningBuild build) {
         // LOG.info("BUILD INTERRUPTED ===========================> " + build.toString());
         // if (build.getBuildType() != null) {
-		// 	LOG.info(String.format("BUILD INTERRUPTED ===========================> %s", build.getBuildType().getName()));
-		// } else {
-		// 	LOG.info("BUILD INTERRUPTED ===========================> unknown build type");
-		// }
+        //     LOG.info(String.format("BUILD INTERRUPTED ===========================> %s", build.getBuildType().getName()));
+        // } else {
+        //     LOG.info("BUILD INTERRUPTED ===========================> unknown build type");
+        // }
         // SBuildAgent agent = getAgentByBuildId(build.getBuildId());
         // CloudInstance instance = this.client.findInstanceByAgent(agent);
         // if (instance != null) {
@@ -77,18 +77,18 @@ public class AnkaBuildServerAdapter extends BuildServerAdapter {
         // } else {
         //     LOG.warn("BUILD INTERRUPTED ===========================> Instance not found to terminate for agent: " + agent.toString());
         // }
-		super.buildInterrupted(build);
-	}
-	
-	@Override
-	public void serverStartup() {
-		LOG.info("Server startup");
-	}
+        super.buildInterrupted(build);
+    }
 
-	@Override
-	public void serverShutdown() {
-		LOG.info("Server shutdown");
-	}
+    @Override
+    public void serverStartup() {
+        LOG.info("Server startup");
+    }
+
+    @Override
+    public void serverShutdown() {
+        LOG.info("Server shutdown");
+    }
 
     // @Override
     // public void agentStatusChanged(SBuildAgent agent, boolean wasEnabled, boolean wasAuthorized) {

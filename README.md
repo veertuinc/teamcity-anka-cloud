@@ -9,9 +9,23 @@ Documentation can be found [HERE](https://docs.veertu.com/anka/plugins-and-integ
 1. Install Maven 4.0.0 rc 5
 2. Run `mvn package` and ensure there aren't any failures.
     - If you see `Invalid CEN header` errors, manually replace the `aspectjweaver-1.8.9.jar` with the latest jar for that project, but keep the name the same.
-3. This produces {repo root}/target/anka-build-cloud-teamcity-plugin-1.10.0.zip which you can then test
+3. This produces {repo root}/target/anka-build-cloud-teamcity-plugin-1.11.0.zip which you can then test
 
 - You can watch `logs/teamcity-clouds.log` to see all logs related to the plugin.
+
+### Tests and lint
+
+```bash
+mvn test
+mvn -pl server,agent,common -am checkstyle:check
+mvn -pl server,agent,common -am install -DskipTests spotbugs:check
+```
+
+Unit tests run offline (no live TeamCity or Anka required). GitHub Actions runs the same checks on pull requests and pushes to `master` (see `.github/workflows/ci.yml`).
+
+### Releasing
+
+See [RELEASING.md](RELEASING.md). Prefer the **Release** GitHub Action (`workflow_dispatch`) to bump, tag, and publish.
 
 <!-- ### Building with Docker
 

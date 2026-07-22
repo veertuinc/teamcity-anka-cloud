@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Baseline exclusions for pre-existing High findings.
+  Remove entries as they are fixed; do not add new suppressions lightly.
+-->
+<FindBugsFilter>
+    <Match>
+        <Class name="com.veertu.AnkaCloudClientEx"/>
+        <Method name="startNewInstance"/>
+        <Bug pattern="NP_NONNULL_RETURN_VIOLATION"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.AnkaEditProfileController"/>
+        <Method name="doPost"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.ankaMgmtSdk.AnkaMgmtCommunicator"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.ankaMgmtSdk.AnkaMgmtCommunicator"/>
+        <Bug pattern="UC_USELESS_CONDITION"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.ankaMgmtSdk.ClientCertAuthenticator"/>
+        <Bug pattern="UWF_NULL_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.ankaMgmtSdk.OpenIdConnectAuthenticator"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.utils.MetadataKeys"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    <Match>
+        <Class name="com.veertu.AnkaCloudPropertiesSetter"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+</FindBugsFilter>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.veertu</groupId>
         <artifactId>anka-build-cloud-teamcity-plugin</artifactId>
-        <version>1.10.0</version>
+        <version>1.11.0</version>
     </parent>
     <artifactId>server</artifactId>
     <packaging>jar</packaging>
@@ -12,7 +12,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.6-alpha1</version>
+            <version>5.6.2</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.teamcity.internal</groupId>
@@ -22,7 +22,7 @@
         </dependency>
         <dependency>
             <groupId>com.veertu</groupId>
-            <version>1.10.0</version>
+            <version>1.11.0</version>
             <artifactId>common</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -67,48 +67,35 @@
             <artifactId>jsch</artifactId>
             <version>2.27.7</version>
         </dependency>
+        <!--
+          TeamCity already ships BouncyCastle on the webapp classpath.
+          Bundling a second copy with use-separate-classloader=true causes
+          ClassCastException across PluginStandaloneClassLoader vs ParallelWebappClassLoader
+          (e.g. HKDF$Mappings vs AlgorithmProvider) when opening cloud profiles.
+          Keep provided so we compile against BC but do not package it into the plugin.
+        -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>1.85</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>1.85</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.20.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>4.0.0-beta-3</version>
-                <configuration>
-                    <release>17</release>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>testCompile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
+

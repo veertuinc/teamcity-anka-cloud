@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.veertu</groupId>
     <artifactId>anka-build-cloud-teamcity-plugin</artifactId>
-    <version>1.10.0</version>
+    <version>1.11.0</version>
   </parent>
   <artifactId>build</artifactId>
   <packaging>pom</packaging>
@@ -13,22 +13,25 @@
       <teamcity.ankaCloud.plugin.version>snapshot-${maven.build.timestamp}</teamcity.ankaCloud.plugin.version>
       <teamcity.ankaCloud.plugin.vendorName>Plugin vendor name</teamcity.ankaCloud.plugin.vendorName>
       <teamcity.ankaCloud.plugin.vendorUrl>Plugin vendor URL</teamcity.ankaCloud.plugin.vendorUrl>
+      <!-- packaging-only module: no Java sources to lint -->
+      <checkstyle.skip>true</checkstyle.skip>
+      <spotbugs.skip>true</spotbugs.skip>
   </properties>
   <dependencies>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>agent</artifactId>
-           <version>1.10.0</version>
+           <version>1.11.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>common</artifactId>
-           <version>1.10.0</version>
+           <version>1.11.0</version>
       </dependency>
       <dependency>
            <groupId>com.veertu</groupId>
            <artifactId>server</artifactId>
-           <version>1.10.0</version>
+           <version>1.11.0</version>
       </dependency>
   </dependencies>
   <build>
