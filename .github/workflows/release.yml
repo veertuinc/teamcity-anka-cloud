@@ -2,11 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Plugin version (MAJOR.MINOR.PATCH)"
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -16,25 +11,27 @@ jobs:
     name: Tag and publish
     runs-on: ubuntu-latest
     steps:
-      - name: Validate version
-        env:
-          VERSION: ${{ inputs.version }}
+      - name: Parse version from branch
+        id: version
         run: |
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Version must be MAJOR.MINOR.PATCH (got: $VERSION)" >&2
+          BRANCH="${GITHUB_REF_NAME}"
+          if [[ ! "$BRANCH" =~ ^release/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Release must run from a branch named release/vMAJOR.MINOR.PATCH (got: $BRANCH)" >&2
             exit 1
           fi
+          VERSION="${BASH_REMATCH[1]}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Parsed version: ${VERSION}"
 
-      - name: Checkout master
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: master
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Ensure tag does not already exist
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
             echo "Tag v${VERSION} already exists" >&2
@@ -45,22 +42,26 @@ jobs:
 
       - name: Bump version
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: ./scripts/bump-version.sh "$VERSION"
 
       - name: Commit version bump
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pom.xml server/pom.xml agent/pom.xml common/pom.xml build/pom.xml teamcity-plugin.xml README.md
-          git commit -m "Release ${VERSION}"
-          git push origin HEAD:master
+          if git diff --staged --quiet; then
+            echo "Version already at ${VERSION}; skipping commit"
+          else
+            git commit -m "Release ${VERSION}"
+            git push
+          fi
 
       - name: Create tag
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           git tag -a "v${VERSION}" -m "Release ${VERSION}"
           git push origin "v${VERSION}"
@@ -70,7 +71,7 @@ jobs:
 
       - name: Create GitHub Release
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
@@ -82,3 +83,15 @@ jobs:
           gh release create "v${VERSION}" "$ZIP" \
             --title "v${VERSION}" \
             --notes "Anka Build Cloud TeamCity plugin ${VERSION}."
+
+      - name: Merge release into edge
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin edge
+          git checkout edge
+          git pull --ff-only origin edge
+          git merge --no-ff "release/v${VERSION}" -m "Merge release/v${VERSION} into edge"
+          git push origin edge

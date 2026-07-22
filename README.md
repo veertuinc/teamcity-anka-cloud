@@ -25,7 +25,7 @@ Unit tests run offline (no live TeamCity or Anka required). GitHub Actions runs 
 
 ### Releasing
 
-See [RELEASING.md](RELEASING.md). Prefer the **Release** GitHub Action (`workflow_dispatch`) to bump, tag, and publish.
+See [RELEASING.md](RELEASING.md). Prefer the **Release** GitHub Action: run `workflow_dispatch` from a `release/vX.X.X` branch to bump, tag, and publish.
 
 <!-- ### Building with Docker
 
