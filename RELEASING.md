@@ -2,7 +2,18 @@
 
 ## Preferred: GitHub Action
 
-**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). The workflow publishes to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/10733-anka-build-cloud) (`pluginId` `10733`) on the Stable channel via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html).
+**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/10733-anka-build-cloud) (`pluginId` `10733`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
+
+Channel depends on the branch you run **Release** from:
+
+| Branch | Marketplace channel | What the workflow does |
+| --- | --- | --- |
+| `edge` | **beta** | Builds the current `pom.xml` version and uploads to Marketplace beta (no bump, tag, GitHub Release, or merge). |
+| `release/vX.X.X` | **Stable** | Full release: bump, tag, GitHub Release, Marketplace Stable, merge into `edge`. |
+
+Install/update from beta requires adding `https://plugins.jetbrains.com/plugins/beta/list` as a custom plugin repository in TeamCity.
+
+### Stable release (`release/vX.X.X`)
 
 1. Create a branch named `release/vX.X.X` (example: `release/v1.12.0`) from the commit you want to ship.
 2. Open the **Release** workflow in GitHub Actions and run `workflow_dispatch` **from that branch** (no version input — the branch name is the source of truth).
@@ -15,6 +26,15 @@
    - Publish a GitHub Release with that zip
    - Upload the same zip to JetBrains Marketplace (Stable)
    - Merge the release branch into `edge`
+
+### Beta publish (`edge`)
+
+1. Ensure `edge` has the version and code you want in Marketplace beta.
+2. Open the **Release** workflow and run `workflow_dispatch` **from `edge`**.
+3. The workflow will:
+   - Read the version from root `pom.xml`
+   - Build `{repo root}/target/anka-build-cloud-teamcity-plugin-X.X.X.zip`
+   - Upload that zip to JetBrains Marketplace (`beta` channel)
 
 ## Manual fallback
 

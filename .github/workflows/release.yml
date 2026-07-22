@@ -11,27 +11,43 @@ jobs:
     name: Tag and publish
     runs-on: ubuntu-latest
     steps:
-      - name: Parse version from branch
-        id: version
-        run: |
-          BRANCH="${GITHUB_REF_NAME}"
-          if [[ ! "$BRANCH" =~ ^release/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Release must run from a branch named release/vMAJOR.MINOR.PATCH (got: $BRANCH)" >&2
-            exit 1
-          fi
-          VERSION="${BASH_REMATCH[1]}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Parsed version: ${VERSION}"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # edge → Marketplace beta (current pom version, no tag/bump/merge)
+      # release/vX.X.X → Stable Marketplace + full GitHub release flow
+      - name: Resolve publish mode
+        id: meta
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          if [[ "$BRANCH" == "edge" ]]; then
+            VERSION="$(sed -n 's|^[[:space:]]*<version>\([^<]*\)</version>.*|\1|p' pom.xml | head -1)"
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].+)?$ ]]; then
+              echo "Could not read a valid version from pom.xml (got: ${VERSION:-empty})" >&2
+              exit 1
+            fi
+            echo "mode=edge" >> "$GITHUB_OUTPUT"
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "Edge publish: version ${VERSION} → Marketplace beta"
+          elif [[ "$BRANCH" =~ ^release/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+            echo "channel=" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "Release publish: version ${VERSION} → Marketplace Stable"
+          else
+            echo "Run from edge (beta) or release/vMAJOR.MINOR.PATCH (Stable). Got: $BRANCH" >&2
+            exit 1
+          fi
+
       - name: Ensure tag does not already exist
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
             echo "Tag v${VERSION} already exists" >&2
@@ -41,13 +57,15 @@ jobs:
       - uses: ./.github/actions/setup-build
 
       - name: Bump version
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: ./scripts/bump-version.sh "$VERSION"
 
       - name: Commit version bump
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -60,8 +78,9 @@ jobs:
           fi
 
       - name: Create tag
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           git tag -a "v${VERSION}" -m "Release ${VERSION}"
           git push origin "v${VERSION}"
@@ -70,8 +89,9 @@ jobs:
         run: mvn -B package
 
       - name: Create GitHub Release
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
@@ -84,11 +104,12 @@ jobs:
             --title "v${VERSION}" \
             --notes "Anka Build Cloud TeamCity plugin ${VERSION}."
 
-      # Uploads to JetBrains Marketplace Stable channel (plugin 10733).
-      # Requires repo secret JETBRAINS_MARKETPLACE_TOKEN (Marketplace permanent token).
+      # pluginId 10733 — XML ID teamcity_<name> from teamcity-plugin.xml.
+      # Requires repo secret JETBRAINS_MARKETPLACE_TOKEN.
       - name: Publish to JetBrains Marketplace
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
           JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
         run: |
           ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
@@ -101,17 +122,25 @@ jobs:
             ls -la target/ || true
             exit 1
           fi
-          curl --fail-with-body -sS \
-            --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}" \
-            -F pluginId=10733 \
-            -F file="@${ZIP}" \
-            https://plugins.jetbrains.com/api/updates/upload
+          CURL_ARGS=(
+            --fail-with-body -sS
+            --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}"
+            -F pluginId=10733
+            -F "file=@${ZIP}"
+          )
+          CHANNEL_LABEL="Stable"
+          if [[ -n "${CHANNEL}" ]]; then
+            CURL_ARGS+=(-F "channel=${CHANNEL}")
+            CHANNEL_LABEL="${CHANNEL}"
+          fi
+          curl "${CURL_ARGS[@]}" https://plugins.jetbrains.com/api/updates/upload
           echo
-          echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, Stable)."
+          echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, ${CHANNEL_LABEL})."
 
       - name: Merge release into edge
+        if: steps.meta.outputs.mode == 'release'
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
