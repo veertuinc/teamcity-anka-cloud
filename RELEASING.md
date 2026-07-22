@@ -2,6 +2,8 @@
 
 ## Preferred: GitHub Action
 
+**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). The workflow publishes to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/10733-anka-build-cloud) (`pluginId` `10733`) on the Stable channel via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html).
+
 1. Create a branch named `release/vX.X.X` (example: `release/v1.12.0`) from the commit you want to ship.
 2. Open the **Release** workflow in GitHub Actions and run `workflow_dispatch` **from that branch** (no version input — the branch name is the source of truth).
 3. The workflow will:
@@ -11,6 +13,7 @@
    - Create and push tag `vX.X.X`
    - Build `{repo root}/target/anka-build-cloud-teamcity-plugin-X.X.X.zip`
    - Publish a GitHub Release with that zip
+   - Upload the same zip to JetBrains Marketplace (Stable)
    - Merge the release branch into `edge`
 
 ## Manual fallback
