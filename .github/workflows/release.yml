@@ -84,6 +84,31 @@ jobs:
             --title "v${VERSION}" \
             --notes "Anka Build Cloud TeamCity plugin ${VERSION}."
 
+      # Uploads to JetBrains Marketplace Stable channel (plugin 10733).
+      # Requires repo secret JETBRAINS_MARKETPLACE_TOKEN (Marketplace permanent token).
+      - name: Publish to JetBrains Marketplace
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+        run: |
+          ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
+          if [[ -z "${JETBRAINS_MARKETPLACE_TOKEN}" ]]; then
+            echo "Missing secret JETBRAINS_MARKETPLACE_TOKEN" >&2
+            exit 1
+          fi
+          if [[ ! -f "$ZIP" ]]; then
+            echo "Expected artifact missing: $ZIP" >&2
+            ls -la target/ || true
+            exit 1
+          fi
+          curl --fail-with-body -sS \
+            --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}" \
+            -F pluginId=10733 \
+            -F file="@${ZIP}" \
+            https://plugins.jetbrains.com/api/updates/upload
+          echo
+          echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, Stable)."
+
       - name: Merge release into edge
         env:
           VERSION: ${{ steps.version.outputs.version }}
