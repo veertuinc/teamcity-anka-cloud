@@ -67,15 +67,24 @@
             <artifactId>jsch</artifactId>
             <version>2.27.7</version>
         </dependency>
+        <!--
+          TeamCity already ships BouncyCastle on the webapp classpath.
+          Bundling a second copy with use-separate-classloader=true causes
+          ClassCastException across PluginStandaloneClassLoader vs ParallelWebappClassLoader
+          (e.g. HKDF$Mappings vs AlgorithmProvider) when opening cloud profiles.
+          Keep provided so we compile against BC but do not package it into the plugin.
+        -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>1.79</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>1.79</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
