@@ -123,7 +123,7 @@ jobs:
             exit 1
           fi
           CURL_ARGS=(
-            --fail-with-body -sS
+            -sS
             --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}"
             -F pluginId=10733
             -F "file=@${ZIP}"
@@ -133,9 +133,24 @@ jobs:
             CURL_ARGS+=(-F "channel=${CHANNEL}")
             CHANNEL_LABEL="${CHANNEL}"
           fi
-          curl "${CURL_ARGS[@]}" https://plugins.jetbrains.com/api/updates/upload
-          echo
-          echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, ${CHANNEL_LABEL})."
+          RESPONSE_FILE="$(mktemp)"
+          HTTP_CODE="$(curl "${CURL_ARGS[@]}" \
+            -o "${RESPONSE_FILE}" -w "%{http_code}" \
+            https://plugins.jetbrains.com/api/updates/upload)"
+          RESPONSE_BODY="$(cat "${RESPONSE_FILE}")"
+          echo "${RESPONSE_BODY}"
+          if [[ "${HTTP_CODE}" =~ ^2 ]]; then
+            echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, ${CHANNEL_LABEL})."
+            exit 0
+          fi
+          # Re-runs / retries: version already on Marketplace should not fail the workflow.
+          if echo "${RESPONSE_BODY}" | grep -Eiq \
+            'already exists|already been uploaded|duplicate|same version|version .* exists'; then
+            echo "Marketplace already has this version on ${CHANNEL_LABEL}; continuing."
+            exit 0
+          fi
+          echo "Marketplace upload failed (HTTP ${HTTP_CODE})" >&2
+          exit 1
 
       - name: Merge release into edge
         if: steps.meta.outputs.mode == 'release'
