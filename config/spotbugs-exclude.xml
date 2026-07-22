@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Start empty / minimal. Add matches here only for intentional suppressions
+  after reviewing SpotBugs findings.
+-->
+<FindBugsFilter>
+    <!-- Example:
+    <Match>
+        <Class name="com.veertu.example.SomeClass"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+    </Match>
+    -->
+</FindBugsFilter>
