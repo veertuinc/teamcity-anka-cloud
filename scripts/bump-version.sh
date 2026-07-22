@@ -32,8 +32,8 @@ if [[ -z "$OLD_VERSION" ]]; then
 fi
 
 if [[ "$OLD_VERSION" == "$NEW_VERSION" ]]; then
-  echo "Error: old and new version are the same ($NEW_VERSION)" >&2
-  exit 1
+  echo "Version already at ${NEW_VERSION}; nothing to bump"
+  exit 0
 fi
 
 FILES=(
