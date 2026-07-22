@@ -19,22 +19,22 @@
 
 ## Task 1: Maven test + lint plugins
 
-- [ ] Add JUnit 5, Surefire, Checkstyle, SpotBugs to parent `pom.xml`
-- [ ] Add `config/checkstyle.xml` and `config/spotbugs-exclude.xml`
-- [ ] Ensure `server` inherits and can run `mvn test` / lint goals
+- [x] Add JUnit 5, Surefire, Checkstyle, SpotBugs to parent `pom.xml`
+- [x] Add `config/checkstyle.xml` and `config/spotbugs-exclude.xml`
+- [x] Ensure `server` inherits and can run `mvn test` / lint goals
 
 ## Task 2: Unit tests
 
-- [ ] `RoundRobinTest` / `WeighedURL` coverage
-- [ ] `AnkaVmInstanceTest` JSON + state helpers
-- [ ] `AnkaCloudPropertiesProcesserTest` validation
-- [ ] Run `mvn test` and fix until green
+- [x] `RoundRobinTest` / `WeighedURL` coverage
+- [x] `AnkaVmInstanceTest` JSON + state helpers
+- [x] `AnkaCloudPropertiesProcesserTest` validation
+- [x] Run `mvn test` and fix until green
 
 ## Task 3: GitHub Actions
 
-- [ ] `.github/workflows/ci.yml` — parallel test/checkstyle/spotbugs
-- [ ] `.github/workflows/release.yml` — dispatch bump/commit/tag/package/release
+- [x] `.github/workflows/ci.yml` — parallel test/checkstyle/spotbugs
+- [x] `.github/workflows/release.yml` — dispatch bump/commit/tag/package/release
 
 ## Task 4: Docs
 
-- [ ] Update `RELEASING.md` and `README.md`
+- [x] Update `RELEASING.md` and `README.md`

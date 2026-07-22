@@ -39,7 +39,7 @@ Add offline unit tests and GitHub Actions for continuous testing/linting, plus a
 
 - Parent POM: Surefire, Checkstyle plugin, SpotBugs plugin; JUnit 5 test dependency available to modules
 - `config/checkstyle.xml` — minimal ruleset + suppressions as needed for green CI
-- `config/spotbugs-exclude.xml` — exclude known noise; fail on remaining bugs
+- `config/spotbugs-exclude.xml` — baseline exclusions for pre-existing High findings; fail on any new High bugs
 
 ## Unit tests
 

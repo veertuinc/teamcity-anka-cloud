@@ -35,4 +35,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
       - name: Run SpotBugs
-        run: mvn -B -pl server,agent,common -am spotbugs:check
+        # install first so Maven 4 can resolve reactor modules (common → server/agent)
+        run: mvn -B -pl server,agent,common -am install -DskipTests spotbugs:check
+
