@@ -2,7 +2,7 @@
 
 ## Preferred: GitHub Action
 
-**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/10733-anka-build-cloud) (`pluginId` `10733`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
+**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/33114-anka-build-cloud) (`pluginId` `33114`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
 
 Channel depends on the branch you run **Release** from:
 

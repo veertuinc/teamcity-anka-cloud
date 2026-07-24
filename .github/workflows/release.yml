@@ -104,7 +104,7 @@ jobs:
             --title "v${VERSION}" \
             --notes "Anka Build Cloud TeamCity plugin ${VERSION}."
 
-      # pluginId 10733 — XML ID teamcity_<name> from teamcity-plugin.xml.
+      # pluginId 33114 — XML ID teamcity_<name> from teamcity-plugin.xml.
       # Requires repo secret JETBRAINS_MARKETPLACE_TOKEN.
       - name: Publish to JetBrains Marketplace
         env:
@@ -125,7 +125,7 @@ jobs:
           CURL_ARGS=(
             -sS
             --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}"
-            -F pluginId=10733
+            -F pluginId=33114
             -F "file=@${ZIP}"
           )
           CHANNEL_LABEL="Stable"
@@ -140,7 +140,7 @@ jobs:
           RESPONSE_BODY="$(cat "${RESPONSE_FILE}")"
           echo "${RESPONSE_BODY}"
           if [[ "${HTTP_CODE}" =~ ^2 ]]; then
-            echo "Published ${ZIP} to JetBrains Marketplace (plugin 10733, ${CHANNEL_LABEL})."
+            echo "Published ${ZIP} to JetBrains Marketplace (plugin 33114, ${CHANNEL_LABEL})."
             exit 0
           fi
           # Re-runs / retries: version already on Marketplace should not fail the workflow.
