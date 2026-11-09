@@ -21,7 +21,7 @@ mvn -pl server,agent,common -am checkstyle:check
 mvn -pl server,agent,common -am install -DskipTests spotbugs:check
 ```
 
-Unit tests run offline (no live TeamCity or Anka required). GitHub Actions runs the same checks on pull requests and pushes to `master` (see `.github/workflows/ci.yml`).
+Unit tests run offline (no live TeamCity or Anka required). GitHub Actions runs the same checks on pull requests and pushes to `edge` (see `.github/workflows/ci.yml`).
 
 ### Releasing
 

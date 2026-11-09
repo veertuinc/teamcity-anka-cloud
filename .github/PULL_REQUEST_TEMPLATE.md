@@ -24,7 +24,7 @@ Issue Number: N/A
 
 Please validate that your PR fulfills the following requirements:
 - [ ] I have read the **CONTRIBUTING.md** documentation (if available)
-- [ ] I have branched from the default repo branch (can be master, main, or release/vX.X)
+- [ ] I have branched from the default repo branch (`edge`)
 - [ ] I have checked that a similar PR does not exist or has been rejected in the past
 - [ ] PR changes are specific to a feature or bug
 - [ ] No style/format/cosmetic changes included

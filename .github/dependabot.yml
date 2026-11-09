@@ -1,0 +1,35 @@
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    target-branch: edge
+    schedule:
+      interval: weekly
+      day: tuesday
+    assignees:
+      - NorseGaud
+    reviewers:
+      - NorseGaud
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: edge
+    schedule:
+      interval: weekly
+      day: tuesday
+    assignees:
+      - NorseGaud
+    reviewers:
+      - NorseGaud
+
+  - package-ecosystem: docker
+    directory: /shared/docker/orchestrator
+    target-branch: edge
+    schedule:
+      interval: weekly
+      day: tuesday
+    assignees:
+      - NorseGaud
+    reviewers:
+      - NorseGaud
