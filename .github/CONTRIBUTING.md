@@ -21,7 +21,7 @@ Labels will be used/set by maintainers throughout the life-cycle of the Issue. C
 # Submitting Pull Requests
 
 ### Guidelines for Contributors
-* Branch off an updated version of `master`
+* Branch off an updated version of `edge`
 * Do not integrate cosmetic/style/format changes. [Why?](#cosmetic-changes)
 * Keep PRs small and specific
 * Follow the existing code style and patterns
