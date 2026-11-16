@@ -6,7 +6,18 @@ Documentation can be found [HERE](https://docs.veertu.com/anka/plugins-and-integ
 
 ## Development
 
-1. Install Maven 4.0.0 rc 7
+1. Install Maven 4.0.0 rc 7 (Homebrew only has Maven 3):
+
+   ```bash
+   mkdir -p ~/opt
+   curl -fsSL "https://dlcdn.apache.org/maven/maven-4/4.0.0-rc-7/binaries/apache-maven-4.0.0-rc-7-bin.tar.gz" \
+     | tar -xz -C ~/opt
+   echo 'export PATH="$HOME/opt/apache-maven-4.0.0-rc-7/bin:$PATH"' >> ~/.zshrc
+   source ~/.zshrc
+   mvn -v
+   ```
+
+   You also need a JDK 17+ (`java -version`). If Java is missing: `brew install openjdk@17`.
 2. Run `mvn package` and ensure there aren't any failures.
     - If you see `Invalid CEN header` errors, manually replace the `aspectjweaver-1.8.9.jar` with the latest jar for that project, but keep the name the same.
 3. This produces {repo root}/target/anka-build-cloud-teamcity-plugin-1.11.0.zip which you can then test
