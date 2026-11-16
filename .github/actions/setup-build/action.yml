@@ -9,7 +9,7 @@ inputs:
   maven-version:
     description: Apache Maven version
     required: false
-    default: "4.0.0-rc-5"
+    default: "4.0.0-rc-7"
 
 runs:
   using: composite
@@ -25,7 +25,8 @@ runs:
       shell: bash
       env:
         MAVEN_VERSION: ${{ inputs.maven-version }}
+      # dlcdn.apache.org drops old releases; Maven Central keeps every version.
       run: |
-        curl -fsSL "https://dlcdn.apache.org/maven/maven-4/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+        curl -fsSL "https://repo1.maven.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
           | tar -xz -C /tmp
         echo "/tmp/apache-maven-${MAVEN_VERSION}/bin" >> "$GITHUB_PATH"
