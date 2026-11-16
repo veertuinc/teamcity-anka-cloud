@@ -46,3 +46,17 @@ Install/update from beta requires adding `https://plugins.jetbrains.com/plugins/
    This updates `pom.xml`, `server/pom.xml`, `agent/pom.xml`, `common/pom.xml`, `build/pom.xml`, `teamcity-plugin.xml`, and `README.md`. Changing only the root `pom.xml` is not enough — the build will still produce the old version.
 2. Run `mvn package` and confirm `{repo root}/target/anka-build-cloud-teamcity-plugin-<version>.zip` was produced.
 3. Test the zip on a TeamCity server, then tag `vX.X.X`, publish the release, and merge the release branch into `edge`.
+
+## Automation
+
+Default branch is `edge`. Do not dispatch this workflow from `edge`.
+
+1. Required checks must be green on the commit: `CI / Test`, `CI / Checkstyle`, `CI / SpotBugs`. `ci.yml` runs on pull requests and on push to `edge`.
+2. Next security version is the latest release tag plus one patch. On 2026-11-09 the latest tag is `v1.11.0`. The branch name is that version: `release/v1.11.1`.
+3. Push branch `release/vX.Y.Z` from the `edge` commit. Do not bump files yourself. The workflow runs `./scripts/bump-version.sh`.
+4. `gh workflow run Release --ref release/vX.Y.Z`. Workflow name `Release`. No inputs.
+5. Wait until the run finishes. On failure, stop. Do not dispatch again in the same run.
+6. The workflow needs repo secret `JETBRAINS_MARKETPLACE_TOKEN`. The bot does not paste that token.
+7. Ignore the root `Jenkinsfile`. It is not the release path and it names no job.
+
+The workflow merges `release/vX.Y.Z` back into `edge`. Do not also merge it by hand.
