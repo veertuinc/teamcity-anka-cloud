@@ -11,11 +11,33 @@ jobs:
     name: Tag and publish
     runs-on: ubuntu-latest
     steps:
+      - name: Check for GitHub App credentials
+        id: app-check
+        env:
+          GOVULNCHECK_APP_ID: ${{ secrets.GOVULNCHECK_APP_ID }}
+          GOVULNCHECK_APP_PRIVATE_KEY: ${{ secrets.GOVULNCHECK_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$GOVULNCHECK_APP_ID" ] && [ -n "$GOVULNCHECK_APP_PRIVATE_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.app-check.outputs.present == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.GOVULNCHECK_APP_ID }}
+          private-key: ${{ secrets.GOVULNCHECK_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       # edge → Marketplace beta (current pom version, no tag/bump/merge)
       # release/vX.X.X → Stable Marketplace + full GitHub release flow
@@ -92,7 +114,7 @@ jobs:
         if: steps.meta.outputs.mode == 'release'
         env:
           VERSION: ${{ steps.meta.outputs.version }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         run: |
           ZIP="target/anka-build-cloud-teamcity-plugin-${VERSION}.zip"
           if [[ ! -f "$ZIP" ]]; then
