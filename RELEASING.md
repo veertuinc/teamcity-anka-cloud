@@ -49,7 +49,7 @@ Install/update from beta requires adding `https://plugins.jetbrains.com/plugins/
 
 ## Automation
 
-Default branch is `edge`. Do not dispatch this workflow from `edge`.
+The default branch is `edge`. The bot never dispatches Release from `edge`. A human may dispatch Release from `edge` for a Marketplace beta. Follow the Preferred section.
 
 1. Required checks must be green on the commit: `CI / Test`, `CI / Checkstyle`, `CI / SpotBugs`. `ci.yml` runs on pull requests and on push to `edge`.
 2. Next security version is the latest release tag plus one patch. On 2026-11-09 the latest tag is `v1.11.0`. The branch name is that version: `release/v1.11.1`.
