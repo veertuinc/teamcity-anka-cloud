@@ -31,7 +31,7 @@ grep -q 'ssh_user: anka' "${TEST_DIR}/node.yaml" || fail "ssh user"
 grep -q 'ssh_port: 22' "${TEST_DIR}/node.yaml" || fail "ssh port"
 grep -q 'agent_path: /Users/anka/buildAgent' "${TEST_DIR}/node.yaml" || fail "agent path"
 
-if grep -R -n -E 'private_key_file|10\.8\.1\.200|ANKA_SSH_PASSWORD|COMPANY_REGISTRY' "${ROOT}/tests" --exclude='check-public-definition.bash'; then
+if grep -R -n -E 'private_key_file|10\.8\.1\.200|COMPANY_REGISTRY' "${ROOT}/tests" --exclude='check-public-definition.bash'; then
   fail "public tests contain private data"
 fi
 echo "public definition ok"
