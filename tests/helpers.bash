@@ -147,6 +147,7 @@ read_manifest() {
   TEMPLATE_NAME="$(yaml_host_value "$MANIFEST" node template_name)"
   TEMPLATE_TAG="$(yaml_host_value "$MANIFEST" node template_tag)"
   SSH_USER="$(yaml_host_value "$MANIFEST" node ssh_user)"
+  SSH_PASSWORD="$(yaml_host_value "$MANIFEST" node ssh_password)"
   SSH_PORT="$(yaml_host_value "$MANIFEST" node ssh_port)"
   AGENT_PATH="$(yaml_host_value "$MANIFEST" node agent_path)"
   PROFILE_NAME="$(yaml_host_value "$MANIFEST" teamcity profile_name)"
@@ -157,7 +158,6 @@ require_runner_env() {
   : "${TEAMCITY_URL:?}"
   : "${TEAMCITY_TOKEN:?}"
   : "${CONTROLLER_URL:?}"
-  : "${ANKA_SSH_PASSWORD:?}"
 }
 
 finish_fail() {
@@ -223,7 +223,7 @@ save_cloud_profile() {
     vm_name='tc-test-$ts'
   fi
   profile_json="$(build_profile_json \
-    "$CONTROLLER_URL" "$TEAMCITY_URL" "$SSH_USER" "$ANKA_SSH_PASSWORD" "$SSH_PORT" \
+    "$CONTROLLER_URL" "$TEAMCITY_URL" "$SSH_USER" "$SSH_PASSWORD" "$SSH_PORT" \
     "$AGENT_PATH" "$TEMPLATE_NAME" "$TEMPLATE_TAG" "$template_id" "$MAX_INSTANCES" \
     "$PROFILE_NAME" "$vm_name")"
   teamcity_request POST "/app/rest/cloud/profiles" "$profile_json" >/dev/null

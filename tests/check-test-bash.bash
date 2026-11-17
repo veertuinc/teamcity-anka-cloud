@@ -6,7 +6,6 @@ export TEAMCITY_DRY_RUN=1
 export TEAMCITY_URL="http://10.0.0.3:8111"
 export TEAMCITY_TOKEN="token"
 export CONTROLLER_URL="http://10.0.0.2"
-export ANKA_SSH_PASSWORD="secret"
 export IMAGE_WAIT_SECONDS=1
 export AGENT_WAIT_SECONDS=1
 export REPORT_PATH="${ROOT}/tests/.report-pass.txt"

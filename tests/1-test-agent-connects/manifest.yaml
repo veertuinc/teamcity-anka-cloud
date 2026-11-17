@@ -19,5 +19,6 @@ tests:
         template_name: 26.1-arm64
         template_tag: vanilla+port-forward-22+brew-git
         ssh_user: anka
+        ssh_password: admin
         ssh_port: 22
         agent_path: /Users/anka/buildAgent

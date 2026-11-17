@@ -30,6 +30,7 @@ grep -q 'id: 13-L-ARM-macos' "$MANIFEST" || fail "mac image id"
 [[ "$(yaml_host_value "$MANIFEST" node template_name)" == "26.1-arm64" ]] || fail "template name"
 [[ "$(yaml_host_value "$MANIFEST" node template_tag)" == "vanilla+port-forward-22+brew-git" ]] || fail "template tag"
 [[ "$(yaml_host_value "$MANIFEST" node ssh_user)" == "anka" ]] || fail "ssh user"
+[[ "$(yaml_host_value "$MANIFEST" node ssh_password)" == "admin" ]] || fail "ssh password"
 [[ "$(yaml_host_value "$MANIFEST" node ssh_port)" == "22" ]] || fail "ssh port"
 [[ "$(yaml_host_value "$MANIFEST" node agent_path)" == "/Users/anka/buildAgent" ]] || fail "agent path"
 
