@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
-yaml_value() {
+yaml_host_value() {
   local file="$1"
-  local key="$2"
-  python3 - "$file" "$key" <<'PY'
+  local host="$2"
+  local key="$3"
+  python3 - "$file" "$host" "$key" <<'PY'
 import sys
-path, key = sys.argv[1], sys.argv[2]
+path, host, key = sys.argv[1], sys.argv[2], sys.argv[3]
+in_host = False
+host_indent = None
 with open(path, encoding="utf-8") as handle:
     for raw in handle:
         line = raw.split("#", 1)[0].rstrip()
-        if not line.strip() or line[:1] in (" ", "\t", "-"):
+        if not line.strip():
             continue
-        name, sep, value = line.partition(":")
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line.strip()
+        if stripped.startswith("- name:"):
+            name = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+            in_host = name == host
+            host_indent = indent
+            continue
+        if not in_host or indent <= host_indent:
+            in_host = False
+            continue
+        name, sep, value = stripped.partition(":")
         if sep and name.strip() == key:
             print(value.strip().strip('"').strip("'"))
             sys.exit(0)
@@ -107,5 +120,200 @@ PY
 report_line() {
   local status="$1"
   local reason="${2:-}"
-  printf '%s|agent-connects|connected|%s\n' "$status" "$reason"
+  local test_id="${TEST_ID:-agent-connects}"
+  local check="${CHECK_NAME:-connected}"
+  printf '%s|%s|%s|%s\n' "$status" "$test_id" "$check" "$reason"
+}
+
+begin_live_test() {
+  MANIFEST="${1:?}"
+  : "${TEST_ID:=agent-connects}"
+  : "${CHECK_NAME:=connected}"
+  : "${REPORT_PATH:=/tmp/test-reports/test-report-teamcity.txt}"
+  : "${IMAGE_WAIT_SECONDS:=300}"
+  : "${AGENT_WAIT_SECONDS:=900}"
+  : "${PROFILE_SETTINGS:=/plugins/anka-build-cloud-teamcity-plugin/profile-settings.html}"
+  if [[ -z "${VM_NAME_TEMPLATE:-}" ]]; then
+    VM_NAME_TEMPLATE='tc-test-$ts'
+  fi
+  INSTANCE_HREF="${INSTANCE_HREF:-}"
+  INSTANCE_BODY="${INSTANCE_BODY:-}"
+  mkdir -p "$(dirname "$REPORT_PATH")"
+  read_manifest
+  require_runner_env
+}
+
+read_manifest() {
+  TEMPLATE_NAME="$(yaml_host_value "$MANIFEST" node template_name)"
+  TEMPLATE_TAG="$(yaml_host_value "$MANIFEST" node template_tag)"
+  SSH_USER="$(yaml_host_value "$MANIFEST" node ssh_user)"
+  SSH_PORT="$(yaml_host_value "$MANIFEST" node ssh_port)"
+  AGENT_PATH="$(yaml_host_value "$MANIFEST" node agent_path)"
+  PROFILE_NAME="$(yaml_host_value "$MANIFEST" teamcity profile_name)"
+  MAX_INSTANCES="$(yaml_host_value "$MANIFEST" teamcity max_instances)"
+}
+
+require_runner_env() {
+  : "${TEAMCITY_URL:?}"
+  : "${TEAMCITY_TOKEN:?}"
+  : "${CONTROLLER_URL:?}"
+  : "${ANKA_SSH_PASSWORD:?}"
+}
+
+finish_fail() {
+  local reason="$1"
+  report_line FAIL "$reason" > "$REPORT_PATH"
+  echo "FAIL: ${reason}" >&2
+  exit 1
+}
+
+teamcity_request() {
+  local method="$1"
+  local path="$2"
+  local body="${3:-}"
+  if [[ "${TEAMCITY_DRY_RUN:-}" == "1" ]]; then
+    dry_run_body "$path"
+    return 0
+  fi
+  local args=(-fsS -X "$method" -H "Authorization: Bearer ${TEAMCITY_TOKEN}" -H "Accept: application/json")
+  if [[ -n "$body" ]]; then
+    args+=(-H "Content-Type: application/json" --data "$body")
+  fi
+  curl "${args[@]}" "${TEAMCITY_URL}${path}"
+}
+
+dry_run_body() {
+  local path="$1"
+  local fixture="instance.body"
+  case "$path" in
+    *get=templates*) fixture="templates.body" ;;
+    *get=tags*) fixture="tags.body" ;;
+    */app/rest/cloud/images*) fixture="images.body" ;;
+    */actions/forceStop*) return 0 ;;
+  esac
+  cat "${FIXTURE_DIR}/${fixture}"
+}
+
+stop_instance() {
+  if [[ -n "${INSTANCE_HREF:-}" ]]; then
+    teamcity_request POST "${INSTANCE_HREF}/actions/forceStop" || true
+  fi
+}
+
+find_template_id() {
+  local templates id
+  templates="$(teamcity_request POST "${PROFILE_SETTINGS}?get=templates&prop:clouds.anka.url=${CONTROLLER_URL}")"
+  json_has_name "$templates" "$TEMPLATE_NAME" || finish_fail "template name absent from list"
+  id="$(template_id_for_name "$templates" "$TEMPLATE_NAME")" || finish_fail "template id missing"
+  printf '%s\n' "$id"
+}
+
+confirm_template_tag() {
+  local template_id="$1"
+  local tags
+  tags="$(teamcity_request POST "${PROFILE_SETTINGS}?get=tags&templateId=${template_id}")"
+  json_has_tag "$tags" "$TEMPLATE_TAG" || finish_fail "template tag absent from list"
+}
+
+save_cloud_profile() {
+  local template_id="$1"
+  local profile_json vm_name
+  vm_name="${VM_NAME_TEMPLATE:-}"
+  if [[ -z "$vm_name" ]]; then
+    vm_name='tc-test-$ts'
+  fi
+  profile_json="$(build_profile_json \
+    "$CONTROLLER_URL" "$TEAMCITY_URL" "$SSH_USER" "$ANKA_SSH_PASSWORD" "$SSH_PORT" \
+    "$AGENT_PATH" "$TEMPLATE_NAME" "$TEMPLATE_TAG" "$template_id" "$MAX_INSTANCES" \
+    "$PROFILE_NAME" "$vm_name")"
+  teamcity_request POST "/app/rest/cloud/profiles" "$profile_json" >/dev/null
+}
+
+wait_for_saved_image() {
+  local images start_epoch now
+  local limit="${IMAGE_WAIT_SECONDS:-300}"
+  start_epoch="$(date +%s)"
+  while true; do
+    images="$(teamcity_request GET "/app/rest/cloud/images")"
+    if json_has_name "$images" "$TEMPLATE_NAME"; then
+      return 0
+    fi
+    now="$(date +%s)"
+    if (( now - start_epoch >= limit )); then
+      finish_fail "template name absent from saved images"
+    fi
+    sleep 1
+  done
+}
+
+start_one_vm() {
+  local template_id="$1"
+  local start_json
+  start_json="$(build_start_instance_json "$PROFILE_NAME" "$template_id")"
+  INSTANCE_BODY="$(teamcity_request POST "/app/rest/cloud/instances" "$start_json")"
+  INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
+}
+
+wait_until_agent_is_connected() {
+  local start_epoch now state
+  local limit="${AGENT_WAIT_SECONDS:-900}"
+  start_epoch="$(date +%s)"
+  while true; do
+    state="$(instance_state "$INSTANCE_BODY")"
+    if [[ "$state" == "error" ]]; then
+      finish_fail "instance state error"
+    fi
+    if agent_connected "$INSTANCE_BODY" && agent_authorized "$INSTANCE_BODY"; then
+      return 0
+    fi
+    if agent_connected "$INSTANCE_BODY"; then
+      authorize_agent
+    fi
+    now="$(date +%s)"
+    if (( now - start_epoch >= limit )); then
+      finish_fail "agent still disconnected after 15 minutes"
+    fi
+    sleep 1
+    INSTANCE_BODY="$(teamcity_request GET "$INSTANCE_HREF")"
+  done
+}
+
+authorize_agent() {
+  local agent_id
+  agent_id="$(json_agent_id "$INSTANCE_BODY")"
+  if [[ "${TEAMCITY_DRY_RUN:-}" == "1" ]]; then
+    return 0
+  fi
+  curl -fsS -X PUT -H "Authorization: Bearer ${TEAMCITY_TOKEN}" \
+    -H "Content-Type: text/plain" --data "true" \
+    "${TEAMCITY_URL}/app/rest/agents/id:${agent_id}/authorized" >/dev/null
+}
+
+template_id_for_name() {
+  python3 - "$1" "$2" <<'PY'
+import json, sys
+body, name = sys.argv[1], sys.argv[2]
+start = body.find("[")
+end = body.rfind("]")
+data = json.loads(body[start:end + 1])
+for item in data:
+    if item.get("name") == name:
+        print(item["id"])
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
+json_href() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1])["href"])
+PY
+}
+
+json_agent_id() {
+  python3 - "$1" <<'PY'
+import json, sys
+print((json.loads(sys.argv[1]).get("agent") or {}).get("id", ""))
+PY
 }

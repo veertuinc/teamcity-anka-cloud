@@ -7,12 +7,19 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-cat > "${tmp}/flat.yaml" <<'EOF'
-port: 8111
-profile_name: anka-agent-connect
+cat > "${tmp}/hosts.yaml" <<'EOF'
+tests:
+  - name: "Agent connects"
+    hosts:
+      - name: teamcity
+        port: 8111
+        profile_name: anka-agent-connect
+      - name: controller
+        port: 80
 EOF
-[[ "$(yaml_value "${tmp}/flat.yaml" port)" == "8111" ]] || fail "yaml port"
-[[ "$(yaml_value "${tmp}/flat.yaml" profile_name)" == "anka-agent-connect" ]] || fail "yaml name"
+[[ "$(yaml_host_value "${tmp}/hosts.yaml" teamcity port)" == "8111" ]] || fail "teamcity port"
+[[ "$(yaml_host_value "${tmp}/hosts.yaml" controller port)" == "80" ]] || fail "controller port"
+[[ "$(yaml_host_value "${tmp}/hosts.yaml" teamcity profile_name)" == "anka-agent-connect" ]] || fail "profile name"
 
 body='[{"id":"abc","name":"26.1-arm64"}]'
 json_has_name "$body" "26.1-arm64" || fail "name"
@@ -48,4 +55,15 @@ pending='{"state":"starting","agent":{"id":9,"connected":true,"authorized":false
 if agent_authorized "$pending"; then fail "pending should be unauthorized"; fi
 [[ "$(report_line PASS "")" == "PASS|agent-connects|connected|" ]] || fail "pass line"
 [[ "$(report_line FAIL "agent still disconnected after 15 minutes")" == "FAIL|agent-connects|connected|agent still disconnected after 15 minutes" ]] || fail "fail line"
+(
+  TEST_ID="other-test"
+  CHECK_NAME="ready"
+  [[ "$(report_line PASS "")" == "PASS|other-test|ready|" ]]
+) || fail "custom report"
+
+listed='note[{"id":"abc","name":"26.1-arm64"}]tail'
+[[ "$(template_id_for_name "$listed" "26.1-arm64")" == "abc" ]] || fail "template id"
+[[ "$(json_href "$ready")" == "/app/rest/cloud/instances/id:1" ]] || fail "href"
+[[ "$(json_agent_id "$ready")" == "9" ]] || fail "agent id"
+[[ "$(json_agent_id '{"state":"starting"}')" == "" ]] || fail "missing agent id"
 echo "helpers ok"
