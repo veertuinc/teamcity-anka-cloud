@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# This workflow checks out the repo and runs Maven. Read is enough.
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test

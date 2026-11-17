@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -62,16 +61,6 @@ public class OpenIdConnectAuthenticator {
     private final String grantTypeClientCredentials = "client_credentials";
     private final String grantTypeRefreshToken = "refresh_token";
 
-    private boolean isValidUrl(String url) {
-        try {
-            URI uri = new URI(url);
-            // Add more validation logic if needed, e.g., check allowed domains
-            return uri.getScheme().equals("https") || uri.getScheme().equals("http");
-        } catch (URISyntaxException e) {
-            return false;
-        }
-    }
-    
     public OpenIdConnectAuthenticator(String mgmtUrl, String clientId, String clientSecret) {
         this.mgmtUrl = mgmtUrl;
         this.clientId = clientId;
@@ -202,13 +191,15 @@ public class OpenIdConnectAuthenticator {
 
     public String doPostRequest(String url, Iterable<NameValuePair> params, Iterable<NameValuePair> headers) throws AnkaMgmtException, ClientException {
 
-        if (!isValidUrl(url)) {
-            throw new ClientException("Invalid URL: " + url);
+        // url can come from the provider discovery document. The match rejects
+        // non-HTTP URLs. require() also rejects metadata addresses before the
+        // client secret is posted.
+        if (url == null || !url.matches(OutboundUrl.URL_PATTERN)) {
+            throw new ClientException("Invalid URL");
         }
-
+        URI uri = OutboundUrl.require(url);
         RequestBuilder builder = RequestBuilder.post();
-        String sanitizedUrl = url.replaceAll("[\r\n]", "");
-        builder.setUri(sanitizedUrl);
+        builder.setUri(uri);
         for (NameValuePair pair: headers) {
             builder.setHeader(pair.getName(), pair.getValue());
         }
@@ -223,11 +214,12 @@ public class OpenIdConnectAuthenticator {
     }
 
     protected String doGetRequest(String url) throws AnkaMgmtException, ClientException {
-        if (!isValidUrl(url)) {
-            throw new ClientException("Invalid URL: " + url);
+        // url can come from the controller auth config (provider_url).
+        if (url == null || !url.matches(OutboundUrl.URL_PATTERN)) {
+            throw new ClientException("Invalid URL");
         }
-        String sanitizedUrl = url.replaceAll("[\r\n]", "");
-        HttpRequestBase request = new HttpGet(sanitizedUrl);
+        URI uri = OutboundUrl.require(url);
+        HttpRequestBase request = new HttpGet(uri);
         return doRequest(request);
     }
 
@@ -274,6 +266,8 @@ public class OpenIdConnectAuthenticator {
         requestBuilder = requestBuilder.setConnectTimeout(timeout);
         requestBuilder = requestBuilder.setConnectionRequestTimeout(timeout);
         HttpClientBuilder builder = HttpClientBuilder.create();
+        // A redirect could move a checked URL onto a metadata address.
+        builder.disableRedirectHandling();
 
         SSLContext sslContext = new SSLContextBuilder()
                 .loadTrustMaterial(null, utils.strategyLambda()).build();
