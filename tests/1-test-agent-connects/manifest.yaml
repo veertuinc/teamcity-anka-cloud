@@ -1,0 +1,15 @@
+description: "Plugin lists one template, starts one VM, and the agent connects"
+teamcity_version: "2026.2.2"
+tests:
+  - name: "Agent connects"
+    hosts:
+      - name: teamcity
+        id: ubuntu-22.04-linux
+        config: teamcity.yaml
+        tester: true
+      - name: controller
+        id: ubuntu-22.04-linux
+        config: controller.yaml
+      - name: node
+        id: 13-L-ARM-macos
+        config: node.yaml

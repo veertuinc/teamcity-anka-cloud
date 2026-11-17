@@ -1,0 +1,3 @@
+port: 8111
+profile_name: anka-agent-connect
+max_instances: 1
