@@ -96,13 +96,13 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             }
             String rootCA = null;
             String rootCAParam =  request.getParameter(PROP_PREFIX + AnkaConstants.ROOT_CA);
-            if (!rootCAParam.isEmpty()) {
+            if (rootCAParam != null && !rootCAParam.isEmpty()) {
                 rootCA = rootCAParam;
             }
             AuthType authType = AuthType.NONE;
-            if (authMethod.equals("cert") && clientCert != null && !clientCert.isEmpty()) {
+            if (AnkaConstants.AUTH_METHOD_CERT.equals(authMethod) && clientCert != null && !clientCert.isEmpty()) {
                 authType = AuthType.CERTIFICATE;
-            } else if(authMethod.equals("oidc") && oidcClientId != null && !oidcClientId.isEmpty()) {
+            } else if (AnkaConstants.AUTH_METHID_OIDC.equals(authMethod) && oidcClientId != null && !oidcClientId.isEmpty()) {
                 authType = AuthType.OPENID_CONNECT;
             }
 
@@ -138,12 +138,12 @@ public class AnkaEditProfileController extends BaseFormXmlController {
             String templateId = request.getParameter("templateId");
             String toGet = request.getParameter("get");
 
-            if (templateId != null && toGet.equals("tags")) {
+            if (templateId != null && "tags".equals(toGet)) {
                 List<String> tags = connector.listTemplateTags(templateId);
                 xmlResponse.addContent(new JSONArray(tags).toString());
-            } else if (toGet.equals("templates")) {
+            } else if ("templates".equals(toGet)) {
                 xmlResponse.addContent(templatesToJson(connector.listTemplates()));
-            } else if (toGet.equals("groups")) {
+            } else if ("groups".equals(toGet)) {
                 // avoid making the call if it's a basic license
                 if (connector.isEnterpriseLicense()) {
                     List<NodeGroup> nodeGroups = connector.getNodeGroups();

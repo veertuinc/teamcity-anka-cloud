@@ -60,6 +60,13 @@ values = dict(zip(names, sys.argv[1:]))
 if any(value == "" for value in values.values()):
     sys.exit("build_profile_json: empty argument")
 pairs = [
+    ("enabled", "true"),
+    ("profileId", values["profile_name"]),
+    ("name", values["profile_name"]),
+    ("description", ""),
+    ("cloud-code", "anka"),
+    ("total-work-time", ""),
+    ("next-hour", ""),
     ("clouds.anka.url", values["controller_url"]),
     ("skipTLSVerification", "false"),
     ("profileServerUrl", values["teamcity_url"]),
@@ -75,11 +82,8 @@ pairs = [
 ]
 print(json.dumps({
     "id": values["profile_name"],
-    "name": values["profile_name"],
-    "cloudType": "anka",
-    "enabled": True,
-    "project": {"id": "_Root"},
-    "parameters": {"property": [{"name": name, "value": value} for name, value in pairs]},
+    "type": "CloudProfile",
+    "properties": {"property": [{"name": name, "value": value} for name, value in pairs]},
 }))
 PY
 }
@@ -175,11 +179,24 @@ teamcity_request() {
     dry_run_body "$path"
     return 0
   fi
-  local args=(-fsS -X "$method" -H "Authorization: Bearer ${TEAMCITY_TOKEN}" -H "Accept: application/json")
+  local response_file http_code
+  response_file="$(mktemp)"
+  local args=(-sS -o "$response_file" -w '%{http_code}' -X "$method" -H "Authorization: Bearer ${TEAMCITY_TOKEN}" -H "Accept: application/json")
   if [[ -n "$body" ]]; then
     args+=(-H "Content-Type: application/json" --data "$body")
   fi
-  curl "${args[@]}" "${TEAMCITY_URL}${path}"
+  http_code="$(curl "${args[@]}" "${TEAMCITY_URL}${path}" || true)"
+  if [[ ! "$http_code" =~ ^2 ]]; then
+    {
+      printf 'HTTP_ERROR %s %s %s\n' "${http_code:-000}" "$method" "$path"
+      cat "$response_file"
+      printf '\n'
+    } | tee -a /tmp/teamcity-http-error.txt >&2
+    rm -f "$response_file"
+    return 22
+  fi
+  cat "$response_file"
+  rm -f "$response_file"
 }
 
 dry_run_body() {
@@ -211,7 +228,7 @@ find_template_id() {
 confirm_template_tag() {
   local template_id="$1"
   local tags
-  tags="$(teamcity_request POST "${PROFILE_SETTINGS}?get=tags&templateId=${template_id}")"
+  tags="$(teamcity_request POST "${PROFILE_SETTINGS}?get=tags&templateId=${template_id}&prop:clouds.anka.url=${CONTROLLER_URL}")"
   json_has_tag "$tags" "$TEMPLATE_TAG" || finish_fail "template tag absent from list"
 }
 
@@ -226,7 +243,14 @@ save_cloud_profile() {
     "$CONTROLLER_URL" "$TEAMCITY_URL" "$SSH_USER" "$SSH_PASSWORD" "$SSH_PORT" \
     "$AGENT_PATH" "$TEMPLATE_NAME" "$TEMPLATE_TAG" "$template_id" "$MAX_INSTANCES" \
     "$PROFILE_NAME" "$vm_name")"
-  teamcity_request POST "/app/rest/cloud/profiles" "$profile_json" >/dev/null
+  if [[ "${TEAMCITY_DRY_RUN:-}" == "1" ]]; then
+    CLOUD_PROFILE_ID="$PROFILE_NAME"
+    teamcity_request POST "/app/rest/projects/id:_Root/projectFeatures" "$profile_json" >/dev/null
+    return 0
+  fi
+  local response
+  response="$(teamcity_request POST "/app/rest/projects/id:_Root/projectFeatures" "$profile_json")"
+  CLOUD_PROFILE_ID="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' "$response")"
 }
 
 wait_for_saved_image() {
@@ -248,17 +272,34 @@ wait_for_saved_image() {
 
 start_one_vm() {
   local template_id="$1"
-  local start_json
-  start_json="$(build_start_instance_json "$PROFILE_NAME" "$template_id")"
-  INSTANCE_BODY="$(teamcity_request POST "/app/rest/cloud/instances" "$start_json")"
-  INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
+  local start_json list start_epoch now
+  local limit="${INSTANCE_LIST_WAIT_SECONDS:-60}"
+  start_json="$(build_start_instance_json "${CLOUD_PROFILE_ID:?}" "$template_id")"
+  teamcity_request POST "/app/rest/cloud/instances" "$start_json" >/dev/null
+  start_epoch="$(date +%s)"
+  while true; do
+    list="$(teamcity_request GET "/app/rest/cloud/instances")"
+    if INSTANCE_BODY="$(instance_for_profile "$list" "$CLOUD_PROFILE_ID")"; then
+      INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
+      return 0
+    fi
+    now="$(date +%s)"
+    if (( now - start_epoch >= limit )); then
+      finish_fail "started instance absent from list"
+    fi
+    sleep 1
+  done
 }
 
 wait_until_agent_is_connected() {
   local start_epoch now state
   local limit="${AGENT_WAIT_SECONDS:-900}"
+  # The default instance document has an agent link with id, name, and href.
+  # connected and authorized are returned only when the request names them.
+  local agent_fields="state,agent(id,href,connected,authorized)"
   start_epoch="$(date +%s)"
   while true; do
+    INSTANCE_BODY="$(teamcity_request GET "${INSTANCE_HREF}?fields=${agent_fields}")"
     state="$(instance_state "$INSTANCE_BODY")"
     if [[ "$state" == "error" ]]; then
       finish_fail "instance state error"
@@ -274,7 +315,6 @@ wait_until_agent_is_connected() {
       finish_fail "agent still disconnected after 15 minutes"
     fi
     sleep 1
-    INSTANCE_BODY="$(teamcity_request GET "$INSTANCE_HREF")"
   done
 }
 
@@ -308,6 +348,35 @@ json_href() {
   python3 - "$1" <<'PY'
 import json, sys
 print(json.loads(sys.argv[1])["href"])
+PY
+}
+
+instance_for_profile() {
+  python3 - "$1" "$2" <<'PY'
+import json, sys
+body, profile_id = sys.argv[1], sys.argv[2]
+try:
+    data = json.loads(body)
+except json.JSONDecodeError:
+    sys.exit(1)
+if not isinstance(data, dict):
+    sys.exit(1)
+if "count" in data or "cloudInstance" in data:
+    items = data.get("cloudInstance", [])
+else:
+    if data.get("href"):
+        print(json.dumps(data))
+        sys.exit(0)
+    sys.exit(1)
+if isinstance(items, dict):
+    items = [items]
+elif not isinstance(items, list):
+    sys.exit(1)
+needle = f"profileId:{profile_id}"
+matches = [item for item in items if needle in str(item.get("id") or "").split(",") and item.get("href")]
+if len(matches) != 1:
+    sys.exit(1)
+print(json.dumps(matches[0]))
 PY
 }
 

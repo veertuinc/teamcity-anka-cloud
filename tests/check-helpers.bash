@@ -33,9 +33,11 @@ json="$(build_profile_json \
 python3 - "$json" <<'PY' || fail "profile json"
 import json, sys
 data = json.loads(sys.argv[1])
-props = {item["name"]: item["value"] for item in data["parameters"]["property"]}
+props = {item["name"]: item["value"] for item in data["properties"]["property"]}
 assert data["id"] == "anka-agent-connect"
-assert data["cloudType"] == "anka"
+assert data["type"] == "CloudProfile"
+assert props["cloud-code"] == "anka"
+assert props["name"] == "anka-agent-connect"
 assert props["clouds.anka.url"] == "http://10.0.0.2"
 assert props["profileServerUrl"] == "http://10.0.0.3:8111"
 assert props["ssh_password"] == "secret"
@@ -64,6 +66,29 @@ if agent_authorized "$pending"; then fail "pending should be unauthorized"; fi
 listed='note[{"id":"abc","name":"26.1-arm64"}]tail'
 [[ "$(template_id_for_name "$listed" "26.1-arm64")" == "abc" ]] || fail "template id"
 [[ "$(json_href "$ready")" == "/app/rest/cloud/instances/id:1" ]] || fail "href"
+[[ "$(json_href "$(instance_for_profile "$ready" "anka-1")")" == "/app/rest/cloud/instances/id:1" ]] || fail "bare instance"
+profile_instances='{"count":2,"cloudInstance":[{"id":"id:old,imageId:img,profileId:anka-10","href":"/old","state":"running"},{"id":"id:new,imageId:img,profileId:anka-1","href":"/new","state":"scheduled_to_start"}]}'
+[[ "$(json_href "$(instance_for_profile "$profile_instances" "anka-1")")" == "/new" ]] || fail "profile instance"
+single='{"count":1,"cloudInstance":{"id":"id:one,imageId:img,profileId:anka-1","href":"/one","state":"running"}}'
+[[ "$(json_href "$(instance_for_profile "$single" "anka-1")")" == "/one" ]] || fail "single object"
+if instance_for_profile '{"count":0}' "anka-1"; then fail "empty list"; fi
+if instance_for_profile '{"count":0,"href":"/app/rest/cloud/instances"}' "anka-1"; then fail "empty collection"; fi
+(
+  TEAMCITY_DRY_RUN=1
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/empty-start-report.txt"
+  calls=0
+  dry_run_body() {
+    calls=$((calls + 1))
+    if [[ "$calls" -eq 1 ]]; then
+      return 0
+    fi
+    printf '%s' "$profile_instances"
+  }
+  start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  [[ "$INSTANCE_HREF" == "/new" ]]
+) || fail "empty start response"
 [[ "$(json_agent_id "$ready")" == "9" ]] || fail "agent id"
 [[ "$(json_agent_id '{"state":"starting"}')" == "" ]] || fail "missing agent id"
 echo "helpers ok"

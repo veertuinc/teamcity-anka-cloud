@@ -17,7 +17,7 @@ tests:
       - name: node
         id: 13-L-ARM-macos
         template_name: 26.1-arm64
-        template_tag: vanilla+port-forward-22+brew-git
+        template_tag: vanilla+port-forward-22+brew-git+azul-jre-21
         ssh_user: anka
         ssh_password: admin
         ssh_port: 22

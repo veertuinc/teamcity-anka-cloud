@@ -82,7 +82,7 @@ public class AnkaCloudInstance implements CloudInstance {
     @Override
     public String getNetworkIdentity() {
         AnkaVmInstance vm = getVm();
-        if (vm == null) {
+        if (vm == null || vm.getVmInfo() == null) {
             return null;
         }
         return vm.getVmInfo().getHostIp();

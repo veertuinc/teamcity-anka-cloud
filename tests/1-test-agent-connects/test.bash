@@ -28,7 +28,9 @@ save_cloud_profile "$template_id"
 wait_for_saved_image
 
 ###############################################################################
-# Start one VM. Wait until the agent is connected and authorized.
+# Start one VM. The start response has an empty body.
+# Read the instance from the instance list.
+# Wait until the agent is connected and authorized.
 ###############################################################################
 start_one_vm "$template_id"
 wait_until_agent_is_connected
