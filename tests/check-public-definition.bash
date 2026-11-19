@@ -1,38 +1,53 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="${ROOT}/tests/1-test-agent-connects"
 fail() { echo "ERROR: $*" >&2; exit 1; }
 
 # shellcheck disable=SC1091
 source "${ROOT}/tests/helpers.bash"
-MANIFEST="${TEST_DIR}/manifest.yaml"
 
-[[ -f "$MANIFEST" ]] || fail "missing manifest.yaml"
-for old in teamcity.yaml controller.yaml node.yaml; do
-  [[ ! -f "${TEST_DIR}/${old}" ]] || fail "remove ${old}"
-done
+check_manifest() {
+  local dir="$1"
+  local profile_name="$2"
+  local manifest="${ROOT}/tests/${dir}/manifest.yaml"
+  [[ -f "$manifest" ]] || fail "${dir} missing manifest.yaml"
+  [[ -f "${ROOT}/tests/${dir}/test.bash" ]] || fail "${dir} missing test.bash"
+  for old in teamcity.yaml controller.yaml node.yaml; do
+    [[ ! -f "${ROOT}/tests/${dir}/${old}" ]] || fail "${dir} remove ${old}"
+  done
+  grep -q 'teamcity_version: "2026.2.2"' "$manifest" || fail "${dir} teamcity version"
+  grep -q 'name: teamcity' "$manifest" || fail "${dir} teamcity host"
+  grep -q 'tester: true' "$manifest" || fail "${dir} tester flag"
+  grep -q 'name: controller' "$manifest" || fail "${dir} controller host"
+  grep -q 'name: node' "$manifest" || fail "${dir} node host"
+  grep -q 'id: ubuntu-linux' "$manifest" || fail "${dir} linux image id"
+  grep -q 'id: 13-L-ARM-macos' "$manifest" || fail "${dir} mac image id"
+  [[ "$(yaml_host_value "$manifest" teamcity port)" == "8111" ]] || fail "${dir} teamcity port"
+  [[ "$(yaml_host_value "$manifest" teamcity profile_name)" == "$profile_name" ]] || fail "${dir} profile name"
+  [[ "$(yaml_host_value "$manifest" teamcity max_instances)" == "1" ]] || fail "${dir} max instances"
+  [[ "$(yaml_host_value "$manifest" controller port)" == "80" ]] || fail "${dir} controller port"
+  [[ "$(yaml_host_value "$manifest" controller registry_port)" == "8089" ]] || fail "${dir} registry port"
+  [[ "$(yaml_host_value "$manifest" controller auth)" == "none" ]] || fail "${dir} auth"
+  [[ "$(yaml_host_value "$manifest" node template_name)" == "26.1-arm64" ]] || fail "${dir} template name"
+  [[ "$(yaml_host_value "$manifest" node template_tag)" == "vanilla+port-forward-22+brew-git+azul-jre-21" ]] || fail "${dir} template tag"
+  [[ "$(yaml_host_value "$manifest" node ssh_user)" == "anka" ]] || fail "${dir} ssh user"
+  [[ "$(yaml_host_value "$manifest" node ssh_password)" == "admin" ]] || fail "${dir} ssh password"
+  [[ "$(yaml_host_value "$manifest" node ssh_port)" == "22" ]] || fail "${dir} ssh port"
+  [[ "$(yaml_host_value "$manifest" node agent_path)" == "/Users/anka/buildAgent" ]] || fail "${dir} agent path"
+}
 
-grep -q 'teamcity_version: "2026.2.2"' "$MANIFEST" || fail "teamcity version"
-grep -q 'name: teamcity' "$MANIFEST" || fail "teamcity host"
-grep -q 'tester: true' "$MANIFEST" || fail "tester flag"
-grep -q 'name: controller' "$MANIFEST" || fail "controller host"
-grep -q 'name: node' "$MANIFEST" || fail "node host"
-grep -q 'id: ubuntu-linux' "$MANIFEST" || fail "linux image id"
-grep -q 'id: 13-L-ARM-macos' "$MANIFEST" || fail "mac image id"
+check_manifest "1-test-agent-connects" "anka-agent-connect"
+check_manifest "2-test-build-stops-vm" "anka-build-stops"
+check_manifest "3-test-max-instances" "anka-max-instances"
+check_manifest "4-test-bad-ssh" "anka-bad-ssh-password"
+check_manifest "5-test-missing-template" "anka-missing-template"
 
-[[ "$(yaml_host_value "$MANIFEST" teamcity port)" == "8111" ]] || fail "teamcity port"
-[[ "$(yaml_host_value "$MANIFEST" teamcity profile_name)" == "anka-agent-connect" ]] || fail "profile name"
-[[ "$(yaml_host_value "$MANIFEST" teamcity max_instances)" == "1" ]] || fail "max instances"
-[[ "$(yaml_host_value "$MANIFEST" controller port)" == "80" ]] || fail "controller port"
-[[ "$(yaml_host_value "$MANIFEST" controller registry_port)" == "8089" ]] || fail "registry port"
-[[ "$(yaml_host_value "$MANIFEST" controller auth)" == "none" ]] || fail "auth"
-[[ "$(yaml_host_value "$MANIFEST" node template_name)" == "26.1-arm64" ]] || fail "template name"
-[[ "$(yaml_host_value "$MANIFEST" node template_tag)" == "vanilla+port-forward-22+brew-git+azul-jre-21" ]] || fail "template tag"
-[[ "$(yaml_host_value "$MANIFEST" node ssh_user)" == "anka" ]] || fail "ssh user"
-[[ "$(yaml_host_value "$MANIFEST" node ssh_password)" == "admin" ]] || fail "ssh password"
-[[ "$(yaml_host_value "$MANIFEST" node ssh_port)" == "22" ]] || fail "ssh port"
-[[ "$(yaml_host_value "$MANIFEST" node agent_path)" == "/Users/anka/buildAgent" ]] || fail "agent path"
+build_manifest="${ROOT}/tests/2-test-build-stops-vm/manifest.yaml"
+[[ "$(yaml_host_value "$build_manifest" teamcity vm_name_template)" == 'tc-build-$ts' ]] || fail "vm name template"
+[[ "$(yaml_host_value "$build_manifest" teamcity vcpu_count)" == "2" ]] || fail "vcpu"
+[[ "$(yaml_host_value "$build_manifest" teamcity ram_size)" == "4096" ]] || fail "ram"
+[[ "$(yaml_host_value "$build_manifest" teamcity terminate_after_build)" == "true" ]] || fail "terminate after build"
+[[ "$(yaml_host_value "$build_manifest" teamcity terminate_idle_time)" == "1" ]] || fail "terminate idle time"
 
 if grep -R -n -E 'private_key_file|10\.8\.1\.200|COMPANY_REGISTRY' "${ROOT}/tests" --exclude='check-public-definition.bash'; then
   fail "public tests contain private data"

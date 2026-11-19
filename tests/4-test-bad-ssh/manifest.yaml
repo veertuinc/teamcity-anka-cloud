@@ -1,0 +1,24 @@
+description: "A bad SSH password, a bad SSH port, and a blocked agent path"
+teamcity_version: "2026.2.2"
+tests:
+  - name: "Bad SSH"
+    hosts:
+      - name: teamcity
+        id: ubuntu-linux
+        tester: true
+        port: 8111
+        profile_name: anka-bad-ssh-password
+        max_instances: 1
+      - name: controller
+        id: ubuntu-linux
+        port: 80
+        registry_port: 8089
+        auth: none
+      - name: node
+        id: 13-L-ARM-macos
+        template_name: 26.1-arm64
+        template_tag: vanilla+port-forward-22+brew-git+azul-jre-21
+        ssh_user: anka
+        ssh_password: admin
+        ssh_port: 22
+        agent_path: /Users/anka/buildAgent

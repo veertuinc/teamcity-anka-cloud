@@ -1,0 +1,29 @@
+description: "One build runs, the profile fields match, and TeamCity removes the VM"
+teamcity_version: "2026.2.2"
+tests:
+  - name: "Build stops VM"
+    hosts:
+      - name: teamcity
+        id: ubuntu-linux
+        tester: true
+        port: 8111
+        profile_name: anka-build-stops
+        max_instances: 1
+        vm_name_template: "tc-build-$ts"
+        vcpu_count: 2
+        ram_size: 4096
+        terminate_after_build: true
+        terminate_idle_time: 1
+      - name: controller
+        id: ubuntu-linux
+        port: 80
+        registry_port: 8089
+        auth: none
+      - name: node
+        id: 13-L-ARM-macos
+        template_name: 26.1-arm64
+        template_tag: vanilla+port-forward-22+brew-git+azul-jre-21
+        ssh_user: anka
+        ssh_password: admin
+        ssh_port: 22
+        agent_path: /Users/anka/buildAgent

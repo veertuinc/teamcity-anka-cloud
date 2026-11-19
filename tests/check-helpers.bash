@@ -44,6 +44,7 @@ assert props["ssh_password"] == "secret"
 assert props["image_id"] == "d792c6f6-198c-470f-9526-9c998efe7ab4"
 assert props["VM_NAME_TEMPLATE"] == "tc-test-$ts"
 assert "auth.method" not in props
+assert "VCPU_COUNT" not in props
 PY
 
 start="$(build_start_instance_json anka-agent-connect d792c6f6-198c-470f-9526-9c998efe7ab4)"
@@ -91,4 +92,53 @@ if instance_for_profile '{"count":0,"href":"/app/rest/cloud/instances"}' "anka-1
 ) || fail "empty start response"
 [[ "$(json_agent_id "$ready")" == "9" ]] || fail "agent id"
 [[ "$(json_agent_id '{"state":"starting"}')" == "" ]] || fail "missing agent id"
+
+extra="$(build_profile_json \
+  "http://10.0.0.2" "http://10.0.0.3:8111" "anka" "secret" "22" \
+  "/Users/anka/buildAgent" "26.1-arm64" "vanilla+port-forward-22+brew-git" \
+  "d792c6f6-198c-470f-9526-9c998efe7ab4" "1" "anka-agent-connect" 'tc-test-$ts' \
+  "2" "4096" "group-1" "7" "true" "1")"
+python3 - "$extra" <<'PY' || fail "extra profile json"
+import json, sys
+data = json.loads(sys.argv[1])
+props = {item["name"]: item["value"] for item in data["properties"]["property"]}
+assert props["VCPU_COUNT"] == "2"
+assert props["RAM_SIZE"] == "4096"
+assert props["group_id"] == "group-1"
+assert props["agentPoolId"] == "7"
+assert props["terminate-after-build"] == "true"
+assert props["terminate-idle-time"] == "1"
+assert props["VM_NAME_TEMPLATE"] == "tc-test-$ts"
+PY
+
+(
+  TEST_ID="build-stops-vm"
+  CHECK_NAME="removed"
+  [[ "$(report_line PASS "")" == "PASS|build-stops-vm|removed|" ]]
+) || fail "build report"
+(
+  TEST_ID="max-instances"
+  CHECK_NAME="one-vm"
+  [[ "$(report_line PASS "")" == "PASS|max-instances|one-vm|" ]]
+) || fail "max report"
+(
+  TEST_ID="bad-ssh"
+  CHECK_NAME="terminated"
+  [[ "$(report_line PASS "")" == "PASS|bad-ssh|terminated|" ]]
+) || fail "ssh report"
+(
+  TEST_ID="missing-template"
+  CHECK_NAME="absent"
+  [[ "$(report_line PASS "")" == "PASS|missing-template|absent|" ]]
+) || fail "missing report"
+
+(
+  printf 'one\n' > "${tmp}/instances.body"
+  printf 'two\n' > "${tmp}/instances.2.body"
+  FIXTURE_DIR="$tmp"
+  [[ "$(dry_run_body GET /app/rest/cloud/instances)" == "one" ]] || exit 1
+  [[ "$(dry_run_body GET /app/rest/cloud/instances)" == "one" ]] || exit 1
+  advance_fixture instances
+  [[ "$(dry_run_body GET /app/rest/cloud/instances)" == "two" ]] || exit 1
+) || fail "fixture cursor"
 echo "helpers ok"
