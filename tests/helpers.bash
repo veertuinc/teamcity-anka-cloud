@@ -966,16 +966,71 @@ cleanup_group_and_pool() {
   return "$failed"
 }
 
+# TeamCity 2026.2 rejects a build configuration in the Root project.
+# The cloud profile stays on _Root. The child project inherits that profile.
+link_build_project_to_pool() {
+  if [[ -z "${AGENT_POOL_ID:-}" ]]; then
+    return 0
+  fi
+  teamcity_request POST "/app/rest/agentPools/id:${AGENT_POOL_ID}/projects" "{\"id\":\"${BUILD_PROJECT_ID}\"}" >/dev/null || finish_fail "project create failed"
+}
+
+prepare_build_project() {
+  if [[ -n "${BUILD_PROJECT_ID:-}" ]]; then
+    return 0
+  fi
+  local payload response existing
+  payload="$(python3 - <<'PY'
+import json
+print(json.dumps({
+    "name": "anka-live",
+    "id": "AnkaLive",
+    "parentProject": {"locator": "id:_Root"},
+}))
+PY
+)"
+  if [[ "${TEAMCITY_DRY_RUN:-}" == "1" ]]; then
+    BUILD_PROJECT_ID="AnkaLive"
+    teamcity_request POST "/app/rest/projects" "$payload" >/dev/null
+    link_build_project_to_pool
+    return 0
+  fi
+  response="$(teamcity_request GET "/app/rest/projects?locator=id:AnkaLive")" || finish_fail "project create failed"
+  existing="$(python3 - "$response" <<'PY'
+import json, sys
+try:
+    data = json.loads(sys.argv[1]) if sys.argv[1].strip() else {}
+except json.JSONDecodeError:
+    sys.exit(0)
+items = data.get("project", []) if isinstance(data, dict) else []
+if isinstance(items, dict):
+    items = [items]
+for item in items:
+    if item.get("id") == "AnkaLive":
+        print("AnkaLive")
+        break
+PY
+)"
+  if [[ -n "$existing" ]]; then
+    teamcity_request DELETE "/app/rest/projects/id:${existing}" >/dev/null || finish_fail "project create failed"
+  fi
+  response="$(teamcity_request POST "/app/rest/projects" "$payload")" || finish_fail "project create failed"
+  BUILD_PROJECT_ID="$(json_get "$response" "id")"
+  [[ -n "$BUILD_PROJECT_ID" ]] || finish_fail "project create failed"
+  link_build_project_to_pool
+}
+
 create_build_type() {
   local name="$1"
   local script="$2"
   local payload response
-  payload="$(python3 - "$name" "$script" <<'PY'
+  prepare_build_project
+  payload="$(python3 - "$name" "$script" "$BUILD_PROJECT_ID" <<'PY'
 import json, sys
-name, script = sys.argv[1], sys.argv[2]
+name, script, project_id = sys.argv[1], sys.argv[2], sys.argv[3]
 print(json.dumps({
     "name": name,
-    "project": {"id": "_Root"},
+    "project": {"id": project_id},
     "steps": {"step": [{
         "type": "simpleRunner",
         "properties": {"property": [

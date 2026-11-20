@@ -39,6 +39,7 @@ TEMPLATE_ID="$(find_template_id)"
 confirm_template_tag "$TEMPLATE_ID"
 save_cloud_profile "$TEMPLATE_ID"
 wait_for_saved_image
+prepare_build_project
 
 ###############################################################################
 # TeamCity may start the VM when the profile is saved.

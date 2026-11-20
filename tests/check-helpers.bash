@@ -333,4 +333,110 @@ PY
   advance_fixture instances
   [[ "$(dry_run_body GET /app/rest/cloud/instances)" == "two" ]] || exit 1
 ) || fail "fixture cursor"
+
+# TeamCity 2026.2 rejects a build configuration in _Root.
+# The build type goes in child project AnkaLive. A pool is linked when one exists.
+(
+  TEST_ID="build-stops-vm"
+  CHECK_NAME="removed"
+  REPORT_PATH="${tmp}/build-type-report.txt"
+  calls_file="${tmp}/build-type-calls"
+  project_list_body='{"count":0}'
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    local body="${3:-}"
+    printf '%s %s %s\n' "$method" "$path" "$body" >> "$calls_file"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/projects?locator=id:AnkaLive" ]]; then
+      printf '%s' "$project_list_body"
+      return 0
+    fi
+    if [[ "$method" == "DELETE" && "$path" == "/app/rest/projects/id:AnkaLive" ]]; then
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/projects" ]]; then
+      printf '%s' '{"id":"AnkaLive","name":"anka-live"}'
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/agentPools/id:7/projects" ]]; then
+      printf '%s' '{"id":"AnkaLive"}'
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/buildTypes" ]]; then
+      printf '%s' '{"id":"bt-live"}'
+      return 0
+    fi
+    return 22
+  }
+  check_build_type_calls() {
+    python3 - "$calls_file" "$1" "$2" <<'PY'
+import json, sys
+path, expect_delete, with_pool = sys.argv[1:]
+rows = []
+for line in open(path, encoding="utf-8"):
+    method, rest = line.rstrip("\n").split(" ", 1)
+    req_path, _, body = rest.partition(" ")
+    rows.append((method, req_path, body))
+
+def one(method, req_path):
+    matches = [row for row in rows if row[0] == method and row[1] == req_path]
+    if len(matches) != 1:
+        raise SystemExit(f"expected one {method} {req_path}, got {len(matches)}")
+    return matches[0]
+
+project = json.loads(one("POST", "/app/rest/projects")[2])
+assert project["id"] == "AnkaLive", project
+assert project["name"] == "anka-live", project
+assert project["parentProject"]["locator"] == "id:_Root", project
+build = json.loads(one("POST", "/app/rest/buildTypes")[2])
+assert build["name"] == "live-build", build
+assert build["project"]["id"] == "AnkaLive", build
+step = build["steps"]["step"][0]
+props = {item["name"]: item["value"] for item in step["properties"]["property"]}
+assert step["type"] == "simpleRunner"
+assert props["script.content"] == "sleep 20; echo live-build-ok"
+assert props["teamcity.step.mode"] == "default"
+assert props["use.custom.script"] == "true"
+deletes = [row for row in rows if row[0] == "DELETE" and row[1] == "/app/rest/projects/id:AnkaLive"]
+if expect_delete == "yes":
+    if len(deletes) != 1:
+        raise SystemExit("missing project delete")
+    if rows.index(deletes[0]) > rows.index(one("POST", "/app/rest/projects")):
+        raise SystemExit("project delete after create")
+elif deletes:
+    raise SystemExit("unexpected project delete")
+pools = [row for row in rows if row[0] == "POST" and row[1] == "/app/rest/agentPools/id:7/projects"]
+if with_pool == "yes":
+    if len(pools) != 1 or json.loads(pools[0][2])["id"] != "AnkaLive":
+        raise SystemExit("missing pool link")
+    if not (rows.index(one("POST", "/app/rest/projects")) < rows.index(pools[0]) < rows.index(one("POST", "/app/rest/buildTypes"))):
+        raise SystemExit("pool link order")
+elif pools:
+    raise SystemExit("unexpected pool link")
+PY
+  }
+  : > "$calls_file"
+  BUILD_PROJECT_ID=""
+  AGENT_POOL_ID="7"
+  prepare_build_project || exit 1
+  [[ "$(create_build_type "live-build" "sleep 20; echo live-build-ok")" == "bt-live" ]] || exit 1
+  check_build_type_calls no yes || exit 1
+  : > "$calls_file"
+  [[ "$(create_build_type "max-hold" "sleep 180")" == "bt-live" ]] || exit 1
+  python3 - "$calls_file" <<'PY' || exit 1
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+if "POST /app/rest/projects " in text or "GET /app/rest/projects" in text:
+    raise SystemExit("second build type created another project")
+if "POST /app/rest/buildTypes " not in text:
+    raise SystemExit("second build type was not created")
+PY
+  : > "$calls_file"
+  BUILD_PROJECT_ID=""
+  AGENT_POOL_ID=""
+  project_list_body='{"count":1,"project":{"id":"AnkaLive","name":"anka-live"}}'
+  prepare_build_project || exit 1
+  [[ "$(create_build_type "live-build" "sleep 20; echo live-build-ok")" == "bt-live" ]] || exit 1
+  check_build_type_calls yes no || exit 1
+) || fail "build type project"
 echo "helpers ok"
