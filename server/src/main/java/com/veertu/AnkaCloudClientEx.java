@@ -60,6 +60,15 @@ public class AnkaCloudClientEx implements CloudClientEx {
         controllerStatusThread();
     }
 
+    // Tests call this constructor. It does not start the controller thread.
+    AnkaCloudClientEx(int maxInstances) {
+        this.connector = null;
+        this.updater = null;
+        this.maxInstances = maxInstances;
+        this.buildAgentManager = null;
+        this.imagesMap = new ConcurrentHashMap<>();
+    }
+
     @NotNull
     @Override
     public CloudInstance startNewInstance(@NotNull CloudImage cloudImage, @NotNull CloudInstanceUserData userData) throws QuotaException {
@@ -170,19 +179,22 @@ public class AnkaCloudClientEx implements CloudClientEx {
     @Override
     public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull CloudImage cloudImage) {
         Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
-        int currentCount = imageInstances.size();
-        
-        // Log instance IDs and statuses for debugging
+        // A Stopped VM is already gone. It does not consume a slot.
+        // Stopping still consumes a slot until the VM leaves the image.
         StringBuilder instanceIds = new StringBuilder();
+        int currentCount = 0;
         int pendingCount = 0;
         for (CloudInstance inst : imageInstances) {
             if (instanceIds.length() > 0) instanceIds.append(", ");
             InstanceStatus status = inst.getStatus();
             instanceIds.append(inst.getInstanceId()).append("(").append(status).append(")");
-            
+
+            if (status != InstanceStatus.STOPPED) {
+                currentCount++;
+            }
             // Count instances that are still starting up (not yet available as agents)
             // These states indicate the VM is still being provisioned
-            if (status == InstanceStatus.SCHEDULED_TO_START || 
+            if (status == InstanceStatus.SCHEDULED_TO_START ||
                 status == InstanceStatus.STARTING ||
                 status == InstanceStatus.UNKNOWN) {
                 pendingCount++;
