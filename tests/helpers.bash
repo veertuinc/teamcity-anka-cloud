@@ -466,10 +466,18 @@ wait_for_saved_image() {
 
 # Return 0 after storing the one instance for this profile.
 # Return 1 when the list has no matching instance.
+# Exit when the list has more than one matching instance.
 listed_profile_instance() {
-  local list
+  local list count
   list="$(teamcity_request GET "/app/rest/cloud/instances")" || return 1
-  INSTANCE_BODY="$(instance_for_profile "$list" "${CLOUD_PROFILE_ID:?}")" || return 1
+  count="$(profile_instance_count "$list" "${CLOUD_PROFILE_ID:?}")" || return 1
+  if [[ "$count" -gt 1 ]]; then
+    finish_fail "instance count ${count}"
+  fi
+  if [[ "$count" -ne 1 ]]; then
+    return 1
+  fi
+  INSTANCE_BODY="$(instance_for_profile "$list" "${CLOUD_PROFILE_ID}")" || return 1
   INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
   ANKA_VM_ID="$(anka_vm_id_from_body "$INSTANCE_BODY")"
 }
@@ -478,7 +486,9 @@ start_error_is_instance_already_starting() {
   grep -E -q 'Waiting for [0-9]+ instance\(s\) to finish starting' "$1"
 }
 
-wait_for_listed_instance() {
+# Return 0 when one instance is listed.
+# Return 1 when the list stays empty until the wait ends.
+poll_for_listed_instance() {
   local start_epoch now
   local limit="${INSTANCE_LIST_WAIT_SECONDS:-60}"
   start_epoch="$(date +%s)"
@@ -488,10 +498,14 @@ wait_for_listed_instance() {
     fi
     now="$(date +%s)"
     if (( now - start_epoch >= limit )); then
-      finish_fail "started instance absent from list"
+      return 1
     fi
     sleep 1
   done
+}
+
+wait_for_listed_instance() {
+  poll_for_listed_instance || finish_fail "started instance absent from list"
 }
 
 # Return 0 when TeamCity accepts the start.
@@ -516,12 +530,11 @@ send_start_request() {
 }
 
 # TeamCity starts one instance after the profile save to read the agent details.
-# Use that instance when it is listed or still starting.
-# Start one only when the list has none.
+# Wait for that instance. Start one only when the list stays empty.
 start_one_vm() {
   local template_id="$1"
   local start_status
-  if listed_profile_instance; then
+  if poll_for_listed_instance; then
     return 0
   fi
   if send_start_request "$template_id"; then
@@ -622,7 +635,10 @@ print(json.loads(sys.argv[1])["href"])
 PY
 }
 
-instance_for_profile() {
+# Print a JSON array of instances for this profile.
+# A bare object with href counts as one instance.
+# Return 1 when the body is not an instance document.
+profile_instance_matches() {
   python3 - "$1" "$2" <<'PY'
 import json, sys
 body, profile_id = sys.argv[1], sys.argv[2]
@@ -636,7 +652,7 @@ if "count" in data or "cloudInstance" in data:
     items = data.get("cloudInstance", [])
 else:
     if data.get("href"):
-        print(json.dumps(data))
+        print(json.dumps([data]))
         sys.exit(0)
     sys.exit(1)
 if isinstance(items, dict):
@@ -645,9 +661,25 @@ elif not isinstance(items, list):
     sys.exit(1)
 needle = f"profileId:{profile_id}"
 matches = [item for item in items if needle in str(item.get("id") or "").split(",") and item.get("href")]
-if len(matches) != 1:
+print(json.dumps(matches))
+PY
+}
+
+profile_instance_count() {
+  local matches
+  matches="$(profile_instance_matches "$1" "$2")" || return 1
+  python3 -c 'import json,sys; print(len(json.loads(sys.argv[1])))' "$matches"
+}
+
+instance_for_profile() {
+  local matches
+  matches="$(profile_instance_matches "$1" "$2")" || return 1
+  python3 - "$matches" <<'PY'
+import json, sys
+items = json.loads(sys.argv[1])
+if len(items) != 1:
     sys.exit(1)
-print(json.dumps(matches[0]))
+print(json.dumps(items[0]))
 PY
 }
 

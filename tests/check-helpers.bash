@@ -110,6 +110,58 @@ if instance_for_profile '{"count":0,"href":"/app/rest/cloud/instances"}' "anka-1
 ) || fail "listed instance"
 (
   CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=3
+  REPORT_PATH="${tmp}/delayed-instance-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  post_calls=0
+  get_count_file="${tmp}/delayed-gets"
+  : > "$get_count_file"
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/cloud/instances" ]]; then
+      local seen
+      seen="$(wc -l < "$get_count_file" | tr -d ' ')"
+      printf 'x\n' >> "$get_count_file"
+      if [[ "$seen" -eq 0 ]]; then
+        printf '%s' '{"count":0}'
+        return 0
+      fi
+      printf '%s' "$profile_instances"
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/cloud/instances" ]]; then
+      post_calls=$((post_calls + 1))
+      return 0
+    fi
+    return 22
+  }
+  start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  [[ "$INSTANCE_HREF" == "/new" ]]
+  [[ "$post_calls" -eq 0 ]]
+) || fail "delayed automatic instance"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/two-instances-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  two='{"count":2,"cloudInstance":[{"id":"id:one,imageId:img,profileId:anka-1","href":"/one","state":"scheduled_to_start"},{"id":"id:two,imageId:img,profileId:anka-1","href":"/two","state":"scheduled_to_start"}]}'
+  teamcity_request() {
+    printf '%s' "$two"
+  }
+  set +e
+  (
+    start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  )
+  code=$?
+  set -e
+  [[ "$code" -eq 1 ]]
+  grep -q 'FAIL|agent-connects|connected|instance count 2' "$REPORT_PATH"
+) || fail "two instances"
+(
+  CLOUD_PROFILE_ID="anka-1"
   INSTANCE_LIST_WAIT_SECONDS=1
   REPORT_PATH="${tmp}/already-starting-report.txt"
   TEST_ID="agent-connects"
