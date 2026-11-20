@@ -37,6 +37,9 @@ public class AnkaCloudClientEx implements CloudClientEx {
     private final int maxInstances;
     private final BuildAgentManagerEx buildAgentManager;
     private final ConcurrentHashMap<String, AnkaCloudImage> imagesMap;
+    // SSH failure blocks further starts on this client.
+    // TeamCity builds a new client when the profile is saved, so a settings change clears the block.
+    private final AtomicBoolean sshStartBlocked = new AtomicBoolean(false);
     private final AtomicBoolean isControllerRunning = new AtomicBoolean(false);
     private final AtomicBoolean controllerStatusCheckThread = new AtomicBoolean(true);
 
@@ -54,10 +57,16 @@ public class AnkaCloudClientEx implements CloudClientEx {
         this.imagesMap = new ConcurrentHashMap<>();
         for (AnkaCloudImage ankaCloudImage: images) {
             imagesMap.put(ankaCloudImage.getTemplateId(), ankaCloudImage);
+            ankaCloudImage.setSshFailureListener(this::noteSshFailure);
         }
         LOG.info(String.format("Registering AnkaCloudClientEx %s to updater", this.toString()));
         updater.registerClient(this);
         controllerStatusThread();
+    }
+
+    // Tests call this method. The SSH failure path calls it too.
+    void noteSshFailure() {
+        sshStartBlocked.set(true);
     }
 
     // Tests call this constructor. It does not start the controller thread.
@@ -178,6 +187,12 @@ public class AnkaCloudClientEx implements CloudClientEx {
 
     @Override
     public CanStartNewInstanceResult canStartNewInstanceWithDetails(@NotNull CloudImage cloudImage) {
+        if (sshStartBlocked.get()) {
+            LOG.info(String.format("[canStartNewInstanceWithDetails] image=%s, canStart=false (ssh failed)",
+                cloudImage.getId()));
+            return CanStartNewInstanceResult.no("SSH to the last instance failed");
+        }
+
         Collection<? extends CloudInstance> imageInstances = cloudImage.getInstances();
         // A Stopped VM is already gone. It does not consume a slot.
         // Stopping still consumes a slot until the VM leaves the image.

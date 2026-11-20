@@ -34,6 +34,7 @@ public class AnkaCloudImage implements CloudImage {
     private final ConcurrentHashMap<String, AnkaCloudInstance> instances;
     private String errorMsg;
     private long errorTimestamp;
+    private volatile Runnable sshFailureListener;
     
     // Error display duration in milliseconds (30 seconds)
     private static final long ERROR_DISPLAY_DURATION_MS = 30000;
@@ -129,6 +130,17 @@ public class AnkaCloudImage implements CloudImage {
 
     public void setExternalId(String profileId) {
         this.externalId = profileId;
+    }
+
+    void setSshFailureListener(Runnable listener) {
+        this.sshFailureListener = listener;
+    }
+
+    void noteSshFailure() {
+        Runnable listener = this.sshFailureListener;
+        if (listener != null) {
+            listener.run();
+        }
     }
 
     @NotNull

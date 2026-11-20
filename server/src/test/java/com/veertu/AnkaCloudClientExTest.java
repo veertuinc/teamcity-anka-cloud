@@ -35,6 +35,16 @@ class AnkaCloudClientExTest {
     }
 
     @Test
+    void sshFailureBlocksTheNextStart() {
+        AnkaCloudClientEx client = new AnkaCloudClientEx(1);
+        client.noteSshFailure();
+        CanStartNewInstanceResult result = client.canStartNewInstanceWithDetails(
+            image(instance("gone", InstanceStatus.STOPPED)));
+        assertFalse(result.isPositive());
+        assertEquals("SSH to the last instance failed", result.getReason());
+    }
+
+    @Test
     void stoppingInstanceConsumesTheLimit() {
         AnkaCloudClientEx client = new AnkaCloudClientEx(1);
         CanStartNewInstanceResult result = client.canStartNewInstanceWithDetails(

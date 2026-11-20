@@ -185,6 +185,7 @@ public class AnkaCloudConnector {
                 propertiesSetter.setProperties(properties);
             } catch (AnkaUnreachableInstanceException e) {
                 LOG.error(e.getMessage());
+                ankaCloudImage.noteSshFailure();
                 ankaAPI.terminateInstance(vmId);
             }
         } catch (AnkaMgmtException | InterruptedException | IOException e) {
