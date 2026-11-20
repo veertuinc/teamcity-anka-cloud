@@ -21,7 +21,9 @@ on_exit_max_instances() {
 trap on_exit_max_instances EXIT
 
 ###############################################################################
-# Save the profile with maxInstances 1. Queue a long build, then a second build.
+# Save the profile with maxInstances 1.
+# TeamCity may start that one VM to read the agent details.
+# Queue a long build, then a second build.
 ###############################################################################
 TEMPLATE_ID="$(find_template_id)"
 confirm_template_tag "$TEMPLATE_ID"

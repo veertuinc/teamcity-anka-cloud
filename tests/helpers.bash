@@ -464,18 +464,26 @@ wait_for_saved_image() {
   done
 }
 
-start_one_vm() {
-  local template_id="$1"
-  local start_json list start_epoch now
+# Return 0 after storing the one instance for this profile.
+# Return 1 when the list has no matching instance.
+listed_profile_instance() {
+  local list
+  list="$(teamcity_request GET "/app/rest/cloud/instances")" || return 1
+  INSTANCE_BODY="$(instance_for_profile "$list" "${CLOUD_PROFILE_ID:?}")" || return 1
+  INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
+  ANKA_VM_ID="$(anka_vm_id_from_body "$INSTANCE_BODY")"
+}
+
+start_error_is_instance_already_starting() {
+  grep -E -q 'Waiting for [0-9]+ instance\(s\) to finish starting' "$1"
+}
+
+wait_for_listed_instance() {
+  local start_epoch now
   local limit="${INSTANCE_LIST_WAIT_SECONDS:-60}"
-  start_json="$(build_start_instance_json "${CLOUD_PROFILE_ID:?}" "$template_id")"
-  teamcity_request POST "/app/rest/cloud/instances" "$start_json" >/dev/null
   start_epoch="$(date +%s)"
   while true; do
-    list="$(teamcity_request GET "/app/rest/cloud/instances")"
-    if INSTANCE_BODY="$(instance_for_profile "$list" "$CLOUD_PROFILE_ID")"; then
-      INSTANCE_HREF="$(json_href "$INSTANCE_BODY")"
-      ANKA_VM_ID="$(anka_vm_id_from_body "$INSTANCE_BODY")"
+    if listed_profile_instance; then
       return 0
     fi
     now="$(date +%s)"
@@ -484,6 +492,74 @@ start_one_vm() {
     fi
     sleep 1
   done
+}
+
+# Return 0 when TeamCity accepts the start.
+# Return 2 when an instance is already starting.
+# Return 1 for any other start error. The error text is already printed.
+send_start_request() {
+  local template_id="$1"
+  local start_json post_error
+  start_json="$(build_start_instance_json "${CLOUD_PROFILE_ID:?}" "$template_id")"
+  post_error="$(mktemp)"
+  if teamcity_request POST "/app/rest/cloud/instances" "$start_json" >/dev/null 2>"$post_error"; then
+    rm -f "$post_error"
+    return 0
+  fi
+  cat "$post_error" >&2
+  if start_error_is_instance_already_starting "$post_error"; then
+    rm -f "$post_error"
+    return 2
+  fi
+  rm -f "$post_error"
+  return 1
+}
+
+# TeamCity starts one instance after the profile save to read the agent details.
+# Use that instance when it is listed or still starting.
+# Start one only when the list has none.
+start_one_vm() {
+  local template_id="$1"
+  local start_status
+  if listed_profile_instance; then
+    return 0
+  fi
+  if send_start_request "$template_id"; then
+    start_status=0
+  else
+    start_status=$?
+  fi
+  if [[ "$start_status" -eq 2 ]]; then
+    echo "The instance is already starting. This test uses that instance." >&2
+  elif [[ "$start_status" -ne 0 ]]; then
+    finish_fail "start instance failed"
+  fi
+  wait_for_listed_instance
+}
+
+# The instance list must be empty. TeamCity must accept this start.
+# This does not use an instance that is already present or still starting.
+start_new_vm() {
+  local template_id="$1"
+  local start_status
+  if listed_profile_instance; then
+    finish_fail "instance still present before start"
+  fi
+  if send_start_request "$template_id"; then
+    start_status=0
+  else
+    start_status=$?
+  fi
+  if [[ "$start_status" -eq 2 ]]; then
+    finish_fail "instance still starting"
+  fi
+  if [[ "$start_status" -ne 0 ]]; then
+    finish_fail "start instance failed"
+  fi
+  if [[ "${TEAMCITY_DRY_RUN:-}" == "1" ]]; then
+    advance_fixture instances
+  fi
+  wait_for_listed_instance
 }
 
 wait_until_agent_is_connected() {

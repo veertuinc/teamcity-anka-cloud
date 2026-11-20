@@ -41,7 +41,8 @@ save_cloud_profile "$TEMPLATE_ID"
 wait_for_saved_image
 
 ###############################################################################
-# Queue one build. TeamCity starts the VM. Check the fields while it runs.
+# TeamCity may start the VM when the profile is saved.
+# Queue one build. That VM runs the build. Check the fields while it runs.
 ###############################################################################
 build_type_id="$(create_build_type "live-build" "sleep 20; echo live-build-ok")"
 build_id="$(queue_build "$build_type_id")"

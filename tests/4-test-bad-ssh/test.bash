@@ -43,6 +43,7 @@ run_bad_ssh_case() {
   esac
   save_cloud_profile "$TEMPLATE_ID"
   wait_for_saved_image
+  # TeamCity may already start this VM to read the agent details.
   start_one_vm "$TEMPLATE_ID"
   if [[ "$mode" == "path" ]]; then
     assert_path_vm_stays_up

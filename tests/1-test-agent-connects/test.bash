@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# The plugin must list one template, start one VM, and the agent must connect.
+# The plugin must list one template and the agent must connect.
+# TeamCity starts one VM after the profile save. This test removes that VM,
+# then starts one VM itself.
 # This test does not queue a build.
 set -euo pipefail
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,11 +30,20 @@ save_cloud_profile "$template_id"
 wait_for_saved_image
 
 ###############################################################################
-# Start one VM. The start response has an empty body.
-# Read the instance from the instance list.
-# Wait until the agent is connected and authorized.
+# TeamCity starts one VM after the profile save to read the agent details.
+# Wait until that agent connects. TeamCity then keeps those details.
 ###############################################################################
 start_one_vm "$template_id"
+wait_until_agent_is_connected
+
+###############################################################################
+# Remove that VM. The instance list is empty after this wait.
+# The next start is sent by this test.
+###############################################################################
+stop_instance
+advance_fixture instances
+wait_until_profile_vms_gone
+start_new_vm "$template_id"
 wait_until_agent_is_connected
 
 ###############################################################################

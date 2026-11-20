@@ -90,6 +90,146 @@ if instance_for_profile '{"count":0,"href":"/app/rest/cloud/instances"}' "anka-1
   start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
   [[ "$INSTANCE_HREF" == "/new" ]]
 ) || fail "empty start response"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  post_calls=0
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "POST" && "$path" == "/app/rest/cloud/instances" ]]; then
+      post_calls=$((post_calls + 1))
+      printf 'HTTP_ERROR 500 POST /app/rest/cloud/instances\n' >&2
+      return 22
+    fi
+    printf '%s' "$profile_instances"
+  }
+  start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  [[ "$INSTANCE_HREF" == "/new" ]]
+  [[ "$post_calls" -eq 0 ]]
+) || fail "listed instance"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/already-starting-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  post_calls=0
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/cloud/instances" ]]; then
+      if [[ "${post_calls:-0}" -eq 0 ]]; then
+        printf '%s' '{"count":0}'
+        return 0
+      fi
+      printf '%s' "$profile_instances"
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/cloud/instances" ]]; then
+      post_calls=$((post_calls + 1))
+      printf 'HTTP_ERROR 500 POST /app/rest/cloud/instances\n{"message":"Unable to start new agent: Waiting for 1 instance(s) to finish starting"}\n' >&2
+      return 22
+    fi
+    return 22
+  }
+  start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  [[ "$INSTANCE_HREF" == "/new" ]]
+  [[ "$post_calls" -eq 1 ]]
+) || fail "already starting instance"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/start-failed-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/cloud/instances" ]]; then
+      printf '%s' '{"count":0}'
+      return 0
+    fi
+    printf 'HTTP_ERROR 500 POST /app/rest/cloud/instances\n{"message":"Max instances limit reached"}\n' >&2
+    return 22
+  }
+  set +e
+  (
+    start_one_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  )
+  code=$?
+  set -e
+  [[ "$code" -eq 1 ]]
+  grep -q 'FAIL|agent-connects|connected|start instance failed' "$REPORT_PATH"
+) || fail "other start error"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/new-start-present-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  teamcity_request() {
+    printf '%s' "$profile_instances"
+  }
+  set +e
+  (
+    start_new_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  )
+  code=$?
+  set -e
+  [[ "$code" -eq 1 ]]
+  grep -q 'FAIL|agent-connects|connected|instance still present before start' "$REPORT_PATH"
+) || fail "new start while instance present"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  REPORT_PATH="${tmp}/new-start-waiting-report.txt"
+  TEST_ID="agent-connects"
+  CHECK_NAME="connected"
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/cloud/instances" ]]; then
+      printf '%s' '{"count":0}'
+      return 0
+    fi
+    printf 'HTTP_ERROR 500 POST /app/rest/cloud/instances\n{"message":"Unable to start new agent: Waiting for 1 instance(s) to finish starting"}\n' >&2
+    return 22
+  }
+  set +e
+  (
+    start_new_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  )
+  code=$?
+  set -e
+  [[ "$code" -eq 1 ]]
+  grep -q 'FAIL|agent-connects|connected|instance still starting' "$REPORT_PATH"
+) || fail "new start while instance starting"
+(
+  CLOUD_PROFILE_ID="anka-1"
+  INSTANCE_LIST_WAIT_SECONDS=1
+  post_calls=0
+  teamcity_request() {
+    local method="$1"
+    local path="$2"
+    if [[ "$method" == "GET" && "$path" == "/app/rest/cloud/instances" ]]; then
+      if [[ "$post_calls" -eq 0 ]]; then
+        printf '%s' '{"count":0}'
+        return 0
+      fi
+      printf '%s' "$profile_instances"
+      return 0
+    fi
+    if [[ "$method" == "POST" && "$path" == "/app/rest/cloud/instances" ]]; then
+      post_calls=$((post_calls + 1))
+      return 0
+    fi
+    return 22
+  }
+  start_new_vm "d792c6f6-198c-470f-9526-9c998efe7ab4"
+  [[ "$INSTANCE_HREF" == "/new" ]]
+  [[ "$post_calls" -eq 1 ]]
+) || fail "new start sends one request"
 [[ "$(json_agent_id "$ready")" == "9" ]] || fail "agent id"
 [[ "$(json_agent_id '{"state":"starting"}')" == "" ]] || fail "missing agent id"
 

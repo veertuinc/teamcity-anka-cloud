@@ -1,0 +1,1 @@
+{"count":1,"cloudInstance":[{"id":"id:started,imageId:d792c6f6-198c-470f-9526-9c998efe7ab4,profileId:anka-agent-connect","href":"/app/rest/cloud/instances/id:started","state":"scheduled_to_start","agent":{"id":10,"connected":false,"authorized":false}}]}
