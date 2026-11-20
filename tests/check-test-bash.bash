@@ -39,5 +39,45 @@ run_case "1-test-agent-connects" "PASS|agent-connects|connected|" "FAIL|agent-co
 run_case "2-test-build-stops-vm" "PASS|build-stops-vm|removed|" "FAIL|build-stops-vm|removed|vm still present after 10 minutes"
 run_case "3-test-max-instances" "PASS|max-instances|one-vm|" "FAIL|max-instances|one-vm|second build left the queue"
 run_case "4-test-bad-ssh" "PASS|bad-ssh|terminated|" "FAIL|bad-ssh|terminated|agent connected for anka-bad-ssh-password"
+
+# The next profile is saved only after the previous TeamCity profile is deleted.
+# Two profiles with the same image make the instance list keep the old profile id.
+assert_bad_ssh_drops_previous_profile() {
+  local test_dir="${ROOT}/tests/4-test-bad-ssh"
+  local trace_file
+  trace_file="$(mktemp)"
+  export REPORT_PATH="${ROOT}/tests/.report-pass.txt"
+  export FIXTURE_DIR="${test_dir}/fixtures/pass"
+  bash -x "${test_dir}/test.bash" >"${ROOT}/tests/.report-pass.txt" 2>"$trace_file"
+  python3 - "$trace_file" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+
+def require_before(later, earlier):
+    later_at = text.find(later)
+    earlier_at = text.find(earlier)
+    if later_at < 0:
+        raise SystemExit("missing " + later)
+    if earlier_at < 0 or earlier_at > later_at:
+        raise SystemExit("missing " + earlier + " before " + later)
+
+require_before(
+    "PROFILE_NAME=anka-bad-ssh-port",
+    "projectFeatures/id:anka-bad-ssh-password",
+)
+require_before(
+    "PROFILE_NAME=anka-bad-ssh-path",
+    "projectFeatures/id:anka-bad-ssh-port",
+)
+import re
+port_at = text.find("PROFILE_NAME=anka-bad-ssh-port")
+hrefs = list(re.finditer(r"INSTANCE_HREF=(\S*)", text[:port_at]))
+if not hrefs or hrefs[-1].group(1) != "":
+    raise SystemExit("INSTANCE_HREF still set when the port profile is saved")
+PY
+  rm -f "$trace_file" "${ROOT}/tests/.report-pass.txt"
+}
+
+assert_bad_ssh_drops_previous_profile
 run_case "5-test-missing-template" "PASS|missing-template|absent|" "FAIL|missing-template|absent|missing template name was listed"
 echo "test.bash ok"

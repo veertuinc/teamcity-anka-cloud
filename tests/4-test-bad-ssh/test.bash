@@ -34,6 +34,13 @@ reset_ssh_from_manifest() {
 run_bad_ssh_case() {
   local profile_name="$1"
   local mode="$2"
+  # The previous profile must be gone before this profile is saved.
+  # TeamCity otherwise lists the new VM under the old profile id.
+  # The poll misses that VM and sends a second start. SSH failure blocks that start.
+  delete_saved_cloud_profile
+  INSTANCE_HREF=""
+  INSTANCE_BODY=""
+  ANKA_VM_ID=""
   reset_ssh_from_manifest
   PROFILE_NAME="$profile_name"
   case "$mode" in

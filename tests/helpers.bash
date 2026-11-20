@@ -447,6 +447,16 @@ save_cloud_profile() {
   CLOUD_PROFILE_ID="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' "$response")"
 }
 
+# Drop the profile from the previous case.
+# A second profile with the same image keeps the old profile id on the instance list.
+delete_saved_cloud_profile() {
+  if [[ -z "${CLOUD_PROFILE_ID:-}" ]]; then
+    return 0
+  fi
+  teamcity_request DELETE "/app/rest/projects/id:_Root/projectFeatures/id:${CLOUD_PROFILE_ID}" >/dev/null
+  CLOUD_PROFILE_ID=""
+}
+
 wait_for_saved_image() {
   local images start_epoch now
   local limit="${IMAGE_WAIT_SECONDS:-300}"
