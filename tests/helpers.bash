@@ -952,12 +952,71 @@ PY
   [[ -n "$AGENT_POOL_ID" ]] || finish_fail "agent pool create failed"
 }
 
+# Return 0 when any node in the controller node list still includes target_group_id.
+node_list_has_group() {
+  local raw_nodes="$1"
+  local target_group_id="$2"
+  python3 - "$raw_nodes" "$target_group_id" <<'PY'
+import json, sys
+raw_nodes, target_group_id = sys.argv[1], sys.argv[2]
+try:
+    data = json.loads(raw_nodes) if raw_nodes.strip() else {}
+except json.JSONDecodeError:
+    sys.exit(1)
+items = data.get("body", []) if isinstance(data, dict) else []
+if isinstance(items, dict):
+    items = [items]
+if not isinstance(items, list):
+    sys.exit(1)
+for node in items:
+    if not isinstance(node, dict):
+        continue
+    groups = node.get("groups") or []
+    if isinstance(groups, dict):
+        groups = [groups]
+    for group in groups:
+        group_id = group.get("id") if isinstance(group, dict) else group
+        if str(group_id or "") == target_group_id:
+            sys.exit(0)
+sys.exit(1)
+PY
+}
+
+# Anka Controller detaches nodes from a group asynchronously.
+# Wait until GET /api/v1/node no longer lists the group before deleting it.
+wait_until_group_detached() {
+  local target_group_id="$1"
+  local limit="${GROUP_DETACH_WAIT_SECONDS:-180}"
+  local poll="${GROUP_DETACH_POLL_SECONDS:-5}"
+  local start_epoch now nodes_json
+  start_epoch="$(date +%s)"
+  while true; do
+    nodes_json="$(controller_request GET "/api/v1/node")" || return 1
+    if ! node_list_has_group "$nodes_json" "$target_group_id"; then
+      return 0
+    fi
+    now="$(date +%s)"
+    if (( now - start_epoch >= limit )); then
+      echo "group still attached to node: ${target_group_id}" >&2
+      return 1
+    fi
+    sleep "$poll"
+  done
+}
+
 cleanup_group_and_pool() {
   local failed=0
+  local group_detach_failed=0
   if [[ -n "${GROUP_ID:-}" && -n "${NODE_ID:-}" ]]; then
-    controller_request DELETE "/api/v1/node/group" "{\"group_ids\":[\"${GROUP_ID}\"],\"node_ids\":[\"${NODE_ID}\"]}" >/dev/null || failed=1
+    if controller_request DELETE "/api/v1/node/group" "{\"group_ids\":[\"${GROUP_ID}\"],\"node_ids\":[\"${NODE_ID}\"]}" >/dev/null; then
+      wait_until_group_detached "$GROUP_ID" || group_detach_failed=1
+    else
+      group_detach_failed=1
+    fi
   fi
-  if [[ -n "${GROUP_ID:-}" ]]; then
+  if [[ "$group_detach_failed" -ne 0 ]]; then
+    failed=1
+  elif [[ -n "${GROUP_ID:-}" ]]; then
     controller_request DELETE "/api/v1/group?id=${GROUP_ID}" >/dev/null || failed=1
   fi
   if [[ -n "${AGENT_POOL_ID:-}" ]]; then

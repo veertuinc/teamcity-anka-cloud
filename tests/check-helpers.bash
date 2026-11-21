@@ -439,4 +439,100 @@ PY
   [[ "$(create_build_type "live-build" "sleep 20; echo live-build-ok")" == "bt-live" ]] || exit 1
   check_build_type_calls yes no || exit 1
 ) || fail "build type project"
+
+# Cleanup waits for the node to detach from the group before deleting the group.
+(
+  GROUP_ID="group-1"
+  NODE_ID="node-1"
+  AGENT_POOL_ID="7"
+  GROUP_DETACH_WAIT_SECONDS=2
+  GROUP_DETACH_POLL_SECONDS=0
+  calls_file="${tmp}/cleanup-group-calls"
+  node_polls_file="${tmp}/cleanup-node-polls"
+  : > "$calls_file"
+  printf '0\n' > "$node_polls_file"
+  controller_request() {
+    local method="$1"
+    local path="$2"
+    local body="${3:-}"
+    printf '%s %s %s\n' "$method" "$path" "$body" >> "$calls_file"
+    if [[ "$method" == "DELETE" && "$path" == "/api/v1/node/group" ]]; then
+      printf '%s' '{"status":"OK"}'
+      return 0
+    fi
+    if [[ "$method" == "GET" && "$path" == "/api/v1/node" ]]; then
+      local polls
+      polls="$(cat "$node_polls_file")"
+      polls=$((polls + 1))
+      printf '%s\n' "$polls" > "$node_polls_file"
+      if [[ "$polls" -eq 1 ]]; then
+        printf '%s' '{"status":"OK","body":[{"node_id":"node-1","groups":[{"id":"group-1","name":"live-test"}]}]}'
+      else
+        printf '%s' '{"status":"OK","body":[{"node_id":"node-1"}]}'
+      fi
+      return 0
+    fi
+    if [[ "$method" == "DELETE" && "$path" == "/api/v1/group?id=group-1" ]]; then
+      printf '%s' '{"status":"OK"}'
+      return 0
+    fi
+    return 22
+  }
+  teamcity_request() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_file"
+    return 0
+  }
+  cleanup_group_and_pool || exit 1
+  python3 - "$calls_file" <<'PY' || exit 1
+import sys
+lines = [line.strip() for line in open(sys.argv[1], encoding="utf-8")]
+expected = [
+    'DELETE /api/v1/node/group {"group_ids":["group-1"],"node_ids":["node-1"]}',
+    'GET /api/v1/node',
+    'GET /api/v1/node',
+    'DELETE /api/v1/group?id=group-1',
+    'DELETE /app/rest/agentPools/id:7',
+]
+if lines != expected:
+    raise SystemExit(f"expected {expected}, got {lines}")
+PY
+) || fail "cleanup waits for group detach"
+
+(
+  GROUP_ID="group-1"
+  NODE_ID="node-1"
+  AGENT_POOL_ID="7"
+  GROUP_DETACH_WAIT_SECONDS=0
+  GROUP_DETACH_POLL_SECONDS=0
+  calls_file="${tmp}/cleanup-timeout-calls"
+  : > "$calls_file"
+  controller_request() {
+    local method="$1"
+    local path="$2"
+    printf '%s %s\n' "$method" "$path" >> "$calls_file"
+    if [[ "$method" == "DELETE" && "$path" == "/api/v1/node/group" ]]; then
+      printf '%s' '{"status":"OK"}'
+      return 0
+    fi
+    if [[ "$method" == "GET" && "$path" == "/api/v1/node" ]]; then
+      printf '%s' '{"status":"OK","body":[{"node_id":"node-1","groups":[{"id":"group-1","name":"live-test"}]}]}'
+      return 0
+    fi
+    return 22
+  }
+  teamcity_request() {
+    printf '%s %s\n' "$1" "$2" >> "$calls_file"
+    return 0
+  }
+  set +e
+  cleanup_group_and_pool 2>/dev/null
+  code=$?
+  set -e
+  [[ "$code" -ne 0 ]] || exit 1
+  grep -q '^DELETE /app/rest/agentPools/id:7$' "$calls_file" || exit 1
+  if grep -q '^DELETE /api/v1/group' "$calls_file"; then
+    exit 1
+  fi
+) || fail "cleanup group detach timeout"
+
 echo "helpers ok"
