@@ -1,1 +1,1 @@
-{"name":"26.1-arm64_vm-1","pool":{"id":7},"properties":{"property":[{"name":"env.ANKA_INSTANCE_ID","value":"vm-1"},{"name":"env.ANKA_TEMPLATE_ID","value":"d792c6f6-198c-470f-9526-9c998efe7ab4"},{"name":"env.ANKA_CLOUD","value":"ANKA_BUILD_CLOUD"}]}}
+{"name":"mgmtManaged-tc-build-170000","pool":{"id":7},"properties":{"property":[{"name":"env.ANKA_INSTANCE_ID","value":"vm-1"},{"name":"env.ANKA_TEMPLATE_ID","value":"d792c6f6-198c-470f-9526-9c998efe7ab4"},{"name":"env.ANKA_CLOUD","value":"ANKA_BUILD_CLOUD"}]}}

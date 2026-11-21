@@ -1098,19 +1098,19 @@ wait_for_one_vm() {
 }
 
 assert_vm_and_agent_fields() {
-  local vm_payload agent_payload actual
+  local vm_payload agent_payload actual vm_name
   vm_payload="$(controller_request GET "/api/v1/vm?id=${ANKA_VM_ID}")" || finish_fail "field group_id expected ${GROUP_ID} got "
   actual="$(json_get "$vm_payload" "body.group_id")"
   require_field "group_id" "$GROUP_ID" "$actual"
-  actual="$(json_get "$vm_payload" "body.vminfo.name")"
-  require_field_prefix "vminfo.name" "mgmtManaged-tc-build-" "$actual"
+  vm_name="$(json_get "$vm_payload" "body.vminfo.name")"
+  require_field_prefix "vminfo.name" "mgmtManaged-tc-build-" "$vm_name"
   actual="$(json_get "$vm_payload" "body.vminfo.cpu_cores")"
   require_field "cpu_cores" "2" "$actual"
   actual="$(json_get "$vm_payload" "body.vminfo.ram")"
   require_field "ram" "4G" "$actual"
-  agent_payload="$(teamcity_request GET "/app/rest/agents/id:$(json_agent_id "$INSTANCE_BODY")?fields=name,pool(id),properties(property(name,value))")" || finish_fail "field name expected 26.1-arm64_${ANKA_VM_ID} got "
+  agent_payload="$(teamcity_request GET "/app/rest/agents/id:$(json_agent_id "$INSTANCE_BODY")?fields=name,pool(id),properties(property(name,value))")" || finish_fail "field name expected ${vm_name} got "
   actual="$(json_get "$agent_payload" "name")"
-  require_field "name" "26.1-arm64_${ANKA_VM_ID}" "$actual"
+  require_field "name" "$vm_name" "$actual"
   actual="$(json_get "$agent_payload" "pool.id")"
   require_field "pool.id" "$AGENT_POOL_ID" "$actual"
   actual="$(json_property "$agent_payload" "env.ANKA_INSTANCE_ID")"
