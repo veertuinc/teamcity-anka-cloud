@@ -1,62 +1,53 @@
 # Releasing
 
-## Preferred: GitHub Action
+Releases ship directly from the `edge` branch. Do not create `release/vX.X.X` version branches.
 
-**Prerequisite:** repo secret `JETBRAINS_MARKETPLACE_TOKEN` — a JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens). Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/33114-anka-build-cloud) (`pluginId` `33114`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
+## Preferred: Jenkins (`teamcity-plugin/edge`)
 
-Channel depends on the branch you run **Release** from:
+**Prerequisites:** Jenkins string credentials configured on the controller:
+- `github-token` — GitHub token with `contents:write` on `veertuinc/teamcity-anka-cloud`.
+- `jetbrains-marketplace-token` — JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens).
 
-| Branch | Marketplace channel | What the workflow does |
-| --- | --- | --- |
-| `edge` | **beta** | Builds the current `pom.xml` version and uploads to Marketplace beta (no bump, tag, GitHub Release, or merge). |
-| `release/vX.X.X` | **Stable** | Full release: bump, tag, GitHub Release, Marketplace Stable, merge into `edge`. |
+Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/33114-anka-build-cloud) (`pluginId` `33114`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
 
-Install/update from beta requires adding `https://plugins.jetbrains.com/plugins/beta/list` as a custom plugin repository in TeamCity.
+### Release steps
 
-### Stable release (`release/vX.X.X`)
-
-1. Create a branch named `release/vX.X.X` (example: `release/v1.12.0`) from the commit you want to ship.
-2. Open the **Release** workflow in GitHub Actions and run `workflow_dispatch` **from that branch** (no version input — the branch name is the source of truth).
-3. The workflow will:
-   - Parse `X.X.X` from `release/vX.X.X`
-   - Bump version files via `./scripts/bump-version.sh`
-   - Commit the bump on the release branch
-   - Create and push tag `vX.X.X`
-   - Build `{repo root}/target/anka-build-cloud-teamcity-plugin-X.X.X.zip`
-   - Publish a GitHub Release with that zip
+1. Bump the plugin version on `edge`:
+   ```bash
+   ./scripts/bump-version.sh <new-version>
+   # Example: ./scripts/bump-version.sh 1.12.0
+   ```
+   Commit and push the version bump to `edge`.
+2. Confirm that `CI / Test`, `CI / Checkstyle`, and `CI / SpotBugs` pass on `edge`.
+3. Update the `teamcity-anka-cloud` submodule pointer in `veertuinc/teamcity-wrapper` on `edge` and push.
+4. Open the Jenkins job `teamcity-plugin/edge` (backed by the `teamcity-wrapper` root `Jenkinsfile`), select **Build with Parameters**, check **`PUBLISH_RELEASE`**, and start the build.
+5. After all live tests pass, Jenkins will:
+   - Read the version from `teamcity-anka-cloud/pom.xml` on `edge`
+   - Verify that `teamcity-anka-cloud` `HEAD` matches `origin/edge` and that tag `vX.X.X` does not already exist
+   - Create and push annotated tag `vX.X.X`
+   - Publish a GitHub Release `vX.X.X` with `target/anka-build-cloud-teamcity-plugin-X.X.X.zip`
    - Upload the same zip to JetBrains Marketplace (Stable)
-   - Merge the release branch into `edge`
-
-### Beta publish (`edge`)
-
-1. Ensure `edge` has the version and code you want in Marketplace beta.
-2. Open the **Release** workflow and run `workflow_dispatch` **from `edge`**.
-3. The workflow will:
-   - Read the version from root `pom.xml`
-   - Build `{repo root}/target/anka-build-cloud-teamcity-plugin-X.X.X.zip`
-   - Upload that zip to JetBrains Marketplace (`beta` channel)
 
 ## Manual fallback
 
-1. Bump the plugin version in every hardcoded location:
+1. Bump the plugin version on `edge` in every hardcoded location:
    ```bash
    ./scripts/bump-version.sh <new-version>
    # Example: ./scripts/bump-version.sh 1.12.0
    ```
    This updates `pom.xml`, `server/pom.xml`, `agent/pom.xml`, `common/pom.xml`, `build/pom.xml`, `teamcity-plugin.xml`, and `README.md`. Changing only the root `pom.xml` is not enough — the build will still produce the old version.
 2. Run `mvn package` and confirm `{repo root}/target/anka-build-cloud-teamcity-plugin-<version>.zip` was produced.
-3. Test the zip on a TeamCity server, then tag `vX.X.X`, publish the release, and merge the release branch into `edge`.
+3. Test the zip on a TeamCity server.
+4. Commit and push the version bump to `edge`, create and push annotated tag `vX.X.X` on `edge`, publish the GitHub Release with the zip, and upload the zip to JetBrains Marketplace (Stable).
 
 ## Automation
 
-The default branch is `edge`. The bot never dispatches Release from `edge`. A human may dispatch Release from `edge` for a Marketplace beta. Follow the Preferred section.
+The default branch is `edge`. Releases do not use `release/vX.Y.Z` branches. Follow the Preferred section.
 
-1. Required checks must be green on the commit: `CI / Test`, `CI / Checkstyle`, `CI / SpotBugs`. `ci.yml` runs on pull requests and on push to `edge`.
-2. Next security version is the latest release tag plus one patch. On 2026-11-09 the latest tag is `v1.11.0`. The branch name is that version: `release/v1.11.1`.
-3. Push branch `release/vX.Y.Z` from the `edge` commit. Do not bump files yourself. The workflow runs `./scripts/bump-version.sh`.
-4. `gh workflow run Release --ref release/vX.Y.Z`. Workflow name `Release`. No inputs.
-5. Wait until the run finishes. On failure, stop. Do not dispatch again in the same run.
-6. The workflow needs repo secret `JETBRAINS_MARKETPLACE_TOKEN`. The bot does not paste that token.
-7. Ignore the root `Jenkinsfile`. It is not the release path and it names no job.
-
-The workflow merges `release/vX.Y.Z` back into `edge`. Do not also merge it by hand.
+1. Required checks must be green on the `edge` commit: `CI / Test`, `CI / Checkstyle`, `CI / SpotBugs`. `ci.yml` runs on pull requests and on push to `edge`.
+2. Next security version is the latest release tag plus one patch.
+3. Run `./scripts/bump-version.sh X.Y.Z`, commit, and push to `edge`.
+4. Update the `teamcity-anka-cloud` submodule in `veertuinc/teamcity-wrapper` on `edge` and push.
+5. Trigger Jenkins job `teamcity-plugin/edge` with `PUBLISH_RELEASE=true`.
+6. Wait until the build finishes. On failure, stop and do not trigger again in the same run.
+7. Jenkins uses the configured `github-token` and `jetbrains-marketplace-token` credentials. Never paste tokens into logs or commits.
