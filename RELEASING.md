@@ -4,8 +4,8 @@ Releases ship directly from the `edge` branch. Do not create `release/vX.X.X` ve
 
 ## Preferred: Jenkins (`teamcity-plugin/edge`)
 
-**Prerequisites:** Jenkins string credentials configured on the controller:
-- `github-token` — GitHub token with `contents:write` on `veertuinc/teamcity-anka-cloud`.
+**Prerequisites:** Jenkins credentials configured on the controller:
+- `engineering-manager-github-app` — GitHub App credential with `contents:write` on `veertuinc/teamcity-anka-cloud`.
 - `jetbrains-marketplace-token` — JetBrains Marketplace [permanent token](https://plugins.jetbrains.com/author/account) (My Tokens).
 
 Uploads go to [Anka Build Cloud](https://plugins.jetbrains.com/plugin/33114-anka-build-cloud) (`pluginId` `33114`, XML ID `teamcity_anka-build-cloud-teamcity-plugin`) via the [Plugin Upload API](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html). Marketplace must allow that XML ID (update the listing if it still expects `teamcity_ankaCloud`).
@@ -50,4 +50,4 @@ The default branch is `edge`. Releases do not use `release/vX.Y.Z` branches. Fol
 4. Update the `teamcity-anka-cloud` submodule in `veertuinc/teamcity-wrapper` on `edge` and push.
 5. Trigger Jenkins job `teamcity-plugin/edge` with `PUBLISH_RELEASE=true`.
 6. Wait until the build finishes. On failure, stop and do not trigger again in the same run.
-7. Jenkins uses the configured `github-token` and `jetbrains-marketplace-token` credentials. Never paste tokens into logs or commits.
+7. Jenkins uses the configured `engineering-manager-github-app` and `jetbrains-marketplace-token` credentials. Never paste tokens into logs or commits.
